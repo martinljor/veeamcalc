@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MJ — Resource Calculator for VDC Vault - Veeam, Keep your business running</title>
+  <title>MJ Storage and Resource Calculator — for Veeam</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -316,6 +316,8 @@ const T = {
     bwDaily:'Daily incremental', bwFull:'Synthetic full (per cycle)',
     bwRequired:'Required per proxy', bwTotal:'Total (all proxies)',
     bwNote:(win,prx)=>`Based on a <strong>${win}h</strong> backup window across <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
+    cpuPerProxy:'CPU per proxy', ramPerProxy:'RAM per proxy',
+    cpuNote:'CPU/RAM estimates: 1 vCPU per 100 Mbps, 2 GB RAM per vCPU (Veeam recommended sizing).',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: immutability period (${ip} days) exceeds daily retention (${rd} days). All restore points will remain <strong>locked until they naturally expire</strong> — Veeam cannot remove them earlier even when the retention policy says so. This maximizes overhead.`,
     warnImmGtRetTip:(rd)=>`Recommendation: set immutability ≤ retention (${rd} days) to allow normal cleanup.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: immutability (${ip} days) exceeds the longest GFS retention (${max} days). Restore points will remain locked <strong>beyond their own retention window</strong>, preventing deletion and generating unnecessary storage overhead.`,
@@ -359,6 +361,8 @@ const T = {
     bwDaily:'Incremental diario', bwFull:'Full sintético (por ciclo)',
     bwRequired:'Requerido por proxy', bwTotal:'Total (todos los proxies)',
     bwNote:(win,prx)=>`Basado en una ventana de backup de <strong>${win}h</strong> con <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
+    cpuPerProxy:'CPU por proxy', ramPerProxy:'RAM por proxy',
+    cpuNote:'Estimación CPU/RAM: 1 vCPU cada 100 Mbps, 2 GB RAM por vCPU (sizing recomendado por Veeam).',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: el período de inmutabilidad (${ip} días) supera la retención diaria (${rd} días). Todos los restore points quedarán <strong>bloqueados hasta que expiren naturalmente</strong> — Veeam no puede eliminarlos antes aunque la política de retención ya los haya vencido. El overhead será máximo.`,
     warnImmGtRetTip:(rd)=>`Recomendación: igualá la inmutabilidad a la retención (${rd} días) o menor, para permitir la limpieza normal.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: la inmutabilidad (${ip} días) excede la retención GFS más larga (${max} días). Los restore points quedarán bloqueados <strong>más allá de su propia ventana de retención</strong>, impidiendo su eliminación y generando overhead innecesario.`,
@@ -401,7 +405,9 @@ const T = {
     bwTitle:'Largura de banda necessária por proxy',
     bwDaily:'Incremental diário', bwFull:'Full sintético (por ciclo)',
     bwRequired:'Necessário por proxy', bwTotal:'Total (todos os proxies)',
-    bwNote:(win,prx)=>`Com base em uma janela de backup de ${win}h e ${prx} ${prx===1?'proxy':'proxies'}.`,
+    bwNote:(win,prx)=>`Com base em uma janela de backup de <strong>${win}h</strong> e <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
+    cpuPerProxy:'CPU por proxy', ramPerProxy:'RAM por proxy',
+    cpuNote:'Estimativa CPU/RAM: 1 vCPU a cada 100 Mbps, 2 GB RAM por vCPU (sizing recomendado pelo Veeam).',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: o período de imutabilidade (${ip} dias) supera a retenção diária (${rd} dias). Todos os restore points ficarão <strong>bloqueados até expirar naturalmente</strong> — o Veeam não pode removê-los antes, mesmo que a política de retenção já os tenha expirado. O overhead será máximo.`,
     warnImmGtRetTip:(rd)=>`Recomendação: defina a imutabilidade ≤ retenção (${rd} dias) para permitir a limpeza normal.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: a imutabilidade (${ip} dias) excede a retenção GFS mais longa (${max} dias). Os restore points ficarão bloqueados <strong>além de sua própria janela de retenção</strong>, impedindo a exclusão e gerando overhead desnecessário.`,
@@ -525,21 +531,27 @@ function renderWarnings(warns) {
 
 // ─── Bandwidth calc ─────────────────────────────────────────────────────────
 function renderBW(src, cr, comp, bg, win, proxies) {
-  const full = src*(1-comp);         // TB
-  const inc  = src*cr*(1-comp);      // TB/day
-
-  // Convert TB to Mbps within the backup window
+  const full = src*(1-comp);
+  const inc  = src*cr*(1-comp);
   const tbToMbps = (tb) => (tb * 1024 * 1024 * 8) / (win * 3600);
 
-  const incMbps  = tbToMbps(inc);
-  const fullMbps = tbToMbps(full);   // when a full is generated
-  const totalMbps = Math.max(incMbps, fullMbps); // worst-case daily requirement
-  const perProxy = totalMbps / proxies;
+  const incMbps   = tbToMbps(inc);
+  const fullMbps  = tbToMbps(full);
+  const totalMbps = Math.max(incMbps, fullMbps);
+  const perProxy  = totalMbps / proxies;
+
+  // CPU: 1 vCPU per 100 Mbps throughput (Veeam recommended), min 2
+  const vcpuPerProxy = Math.max(2, Math.ceil(perProxy / 100));
+  // RAM: 2 GB per vCPU + 2 GB base, min 4 GB
+  const ramPerProxy  = Math.max(4, vcpuPerProxy * 2 + 2);
+
+  const cpuTotal = vcpuPerProxy * proxies;
+  const ramTotal = ramPerProxy  * proxies;
 
   document.getElementById('bw-result').innerHTML = `
     <div class="bw-card">
       <div class="bw-card-title"><i class="fa-solid fa-network-wired" style="font-size:12px"></i>${t('bwTitle')}</div>
-      <div class="bw-grid">
+      <div class="bw-grid" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr">
         <div class="bw-metric">
           <div class="m-label">${t('bwDaily')}</div>
           <div class="m-val">${fmtBW(incMbps)}</div>
@@ -555,8 +567,18 @@ function renderBW(src, cr, comp, bg, win, proxies) {
           <div class="m-val" style="color:#1e3a8a;font-size:18px">${fmtBW(perProxy)}</div>
           <div class="m-unit">${fmtBW(totalMbps)} ${t('bwTotal').toLowerCase()}</div>
         </div>
+        <div class="bw-metric" style="border-color:#bfdbfe">
+          <div class="m-label" style="color:#7c3aed">${t('cpuPerProxy')}</div>
+          <div class="m-val" style="color:#4c1d95">${vcpuPerProxy} vCPU</div>
+          <div class="m-unit" style="color:#8b5cf6">${cpuTotal} vCPU total</div>
+        </div>
+        <div class="bw-metric" style="border-color:#bfdbfe">
+          <div class="m-label" style="color:#7c3aed">${t('ramPerProxy')}</div>
+          <div class="m-val" style="color:#4c1d95">${ramPerProxy} GB</div>
+          <div class="m-unit" style="color:#8b5cf6">${ramTotal} GB total</div>
+        </div>
       </div>
-      <div style="font-size:10px;color:#3b82f6;margin-top:8px">${T[lang].bwNote(win, proxies)}</div>
+      <div style="font-size:10px;color:#3b82f6;margin-top:8px">${T[lang].bwNote(win, proxies)} ${t('cpuNote')}</div>
     </div>`;
 }
 
@@ -669,8 +691,11 @@ function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveO
   let html='<div class="sim-rows">';
   rows.forEach(r=>{
     const bw=Math.max(3,Math.min(maxW,r.size*scale));
+    const lockHtml = r.immutable
+      ? `<i class="fa-solid fa-lock" style="font-size:9px;color:var(--green)" title="${t('immutable')}"></i>`
+      : `<i class="fa-solid fa-lock-open" style="font-size:9px;color:var(--gray-300)" title="${t('noLock')}"></i>`;
     html+=`<div class="sim-row">
-      <span class="sim-row-label"><span class="lock-icon ${r.immutable?'locked':'unlocked'}" title="${r.immutable?t('immutable'):t('noLock')}">${r.immutable?'●':'○'}</span>${r.label}</span>
+      <span class="sim-row-label">${lockHtml}<span style="margin-left:2px">${r.label}</span></span>
       <div class="sim-bar-track"><div class="sim-bar ${r.type}" style="width:${bw}px"></div><span class="sim-size">${r.size.toFixed(2)} TB</span></div>
     </div>`;
   });
