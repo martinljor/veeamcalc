@@ -638,18 +638,25 @@ function calc() {
       : `<div><div class="breakdown-col-title">Capacity Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`
     );
 
-  renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip, immOn, false);
-  if (capOn) renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn, moveOn && !copyOn);
+  const isMoveOnly = moveOn && !copyOn;
+  renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip, immOn, false, isMoveOnly);
+  if (capOn) renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn, isMoveOnly, false);
   else document.getElementById('sim-cap').innerHTML=`<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
 }
 
-function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveOnly) {
+function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveOnly, isPerfWithMove) {
   const full=src*(1-comp), inc=src*cr*(1-comp);
   const maxW=180, scale=maxW/full;
   let rows=[];
   for(let i=rd;i>=1;i--){
     const isB=(i%bg===0||i===rd);
-    // With move-only: capacity tier only stores synthetic fulls, not incrementals
+    // Move policy on Performance Tier: only keep incrementals in the current incomplete cycle (since last full)
+    // Completed cycles have already been moved to Capacity Tier
+    if (isPerfWithMove && !isB) {
+      const daysSinceLastFull = (rd % bg) || bg;
+      if (i <= rd - daysSinceLastFull) continue; // already moved
+    }
+    // Capacity Tier with move-only: only synthetic fulls
     if (moveOnly && !isB) continue;
     rows.push({label:'D'+i,size:isB?full:inc,type:isB?'full-synth':'incremental',immutable:immOn&&i<=immDays});
   }
