@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VDC Vault Storage Calculator — Veeam</title>
+  <title>MJ Storage and Resource Calculator — for Veeam</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -435,8 +435,8 @@
       </svg>
     </div>
     <div>
-      <div class="header-title">VDC Vault Storage Calculator</div>
-      <div class="header-sub">Veeam Backup & Replication</div>
+      <div class="header-title">MJ Storage and Resource Calculator</div>
+      <div class="header-sub">for Veeam</div>
     </div>
   </div>
   <span class="header-badge">Community Tool</span>
@@ -494,32 +494,31 @@
         </div>
 
         <div class="section-label">Inmutabilidad</div>
-        <div class="field-grid">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <input type="checkbox" id="immEnabled" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+          <label for="immEnabled" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500">Activar inmutabilidad (Object Lock)</label>
+        </div>
+        <div id="imm-fields" class="field-grid">
           <div class="field">
             <label>Performance tier (días)</label>
-            <input type="number" id="immPerf" value="30" min="0" max="365">
+            <input type="number" id="immPerf" value="30" min="1" max="365">
           </div>
           <div class="field">
             <label>Capacity tier (días)</label>
-            <input type="number" id="immCap" value="30" min="0" max="365">
+            <input type="number" id="immCap" value="30" min="1" max="365">
           </div>
         </div>
+        <div id="imm-warnings"></div>
 
         <div class="section-label">Capacity Tier</div>
-        <div class="field-grid">
-          <div class="field">
-            <label>Copy policy</label>
-            <select id="copyPolicy">
-              <option value="1">Activada</option>
-              <option value="0">Desactivada</option>
-            </select>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="copyPolicy" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+            <label for="copyPolicy" style="font-size:12px;color:var(--gray-700);cursor:pointer">Copy policy — copiar backups al Capacity Tier</label>
           </div>
-          <div class="field">
-            <label>Move policy</label>
-            <select id="movePolicy">
-              <option value="0">Desactivada</option>
-              <option value="1">Activada</option>
-            </select>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="movePolicy" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+            <label for="movePolicy" style="font-size:12px;color:var(--gray-700);cursor:pointer">Move policy — mover backups al Capacity Tier</label>
           </div>
         </div>
 
@@ -634,7 +633,7 @@
 </div>
 
 <footer>
-  Calculadora no oficial — desarrollada como herramienta complementaria a
+  Desarrollado por <a href="mailto:martin.jorge@veeam.com">Martin Jorge</a> — herramienta complementaria a
   <a href="https://www.veeam.com/calculators/simple/vdc" target="_blank">la calculadora oficial de Veeam VDC</a>.
   Los resultados son estimaciones y pueden variar según la configuración real.
 </footer>
@@ -653,6 +652,66 @@
   function getInt(id) { return parseInt(document.getElementById(id).value) || 0; }
   function fmt(v) { return v.toFixed(2) + ' TB'; }
 
+  // Immutability toggle
+  document.getElementById('immEnabled').addEventListener('change', function() {
+    document.getElementById('imm-fields').style.opacity = this.checked ? '1' : '0.35';
+    document.getElementById('imm-fields').style.pointerEvents = this.checked ? '' : 'none';
+    calc();
+  });
+
+  function validateImm(rd, rw, rm, ry, ip, ic, immOn) {
+    const warnings = [];
+    if (!immOn) return warnings;
+
+    const totalRetDays = rd;
+    const totalRetWeeksDays = rw * 7;
+    const totalRetMonthsDays = rm * 30;
+    const totalRetYearsDays = ry * 365;
+
+    if (ip > totalRetDays && rw === 0 && rm === 0 && ry === 0) {
+      warnings.push({
+        tier: 'Performance Tier',
+        msg: `El período de inmutabilidad (${ip} días) es mayor que la retención diaria (${rd} días). Esto significa que <strong>todos los restore points quedarán bloqueados</strong> hasta el final de su ventana de retención — no podrán eliminarse antes aunque expiren. El overhead será máximo.`,
+        tip: `Recomendación: igualá la inmutabilidad a la retención (${rd} días) o menor.`
+      });
+    }
+    if (ip < 1) {
+      warnings.push({ tier: 'Performance Tier', msg: 'El período de inmutabilidad debe ser al menos 1 día.', tip: '' });
+    }
+    if (ic > totalRetDays && rw === 0 && rm === 0 && ry === 0) {
+      warnings.push({
+        tier: 'Capacity Tier',
+        msg: `El período de inmutabilidad (${ic} días) supera la retención configurada (${rd} días). Los objetos en el Capacity Tier permanecerán bloqueados más tiempo del que existe la política de retención, generando <strong>overhead innecesario</strong> en el almacenamiento de objetos.`,
+        tip: `Recomendación: ajustá la inmutabilidad del Capacity Tier a ${rd} días o menos.`
+      });
+    }
+
+    const maxRet = Math.max(rd, totalRetWeeksDays, totalRetMonthsDays, totalRetYearsDays);
+    if (ip > maxRet) {
+      warnings.push({
+        tier: 'Performance Tier',
+        msg: `La inmutabilidad (${ip} días) excede la retención GFS más larga (${maxRet} días). Veeam no puede eliminar restore points que todavía tienen Object Lock activo, aunque la política de retención ya los haya expirado.`,
+        tip: 'Ajustá la inmutabilidad para que no supere el período de retención más largo.'
+      });
+    }
+
+    return warnings;
+  }
+
+  function renderWarnings(warnings) {
+    const el = document.getElementById('imm-warnings');
+    if (!warnings.length) { el.innerHTML = ''; return; }
+    el.innerHTML = warnings.map(w => `
+      <div style="background:#fdecea;border-left:3px solid var(--red);border-radius:0 var(--radius) var(--radius) 0;padding:.75rem 1rem;margin-top:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:3px">
+          <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px"></i>${w.tier} — configuración inconsistente
+        </div>
+        <div style="font-size:11px;color:#7f1d1d;line-height:1.6">${w.msg}</div>
+        ${w.tip ? `<div style="font-size:11px;color:#991b1b;margin-top:4px;font-style:italic">${w.tip}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
   function calc() {
     const src = getVal('srcTB');
     const cr = getVal('changeRate') / 100;
@@ -662,21 +721,26 @@
     const rw = getInt('retWeeks');
     const rm = getInt('retMonths');
     const ry = getInt('retYears');
-    const ip = getInt('immPerf');
-    const ic = getInt('immCap');
-    const copyOn = document.getElementById('copyPolicy').value === '1';
+    const immOn = document.getElementById('immEnabled').checked;
+    const ip = immOn ? getInt('immPerf') : 0;
+    const ic = immOn ? getInt('immCap') : 0;
+    const copyOn = document.getElementById('copyPolicy').checked;
+
+    // Validation
+    const warnings = validateImm(rd, rw, rm, ry, ip, ic, immOn);
+    renderWarnings(warnings);
 
     const full = src * (1 - comp);
     const inc = src * cr * (1 - comp);
 
     // Performance Tier
     const perfData = full + inc * (rd - 1) + full * rw + full * rm + full * ry;
-    const immOvhPerf = full * (ip / bg);
+    const immOvhPerf = immOn ? full * (ip / bg) : 0;
     const perfTotal = perfData + immOvhPerf;
 
     // Capacity Tier
     const capData = copyOn ? full + inc * (rd - 1) + full * rw + full * rm + full * ry : 0;
-    const immOvhCap = copyOn ? full * (ic / bg) : 0;
+    const immOvhCap = copyOn && immOn ? full * (ic / bg) : 0;
     const capTotal = copyOn ? capData + immOvhCap : 0;
 
     // Banner
@@ -684,13 +748,13 @@
       <div class="tier-box perf">
         <div class="tier-label">Performance Tier</div>
         <div class="tier-val">${fmt(perfTotal)}</div>
-        <div class="tier-sub">${fmt(perfData)} datos<br>${fmt(immOvhPerf)} overhead inmut.</div>
+        <div class="tier-sub">${fmt(perfData)} datos<br>${immOn ? fmt(immOvhPerf) + ' overhead inmut.' : 'sin inmutabilidad'}</div>
       </div>
       ${copyOn
         ? `<div class="tier-box cap">
             <div class="tier-label">Capacity Tier</div>
             <div class="tier-val">${fmt(capTotal)}</div>
-            <div class="tier-sub">${fmt(capData)} datos<br>${fmt(immOvhCap)} overhead inmut.</div>
+            <div class="tier-sub">${fmt(capData)} datos<br>${immOn ? fmt(immOvhCap) + ' overhead inmut.' : 'sin inmutabilidad'}</div>
           </div>`
         : `<div class="tier-box disabled">
             <div class="tier-label">Capacity Tier</div>
@@ -701,7 +765,7 @@
     `;
 
     // Breakdown
-    const makeBreakdown = (label, data, inc_, full_, rw_, rm_, ry_, ovh, total, rd_) => `
+    const makeBreakdown = (label, data, inc_, full_, rw_, rm_, ry_, ovh, total, rd_, showImm) => `
       <div>
         <div class="breakdown-col-title">${label}</div>
         <div class="breakdown-row"><span class="lbl">Full comprimido</span><span class="val">${fmt(full_)}</span></div>
@@ -709,28 +773,28 @@
         ${rw_ > 0 ? `<div class="breakdown-row"><span class="lbl">Semanales (${rw_})</span><span class="val">${fmt(full_ * rw_)}</span></div>` : ''}
         ${rm_ > 0 ? `<div class="breakdown-row"><span class="lbl">Mensuales (${rm_})</span><span class="val">${fmt(full_ * rm_)}</span></div>` : ''}
         ${ry_ > 0 ? `<div class="breakdown-row"><span class="lbl">Anuales (${ry_})</span><span class="val">${fmt(full_ * ry_)}</span></div>` : ''}
-        <div class="breakdown-row"><span class="lbl">Overhead inmutabilidad</span><span class="val overhead">${fmt(ovh)}</span></div>
+        ${showImm ? `<div class="breakdown-row"><span class="lbl">Overhead inmutabilidad</span><span class="val overhead">${fmt(ovh)}</span></div>` : ''}
         <div class="breakdown-row"><span class="lbl"><strong>Total estimado</strong></span><span class="val total"><strong>${fmt(total)}</strong></span></div>
       </div>
     `;
 
     document.getElementById('breakdown-content').innerHTML =
-      makeBreakdown('Performance Tier', perfData, inc, full, rw, rm, ry, immOvhPerf, perfTotal, rd) +
+      makeBreakdown('Performance Tier', perfData, inc, full, rw, rm, ry, immOvhPerf, perfTotal, rd, immOn) +
       (copyOn
-        ? makeBreakdown('Capacity Tier', capData, inc, full, rw, rm, ry, immOvhCap, capTotal, rd)
+        ? makeBreakdown('Capacity Tier', capData, inc, full, rw, rm, ry, immOvhCap, capTotal, rd, immOn && copyOn)
         : `<div><div class="breakdown-col-title">Capacity Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">Desactivado. Activar Copy policy para ver estimación.</p></div>`
       );
 
     // Simulations
-    renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip);
+    renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip, immOn);
     if (copyOn) {
-      renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic);
+      renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn);
     } else {
       document.getElementById('sim-cap').innerHTML = '<p style="font-size:12px;color:var(--gray-500)">Copy policy desactivada.</p>';
     }
   }
 
-  function renderSim(containerId, src, cr, comp, bg, rd, rw, rm, ry, immDays) {
+  function renderSim(containerId, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn) {
     const full = src * (1 - comp);
     const inc = src * cr * (1 - comp);
     const container = document.getElementById(containerId);
@@ -740,20 +804,19 @@
     let rows = [];
     for (let i = rd; i >= 1; i--) {
       const isBlock = (i % bg === 0 || i === rd);
-      rows.push({ label: 'D' + i, size: isBlock ? full : inc, type: isBlock ? 'full-synth' : 'incremental', immutable: i <= immDays });
+      rows.push({ label: 'D' + i, size: isBlock ? full : inc, type: isBlock ? 'full-synth' : 'incremental', immutable: immOn && i <= immDays });
     }
-    if (rw > 0) for (let w = 1; w <= rw; w++) rows.push({ label: 'W' + w, size: full, type: 'gfs', immutable: w * 7 <= immDays });
-    if (rm > 0) for (let m = 1; m <= rm; m++) rows.push({ label: 'M' + m, size: full, type: 'gfs', immutable: m * 30 <= immDays });
-    if (ry > 0) for (let y = 1; y <= ry; y++) rows.push({ label: 'Y' + y, size: full, type: 'gfs', immutable: y * 365 <= immDays });
-    rows.push({ label: 'LATEST', size: full, type: 'full-synth', immutable: true });
+    if (rw > 0) for (let w = 1; w <= rw; w++) rows.push({ label: 'W' + w, size: full, type: 'gfs', immutable: immOn && w * 7 <= immDays });
+    if (rm > 0) for (let m = 1; m <= rm; m++) rows.push({ label: 'M' + m, size: full, type: 'gfs', immutable: immOn && m * 30 <= immDays });
+    if (ry > 0) for (let y = 1; y <= ry; y++) rows.push({ label: 'Y' + y, size: full, type: 'gfs', immutable: immOn && y * 365 <= immDays });
+    rows.push({ label: 'LATEST', size: full, type: 'full-synth', immutable: immOn });
 
-    const immOvh = full * (immDays / Math.max(1, bg));
+    const immOvh = immOn ? full * (immDays / Math.max(1, bg)) : 0;
 
     let html = '<div class="sim-rows">';
     rows.forEach(r => {
       const bw = Math.max(3, Math.min(maxW, r.size * scale));
       const lockCls = r.immutable ? 'locked' : 'unlocked';
-      const lockIcon = r.immutable ? '🔒' : '🔓';
       html += `<div class="sim-row">
         <span class="sim-row-label">
           <span class="lock-icon ${lockCls}" title="${r.immutable ? 'Inmutable' : 'Sin lock'}">${r.immutable ? '●' : '○'}</span>
@@ -767,19 +830,21 @@
     });
     html += '</div>';
 
-    const ovhW = Math.max(3, Math.min(maxW, immOvh * scale));
-    html += `<div class="sim-overhead-row">
-      <span class="sim-row-label" style="color:var(--red);width:46px">Overhead</span>
-      <div class="sim-bar-track">
-        <div class="sim-bar overhead-bar" style="width:${ovhW}px"></div>
-        <span class="sim-size red">${immOvh.toFixed(2)} TB</span>
-      </div>
-    </div>`;
+    if (immOn) {
+      const ovhW = Math.max(3, Math.min(maxW, immOvh * scale));
+      html += `<div class="sim-overhead-row">
+        <span class="sim-row-label" style="color:var(--red);width:46px">Overhead</span>
+        <div class="sim-bar-track">
+          <div class="sim-bar overhead-bar" style="width:${ovhW}px"></div>
+          <span class="sim-size red">${immOvh.toFixed(2)} TB</span>
+        </div>
+      </div>`;
+    }
 
     container.innerHTML = html;
   }
 
-  document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calc));
+  document.querySelectorAll('input[type=number], input[type=checkbox]').forEach(el => el.addEventListener('input', calc));
   calc();
 </script>
 
