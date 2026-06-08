@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VDC Vault Storage Calculator — Veeam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --green: #00b336;
+      --green-dark: #007a24;
+      --green-light: #e6f9ec;
+      --green-mid: #a8e6bc;
+      --red: #c0392b;
+      --red-light: #fdecea;
+      --gray-50: #f8f9fa;
+      --gray-100: #f1f3f4;
+      --gray-200: #e8eaed;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --white: #ffffff;
+      --font: 'IBM Plex Sans', sans-serif;
+      --mono: 'IBM Plex Mono', monospace;
+      --radius: 8px;
+      --radius-lg: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--gray-50);
+      color: var(--gray-900);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .veeam-logo {
+      width: 28px;
+      height: 28px;
+      background: var(--green);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .veeam-logo svg { width: 16px; height: 16px; }
+    .header-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-900);
+    }
+    .header-sub {
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+    .header-badge {
+      font-size: 11px;
+      background: var(--green-light);
+      color: var(--green-dark);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* Layout */
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 800px) {
+      .page { grid-template-columns: 1fr; padding: 1rem; }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+    .card-header {
+      padding: .875rem 1.25rem;
+      border-bottom: 1px solid var(--gray-100);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-header-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--green-light);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--green-dark);
+      font-size: 13px;
+    }
+    .card-header h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+    .card-body { padding: 1.25rem; }
+
+    /* Section labels */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--gray-500);
+      margin-bottom: 10px;
+      margin-top: 16px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* Form fields */
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label {
+      font-size: 11px;
+      color: var(--gray-500);
+      font-weight: 500;
+    }
+    .field input[type=number],
+    .field select {
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 7px 10px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--gray-900);
+      width: 100%;
+      transition: border-color .15s;
+    }
+    .field input[type=number]:focus,
+    .field select:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(0,179,54,.1);
+    }
+
+    /* Result banner */
+    .result-banner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    .tier-box {
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+    }
+    .tier-box.perf {
+      background: linear-gradient(135deg, #007a24 0%, #00b336 100%);
+      color: white;
+    }
+    .tier-box.cap {
+      background: linear-gradient(135deg, #005a1a 0%, #007a24 100%);
+      color: white;
+    }
+    .tier-box.disabled {
+      background: var(--gray-100);
+      color: var(--gray-500);
+    }
+    .tier-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      opacity: .8;
+      margin-bottom: 4px;
+    }
+    .tier-val {
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1.1;
+    }
+    .tier-sub {
+      font-size: 10px;
+      opacity: .7;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* Breakdown */
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--gray-100);
+      font-size: 12px;
+    }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-row .lbl { color: var(--gray-500); }
+    .breakdown-row .val { font-family: var(--mono); font-weight: 500; color: var(--gray-900); }
+    .breakdown-row .val.overhead { color: var(--red); }
+    .breakdown-row .val.total { color: var(--green-dark); font-size: 13px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--gray-100);
+      padding: 4px;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: var(--font);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--gray-500);
+      transition: all .15s;
+    }
+    .tab-btn.active {
+      background: var(--white);
+      color: var(--gray-900);
+      box-shadow: var(--shadow);
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Simulation */
+    .sim-section { margin-bottom: 1.25rem; }
+    .sim-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sim-section-title .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--gray-500);
+    }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+    }
+    .sim-rows { overflow-y: auto; max-height: 340px; padding-right: 4px; }
+    .sim-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+    .sim-row-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--gray-500);
+      width: 46px;
+      text-align: right;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 3px;
+    }
+    .lock-icon { font-size: 9px; }
+    .lock-icon.locked { color: var(--green); }
+    .lock-icon.unlocked { color: var(--gray-300); }
+    .sim-bar-track { flex: 1; display: flex; align-items: center; gap: 6px; }
+    .sim-bar {
+      height: 14px;
+      border-radius: 3px;
+      min-width: 3px;
+      transition: width .25s ease;
+    }
+    .sim-bar.incremental { background: var(--green); }
+    .sim-bar.full-synth { background: var(--green-mid); }
+    .sim-bar.gfs { background: #3b82f6; opacity: .7; }
+    .sim-size {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--gray-500);
+      white-space: nowrap;
+    }
+    .sim-overhead-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed var(--gray-200);
+    }
+    .sim-overhead-row .sim-row-label {
+      color: var(--red);
+      font-size: 10px;
+    }
+    .sim-bar.overhead-bar {
+      background: #e8a0a8;
+      height: 10px;
+    }
+    .sim-size.red { color: var(--red); }
+
+    /* Why overhead */
+    .explainer-step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--green);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-body h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: 3px;
+    }
+    .step-body p {
+      font-size: 12px;
+      color: var(--gray-500);
+      line-height: 1.6;
+    }
+    .formula-box {
+      background: var(--gray-100);
+      border-left: 3px solid var(--green);
+      padding: .75rem 1rem;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin-top: .5rem;
+    }
+    .formula-box code {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--green-dark);
+    }
+    .formula-box p {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    /* Breakdown columns */
+    .breakdown-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    .breakdown-col-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--green);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 11px;
+      color: var(--gray-500);
+    }
+    footer a { color: var(--green-dark); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <div class="veeam-logo">
+      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 4L8 12L14 4" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="header-title">VDC Vault Storage Calculator</div>
+      <div class="header-sub">Veeam Backup & Replication</div>
+    </div>
+  </div>
+  <span class="header-badge">Community Tool</span>
+</header>
+
+<div class="page">
+
+  <!-- LEFT: Inputs -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon"><i class="fa-solid fa-sliders"></i></div>
+        <h3>Parámetros de entrada</h3>
+      </div>
+      <div class="card-body">
+
+        <div class="section-label">Datos de origen</div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Datos fuente (TB)</label>
+            <input type="number" id="srcTB" value="1" min="0.1" max="500" step="0.1">
+          </div>
+          <div class="field">
+            <label>Cambio diario (%)</label>
+            <input type="number" id="changeRate" value="5" min="1" max="50" step="0.5">
+          </div>
+          <div class="field">
+            <label>Compresión (%)</label>
+            <input type="number" id="compress" value="50" min="0" max="80" step="5">
+          </div>
+          <div class="field">
+            <label>Block generation (días)</label>
+            <input type="number" id="blockGen" value="10" min="1" max="30" step="1">
+          </div>
+        </div>
+
+        <div class="section-label">Retención GFS</div>
+        <div class="field-grid-3">
+          <div class="field">
+            <label>Diarias</label>
+            <input type="number" id="retDays" value="30" min="1" max="365">
+          </div>
+          <div class="field">
+            <label>Semanales</label>
+            <input type="number" id="retWeeks" value="0" min="0" max="52">
+          </div>
+          <div class="field">
+            <label>Mensuales</label>
+            <input type="number" id="retMonths" value="0" min="0" max="60">
+          </div>
+          <div class="field">
+            <label>Anuales</label>
+            <input type="number" id="retYears" value="0" min="0" max="10">
+          </div>
+        </div>
+
+        <div class="section-label">Inmutabilidad</div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Performance tier (días)</label>
+            <input type="number" id="immPerf" value="30" min="0" max="365">
+          </div>
+          <div class="field">
+            <label>Capacity tier (días)</label>
+            <input type="number" id="immCap" value="30" min="0" max="365">
+          </div>
+        </div>
+
+        <div class="section-label">Capacity Tier</div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Copy policy</label>
+            <select id="copyPolicy">
+              <option value="1">Activada</option>
+              <option value="0">Desactivada</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Move policy</label>
+            <select id="movePolicy">
+              <option value="0">Desactivada</option>
+              <option value="1">Activada</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Results -->
+  <div>
+
+    <!-- Result banner -->
+    <div id="result-banner" class="result-banner"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('breakdown')">Desglose</button>
+      <button class="tab-btn" onclick="switchTab('sim')">Simulación restore points</button>
+      <button class="tab-btn" onclick="switchTab('why')">¿Por qué el overhead?</button>
+    </div>
+
+    <!-- Tab: Breakdown -->
+    <div id="tab-breakdown" class="tab-pane active">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-icon"><i class="fa-solid fa-table-list"></i></div>
+          <h3>Desglose del almacenamiento</h3>
+        </div>
+        <div class="card-body">
+          <div id="breakdown-content" class="breakdown-cols"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Simulation -->
+    <div id="tab-sim" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-icon"><i class="fa-solid fa-chart-gantt"></i></div>
+          <h3>Restore points simulados</h3>
+        </div>
+        <div class="card-body">
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#00b336"></span>Incremental (cambio diario)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#a8e6bc"></span>Full sintético (bloque generado)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#3b82f680"></span>GFS (semanal/mensual/anual)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#e8a0a8"></span>Overhead inmutabilidad</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+            <div>
+              <div class="sim-section-title"><span class="dot" style="background:var(--green)"></span>Performance Tier</div>
+              <div id="sim-perf"></div>
+            </div>
+            <div>
+              <div class="sim-section-title"><span class="dot" style="background:#005a1a"></span>Capacity Tier</div>
+              <div id="sim-cap"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Why overhead -->
+    <div id="tab-why" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-icon"><i class="fa-solid fa-circle-question"></i></div>
+          <h3>¿Por qué existe el overhead de inmutabilidad?</h3>
+        </div>
+        <div class="card-body">
+
+          <div class="explainer-step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>¿Qué es un backup inmutable?</h4>
+              <p>Un restore point inmutable no puede ser modificado ni eliminado durante el período configurado. VDC Vault implementa esto mediante <strong>Object Lock</strong> (WORM — Write Once Read Many) en su almacenamiento S3-compatible, protegiéndote contra ransomware y errores humanos.</p>
+            </div>
+          </div>
+
+          <div class="explainer-step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>¿Por qué genera espacio adicional?</h4>
+              <p>Normalmente, cuando Veeam hace un merge (combina incrementales en un nuevo full sintético), puede sobrescribir o eliminar los bloques anteriores. Con inmutabilidad activada, <strong>eso no es posible</strong>: los bloques originales tienen un lock activo. Veeam debe escribir los nuevos bloques en paralelo y esperar a que el lock expire para liberar el espacio.</p>
+            </div>
+          </div>
+
+          <div class="explainer-step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h4>¿Qué determina el tamaño del overhead?</h4>
+              <p>Cada <em>block generation period</em> (cada N días), Veeam genera un nuevo full sintético. El full anterior sigue ocupando espacio hasta que vence su período de inmutabilidad. Cuantos más ciclos quepan dentro del período de lock, mayor será el solapamiento.</p>
+              <div class="formula-box">
+                <code>Overhead ≈ full_comprimido × (immutability_period ÷ block_gen_period)</code>
+                <p>Ejemplo: full = 0.5 TB, inmutabilidad = 30 días, block gen = 10 días → 0.5 × (30/10) = 1.5 TB de overhead máximo</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="explainer-step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h4>¿Cómo reducir el overhead?</h4>
+              <p>Podés reducirlo aumentando el <strong>block generation period</strong> (menos fulls = menos solapamiento) o reduciendo el <strong>período de inmutabilidad</strong>. Eso sí, períodos más cortos reducen la ventana de protección contra ataques. Es un balance entre seguridad y costo de almacenamiento.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Calculadora no oficial — desarrollada como herramienta complementaria a
+  <a href="https://www.veeam.com/calculators/simple/vdc" target="_blank">la calculadora oficial de Veeam VDC</a>.
+  Los resultados son estimaciones y pueden variar según la configuración real.
+</footer>
+
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      const names = ['breakdown','sim','why'];
+      b.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+  function getInt(id) { return parseInt(document.getElementById(id).value) || 0; }
+  function fmt(v) { return v.toFixed(2) + ' TB'; }
+
+  function calc() {
+    const src = getVal('srcTB');
+    const cr = getVal('changeRate') / 100;
+    const comp = getVal('compress') / 100;
+    const bg = Math.max(1, getInt('blockGen'));
+    const rd = Math.max(1, getInt('retDays'));
+    const rw = getInt('retWeeks');
+    const rm = getInt('retMonths');
+    const ry = getInt('retYears');
+    const ip = getInt('immPerf');
+    const ic = getInt('immCap');
+    const copyOn = document.getElementById('copyPolicy').value === '1';
+
+    const full = src * (1 - comp);
+    const inc = src * cr * (1 - comp);
+
+    // Performance Tier
+    const perfData = full + inc * (rd - 1) + full * rw + full * rm + full * ry;
+    const immOvhPerf = full * (ip / bg);
+    const perfTotal = perfData + immOvhPerf;
+
+    // Capacity Tier
+    const capData = copyOn ? full + inc * (rd - 1) + full * rw + full * rm + full * ry : 0;
+    const immOvhCap = copyOn ? full * (ic / bg) : 0;
+    const capTotal = copyOn ? capData + immOvhCap : 0;
+
+    // Banner
+    document.getElementById('result-banner').innerHTML = `
+      <div class="tier-box perf">
+        <div class="tier-label">Performance Tier</div>
+        <div class="tier-val">${fmt(perfTotal)}</div>
+        <div class="tier-sub">${fmt(perfData)} datos<br>${fmt(immOvhPerf)} overhead inmut.</div>
+      </div>
+      ${copyOn
+        ? `<div class="tier-box cap">
+            <div class="tier-label">Capacity Tier</div>
+            <div class="tier-val">${fmt(capTotal)}</div>
+            <div class="tier-sub">${fmt(capData)} datos<br>${fmt(immOvhCap)} overhead inmut.</div>
+          </div>`
+        : `<div class="tier-box disabled">
+            <div class="tier-label">Capacity Tier</div>
+            <div class="tier-val" style="font-size:16px;margin-top:8px">Desactivado</div>
+            <div class="tier-sub">Activar Copy policy</div>
+          </div>`
+      }
+    `;
+
+    // Breakdown
+    const makeBreakdown = (label, data, inc_, full_, rw_, rm_, ry_, ovh, total, rd_) => `
+      <div>
+        <div class="breakdown-col-title">${label}</div>
+        <div class="breakdown-row"><span class="lbl">Full comprimido</span><span class="val">${fmt(full_)}</span></div>
+        <div class="breakdown-row"><span class="lbl">Incrementales (${rd_}d)</span><span class="val">${fmt(inc_ * (rd_ - 1))}</span></div>
+        ${rw_ > 0 ? `<div class="breakdown-row"><span class="lbl">Semanales (${rw_})</span><span class="val">${fmt(full_ * rw_)}</span></div>` : ''}
+        ${rm_ > 0 ? `<div class="breakdown-row"><span class="lbl">Mensuales (${rm_})</span><span class="val">${fmt(full_ * rm_)}</span></div>` : ''}
+        ${ry_ > 0 ? `<div class="breakdown-row"><span class="lbl">Anuales (${ry_})</span><span class="val">${fmt(full_ * ry_)}</span></div>` : ''}
+        <div class="breakdown-row"><span class="lbl">Overhead inmutabilidad</span><span class="val overhead">${fmt(ovh)}</span></div>
+        <div class="breakdown-row"><span class="lbl"><strong>Total estimado</strong></span><span class="val total"><strong>${fmt(total)}</strong></span></div>
+      </div>
+    `;
+
+    document.getElementById('breakdown-content').innerHTML =
+      makeBreakdown('Performance Tier', perfData, inc, full, rw, rm, ry, immOvhPerf, perfTotal, rd) +
+      (copyOn
+        ? makeBreakdown('Capacity Tier', capData, inc, full, rw, rm, ry, immOvhCap, capTotal, rd)
+        : `<div><div class="breakdown-col-title">Capacity Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">Desactivado. Activar Copy policy para ver estimación.</p></div>`
+      );
+
+    // Simulations
+    renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip);
+    if (copyOn) {
+      renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic);
+    } else {
+      document.getElementById('sim-cap').innerHTML = '<p style="font-size:12px;color:var(--gray-500)">Copy policy desactivada.</p>';
+    }
+  }
+
+  function renderSim(containerId, src, cr, comp, bg, rd, rw, rm, ry, immDays) {
+    const full = src * (1 - comp);
+    const inc = src * cr * (1 - comp);
+    const container = document.getElementById(containerId);
+    const maxW = 180;
+    const scale = maxW / full;
+
+    let rows = [];
+    for (let i = rd; i >= 1; i--) {
+      const isBlock = (i % bg === 0 || i === rd);
+      rows.push({ label: 'D' + i, size: isBlock ? full : inc, type: isBlock ? 'full-synth' : 'incremental', immutable: i <= immDays });
+    }
+    if (rw > 0) for (let w = 1; w <= rw; w++) rows.push({ label: 'W' + w, size: full, type: 'gfs', immutable: w * 7 <= immDays });
+    if (rm > 0) for (let m = 1; m <= rm; m++) rows.push({ label: 'M' + m, size: full, type: 'gfs', immutable: m * 30 <= immDays });
+    if (ry > 0) for (let y = 1; y <= ry; y++) rows.push({ label: 'Y' + y, size: full, type: 'gfs', immutable: y * 365 <= immDays });
+    rows.push({ label: 'LATEST', size: full, type: 'full-synth', immutable: true });
+
+    const immOvh = full * (immDays / Math.max(1, bg));
+
+    let html = '<div class="sim-rows">';
+    rows.forEach(r => {
+      const bw = Math.max(3, Math.min(maxW, r.size * scale));
+      const lockCls = r.immutable ? 'locked' : 'unlocked';
+      const lockIcon = r.immutable ? '🔒' : '🔓';
+      html += `<div class="sim-row">
+        <span class="sim-row-label">
+          <span class="lock-icon ${lockCls}" title="${r.immutable ? 'Inmutable' : 'Sin lock'}">${r.immutable ? '●' : '○'}</span>
+          ${r.label}
+        </span>
+        <div class="sim-bar-track">
+          <div class="sim-bar ${r.type}" style="width:${bw}px"></div>
+          <span class="sim-size">${r.size.toFixed(2)} TB</span>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+
+    const ovhW = Math.max(3, Math.min(maxW, immOvh * scale));
+    html += `<div class="sim-overhead-row">
+      <span class="sim-row-label" style="color:var(--red);width:46px">Overhead</span>
+      <div class="sim-bar-track">
+        <div class="sim-bar overhead-bar" style="width:${ovhW}px"></div>
+        <span class="sim-size red">${immOvh.toFixed(2)} TB</span>
+      </div>
+    </div>`;
+
+    container.innerHTML = html;
+  }
+
+  document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calc));
+  calc();
+</script>
+
+</body>
+</html>
