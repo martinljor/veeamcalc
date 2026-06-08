@@ -315,7 +315,7 @@ const T = {
     bwTitle:'Required bandwidth per proxy',
     bwDaily:'Daily incremental', bwFull:'Synthetic full (per cycle)',
     bwRequired:'Required per proxy', bwTotal:'Total (all proxies)',
-    bwNote:(win,prx)=>`Based on a ${win}h backup window across ${prx} ${prx===1?'proxy':'proxies'}.`,
+    bwNote:(win,prx)=>`Based on a <strong>${win}h</strong> backup window across <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     warnImmGtRet:(tier,ip,rd)=>`${tier}: immutability period (${ip} days) exceeds daily retention (${rd} days). All restore points will remain <strong>locked until they naturally expire</strong> — Veeam cannot remove them earlier even when the retention policy says so. This maximizes overhead.`,
     warnImmGtRetTip:(rd)=>`Recommendation: set immutability ≤ retention (${rd} days) to allow normal cleanup.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: immutability (${ip} days) exceeds the longest GFS retention (${max} days). Restore points will remain locked <strong>beyond their own retention window</strong>, preventing deletion and generating unnecessary storage overhead.`,
@@ -358,7 +358,7 @@ const T = {
     bwTitle:'Ancho de banda requerido por proxy',
     bwDaily:'Incremental diario', bwFull:'Full sintético (por ciclo)',
     bwRequired:'Requerido por proxy', bwTotal:'Total (todos los proxies)',
-    bwNote:(win,prx)=>`Basado en una ventana de backup de ${win}h con ${prx} ${prx===1?'proxy':'proxies'}.`,
+    bwNote:(win,prx)=>`Basado en una ventana de backup de <strong>${win}h</strong> con <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     warnImmGtRet:(tier,ip,rd)=>`${tier}: el período de inmutabilidad (${ip} días) supera la retención diaria (${rd} días). Todos los restore points quedarán <strong>bloqueados hasta que expiren naturalmente</strong> — Veeam no puede eliminarlos antes aunque la política de retención ya los haya vencido. El overhead será máximo.`,
     warnImmGtRetTip:(rd)=>`Recomendación: igualá la inmutabilidad a la retención (${rd} días) o menor, para permitir la limpieza normal.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: la inmutabilidad (${ip} días) excede la retención GFS más larga (${max} días). Los restore points quedarán bloqueados <strong>más allá de su propia ventana de retención</strong>, impidiendo su eliminación y generando overhead innecesario.`,
@@ -574,11 +574,14 @@ function calc() {
   const ip    = immOn ? getInt('immPerf') : 0;
   const ic    = immOn ? getInt('immCap')  : 0;
   const copyOn= document.getElementById('copyPolicy').checked;
+  const moveOn= document.getElementById('movePolicy').checked;
+  const capOn = copyOn || moveOn;
   const win   = Math.max(1, getInt('bwWindow'));
   const prx   = Math.max(1, getInt('bwProxies'));
 
   renderWarnings(validateImm(rd, rw, rm, ry, ip, ic, immOn, bg));
-  renderBW(src, cr, comp, bg, win, prx);
+  if (capOn) renderBW(src, cr, comp, bg, win, prx);
+  else document.getElementById('bw-result').innerHTML = '';
 
   const full = src*(1-comp);
   const inc  = src*cr*(1-comp);
@@ -587,9 +590,9 @@ function calc() {
   const immOvhPerf  = immOn ? full*(ip/bg) : 0;
   const perfTotal   = perfData + immOvhPerf;
 
-  const capData     = copyOn ? full + inc*(rd-1) + full*rw + full*rm + full*ry : 0;
-  const immOvhCap   = copyOn && immOn ? full*(ic/bg) : 0;
-  const capTotal    = copyOn ? capData + immOvhCap : 0;
+  const capData     = capOn ? full + inc*(rd-1) + full*rw + full*rm + full*ry : 0;
+  const immOvhCap   = capOn && immOn ? full*(ic/bg) : 0;
+  const capTotal    = capOn ? capData + immOvhCap : 0;
 
   document.getElementById('result-banner').innerHTML = `
     <div class="tier-box perf">
@@ -597,7 +600,7 @@ function calc() {
       <div class="tier-val">${fmt(perfTotal)}</div>
       <div class="tier-sub">${fmt(perfData)} ${t('data')}<br>${immOn?fmt(immOvhPerf)+' '+t('immOvh'):t('noImm')}</div>
     </div>
-    ${copyOn
+    ${capOn
       ?`<div class="tier-box cap">
           <div class="tier-label">Capacity Tier</div>
           <div class="tier-val">${fmt(capTotal)}</div>
@@ -624,13 +627,13 @@ function calc() {
 
   document.getElementById('breakdown-content').innerHTML =
     mkBreakdown('Performance Tier', inc, full, rw, rm, ry, immOvhPerf, perfTotal, rd, immOn) +
-    (copyOn
+    (capOn
       ? mkBreakdown('Capacity Tier', inc, full, rw, rm, ry, immOvhCap, capTotal, rd, immOn)
       : `<div><div class="breakdown-col-title">Capacity Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`
     );
 
   renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip, immOn);
-  if (copyOn) renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn);
+  if (capOn) renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn);
   else document.getElementById('sim-cap').innerHTML=`<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
 }
 
