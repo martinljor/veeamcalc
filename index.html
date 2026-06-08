@@ -590,7 +590,13 @@ function calc() {
   const immOvhPerf  = immOn ? full*(ip/bg) : 0;
   const perfTotal   = perfData + immOvhPerf;
 
-  const capData     = capOn ? full + inc*(rd-1) + full*rw + full*rm + full*ry : 0;
+  // With move-only: only synthetic fulls land in Capacity Tier (incrementals are consolidated before move)
+  const numFulls = Math.ceil(rd / bg);
+  const capData  = capOn
+    ? (moveOn && !copyOn
+        ? full * numFulls + full*rw + full*rm + full*ry   // move: fulls only
+        : full + inc*(rd-1) + full*rw + full*rm + full*ry) // copy: everything
+    : 0;
   const immOvhCap   = capOn && immOn ? full*(ic/bg) : 0;
   const capTotal    = capOn ? capData + immOvhCap : 0;
 
@@ -632,17 +638,19 @@ function calc() {
       : `<div><div class="breakdown-col-title">Capacity Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`
     );
 
-  renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip, immOn);
-  if (capOn) renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn);
+  renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip, immOn, false);
+  if (capOn) renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn, moveOn && !copyOn);
   else document.getElementById('sim-cap').innerHTML=`<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
 }
 
-function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn) {
+function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveOnly) {
   const full=src*(1-comp), inc=src*cr*(1-comp);
   const maxW=180, scale=maxW/full;
   let rows=[];
   for(let i=rd;i>=1;i--){
     const isB=(i%bg===0||i===rd);
+    // With move-only: capacity tier only stores synthetic fulls, not incrementals
+    if (moveOnly && !isB) continue;
     rows.push({label:'D'+i,size:isB?full:inc,type:isB?'full-synth':'incremental',immutable:immOn&&i<=immDays});
   }
   if(rw>0) for(let w=1;w<=rw;w++) rows.push({label:'W'+w,size:full,type:'gfs',immutable:immOn&&w*7<=immDays});
