@@ -136,8 +136,8 @@
       </svg>
     </div>
     <div>
-      <div class="header-title">MJ Storage and Resource Calculator</div>
-      <div class="header-sub">for Veeam</div>
+      <div class="header-title">SOBR Calculator by MJ</div>
+      <div class="header-sub">for Veeam Backup and Replication &nbsp;·&nbsp; <a href="mailto:martin.jorge@veeam.com" style="color:var(--green-dark);text-decoration:none">martin.jorge@veeam.com</a></div>
     </div>
   </div>
   <div class="header-right">
@@ -154,18 +154,29 @@
   <!-- LEFT: Inputs -->
   <div>
     <div class="card">
-      <div class="card-header">
-        <div class="card-header-icon"><i class="fa-solid fa-sliders"></i></div>
-        <h3 id="lbl-params">Input parameters</h3>
-      </div>
       <div class="card-body">
+
+        <div class="section-label" id="lbl-mode-sec">Simulation mode</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--gray-300);background:var(--white);transition:border-color .15s" id="mode-sobr-box">
+            <input type="radio" name="simMode" id="modeSobr" value="sobr" checked style="margin-top:2px;accent-color:var(--green);flex-shrink:0">
+            <div><div id="lbl-mode-sobr" style="font-size:12px;font-weight:500;color:var(--gray-900)">Full SOBR (Performance + Capacity Tier)</div>
+            <div id="lbl-mode-sobr-sub" style="font-size:11px;color:var(--gray-500);margin-top:1px">New deployment — calculate both tiers from scratch</div></div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--gray-300);background:var(--white);transition:border-color .15s" id="mode-cap-box">
+            <input type="radio" name="simMode" id="modeCap" value="cap" style="margin-top:2px;accent-color:var(--green);flex-shrink:0">
+            <div><div id="lbl-mode-cap" style="font-size:12px;font-weight:500;color:var(--gray-900)">Capacity Tier only (VDC Vault extension)</div>
+            <div id="lbl-mode-cap-sub" style="font-size:11px;color:var(--gray-500);margin-top:1px">Existing on-prem SOBR — only calculate VDC Vault storage &amp; bandwidth</div></div>
+          </label>
+        </div>
+        <div id="perf-tier-fields">
 
         <div class="section-label" id="lbl-source-sec">Source data</div>
         <div class="field-grid">
           <div class="field"><label id="lbl-src">Source data (TB)</label>
             <input type="number" id="srcTB" value="1" min="0.1" max="500" step="0.1"></div>
           <div class="field"><label id="lbl-cr">Daily change rate (%)</label>
-            <input type="number" id="changeRate" value="5" min="1" max="50" step="0.5"></div>
+            <input type="number" id="changeRate" value="3" min="1" max="50" step="0.5"></div>
           <div class="field"><label id="lbl-comp">Compression (%)</label>
             <input type="number" id="compress" value="50" min="0" max="80" step="5"></div>
           <div class="field"><label id="lbl-bg">Block generation (days)</label>
@@ -175,7 +186,7 @@
         <div class="section-label" id="lbl-gfs-sec">GFS Retention</div>
         <div class="field-grid-4">
           <div class="field"><label id="lbl-daily">Daily</label>
-            <input type="number" id="retDays" value="30" min="1" max="365"></div>
+            <input type="number" id="retDays" value="7" min="1" max="365"></div>
           <div class="field"><label id="lbl-weekly">Weekly</label>
             <input type="number" id="retWeeks" value="0" min="0" max="52"></div>
           <div class="field"><label id="lbl-monthly">Monthly</label>
@@ -187,15 +198,55 @@
         <div class="section-label" id="lbl-imm-sec">Immutability</div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <input type="checkbox" id="immEnabled" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
-          <label for="immEnabled" id="lbl-imm-enable" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500">Enable immutability (Object Lock)</label>
+          <label for="immEnabled" id="lbl-imm-enable" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500">Enable immutability (VDC Vault)</label>
         </div>
-        <div id="imm-fields" class="field-grid">
-          <div class="field"><label id="lbl-imm-perf">Performance tier (days)</label>
-            <input type="number" id="immPerf" value="7" min="1" max="365"></div>
-          <div class="field"><label id="lbl-imm-cap">Capacity tier (days)</label>
-            <input type="number" id="immCap" value="7" min="1" max="365"></div>
+        <div id="imm-fields">
+          <div class="field-grid">
+            <div class="field" id="imm-perf-field">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                <input type="checkbox" id="immPerfEnabled" style="width:13px;height:13px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+                <label for="immPerfEnabled" id="lbl-imm-perf" style="font-size:11px;color:var(--gray-500);cursor:pointer;font-weight:500">Performance tier (days)</label>
+              </div>
+              <input type="number" id="immPerf" value="7" min="1" max="365" style="opacity:.4;pointer-events:none">
+            </div>
+            <div class="field"><label id="lbl-imm-cap">Capacity tier (days)</label>
+              <input type="number" id="immCap" value="7" min="1" max="365"></div>
+          </div>
         </div>
         <div id="imm-warnings"></div>
+
+        </div><!-- /perf-tier-fields -->
+
+        <!-- Capacity-only mode: simplified inputs -->
+        <div id="cap-only-fields" style="display:none">
+          <div class="section-label" id="lbl-existing-sec">Existing on-prem repository</div>
+          <div class="field-grid">
+            <div class="field"><label id="lbl-existing-size">Current backup size (TB)</label>
+              <input type="number" id="existingSize" value="10" min="0.1" max="5000" step="0.1"></div>
+            <div class="field" id="cap-cr-field"><label id="lbl-existing-cr">Daily change rate (%)</label>
+              <input type="number" id="existingCR" value="3" min="1" max="50" step="0.5"></div>
+          </div>
+          <div class="field-grid" style="margin-top:10px">
+            <div class="field"><label id="lbl-existing-comp">Compression (%)</label>
+              <input type="number" id="existingComp" value="50" min="0" max="80" step="5"></div>
+            <div class="field" id="cap-bg-field"><label id="lbl-existing-bg">Block generation (days)</label>
+              <input type="number" id="existingBG" value="7" min="1" max="30" step="1"></div>
+          </div>
+          <div class="section-label" id="lbl-existing-ret-sec">Retention to offload to VDC Vault</div>
+          <div class="field-grid-4">
+            <div class="field" id="cap-daily-field"><label id="lbl-existing-daily">Daily</label>
+              <input type="number" id="existingDays" value="7" min="0" max="365"></div>
+            <div class="field"><label id="lbl-existing-weekly">Weekly</label>
+              <input type="number" id="existingWeeks" value="0" min="0" max="52"></div>
+            <div class="field"><label id="lbl-existing-monthly">Monthly</label>
+              <input type="number" id="existingMonths" value="0" min="0" max="60"></div>
+            <div class="field"><label id="lbl-existing-yearly">Yearly</label>
+              <input type="number" id="existingYears" value="0" min="0" max="10"></div>
+          </div>
+        </div>
+        <div id="cap-move-note" style="display:none;background:#eff6ff;border-left:3px solid #3b82f6;border-radius:0 var(--radius) var(--radius) 0;padding:.65rem 1rem;margin-top:8px;font-size:11px;color:#1e40af;line-height:1.5">
+          <i class="fa-solid fa-circle-info" style="margin-right:5px"></i><span id="lbl-move-note"></span>
+        </div>
 
         <div class="section-label" id="lbl-cap-sec">Capacity Tier</div>
         <div style="display:flex;flex-direction:column;gap:8px">
@@ -212,9 +263,16 @@
         <div class="section-label" id="lbl-bw-sec">Backup window &amp; bandwidth</div>
         <div class="field-grid">
           <div class="field"><label id="lbl-bwwin">Backup window (hours)</label>
-            <input type="number" id="bwWindow" value="8" min="1" max="24" step="1"></div>
-          <div class="field"><label id="lbl-proxies">Number of proxies</label>
-            <input type="number" id="bwProxies" value="1" min="1" max="50" step="1"></div>
+            <input type="number" id="bwWindow" value="12" min="1" max="24" step="1"></div>
+          <div class="field">
+            <label id="lbl-proxies" style="display:flex;align-items:center;gap:4px">
+              <span id="lbl-proxies-text">Proxies assigned to VDC Vault repo</span>
+              <a href="https://helpcenter.veeam.com/docs/backup/vsphere/sobr_capacity_tier.html" target="_blank" title="Veeam docs: assigning proxies to SOBR Capacity Tier" style="color:var(--green-dark);line-height:1">
+                <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
+              </a>
+            </label>
+            <input type="number" id="bwProxies" value="1" min="1" max="50" step="1">
+          </div>
         </div>
 
       </div>
@@ -292,7 +350,7 @@ const T = {
     params:'Input parameters', sourceSec:'Source data', src:'Source data (TB)',
     cr:'Daily change rate (%)', comp:'Compression (%)', bg:'Block generation (days)',
     gfsSec:'GFS Retention', daily:'Daily', weekly:'Weekly', monthly:'Monthly', yearly:'Yearly',
-    immSec:'Immutability', immEnable:'Enable immutability (Object Lock)',
+    immSec:'Immutability', immEnable:'Enable immutability (VDC Vault)',
     immPerf:'Performance tier (days)', immCap:'Capacity tier (days)',
     capSec:'Capacity Tier',
     copy:'Copy policy — copy backups to Capacity Tier',
@@ -313,11 +371,15 @@ const T = {
     warnPerfTier:'Performance Tier', warnCapTier:'Capacity Tier',
     immutable:'Immutable', noLock:'No lock', overhead:'Overhead',
     bwTitle:'Required bandwidth per proxy',
-    bwDaily:'Daily incremental', bwFull:'Synthetic full (per cycle)',
+    bwDaily:'Daily incremental (per proxy)', bwPeak:'Peak — synthetic full day (per proxy)',
+    bwPeakEvery:'occurs every', bwProxiesLbl:'Proxies configured',
+    bwPeakNote:'CPU/RAM sized for peak',
     bwRequired:'Required per proxy', bwTotal:'Total (all proxies)',
     bwNote:(win,prx)=>`Based on a <strong>${win}h</strong> backup window across <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     cpuPerProxy:'CPU per proxy', ramPerProxy:'RAM per proxy',
     cpuNote:'CPU/RAM estimates: 1 vCPU per 100 Mbps, 2 GB RAM per vCPU (Veeam recommended sizing).',
+    diskRequired:'Repository disk throughput (peak)',
+    diskRead:'read', diskWrite:'write',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: immutability period (${ip} days) exceeds daily retention (${rd} days). All restore points will remain <strong>locked until they naturally expire</strong> — Veeam cannot remove them earlier even when the retention policy says so. This maximizes overhead.`,
     warnImmGtRetTip:(rd)=>`Recommendation: set immutability ≤ retention (${rd} days) to allow normal cleanup.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: immutability (${ip} days) exceeds the longest GFS retention (${max} days). Restore points will remain locked <strong>beyond their own retention window</strong>, preventing deletion and generating unnecessary storage overhead.`,
@@ -325,6 +387,13 @@ const T = {
     warnImmNoSense:(tier,ip,bg)=>`${tier}: immutability period (${ip} days) is less than the block generation period (${bg} days). This means synthetic fulls rotate faster than the lock expires — Object Lock provides <strong>no real protection</strong> in this scenario since blocks may already be overwritten.`,
     warnImmNoSenseTip:(bg)=>`Recommendation: set immutability ≥ block generation period (${bg} days).`,
     badge:'Community Tool',
+    modeSec:'Simulation mode',
+    modeSobrLbl:'Full SOBR (Performance + Capacity Tier)', modeSobrSub:'New deployment — calculate both tiers from scratch',
+    modeCapLbl:'Capacity Tier only (VDC Vault extension)', modeCapSub:'Existing on-prem SOBR — only calculate VDC Vault storage & bandwidth',
+    perfOnPrem:'On-premises (existing)', perfOnPremSub:'Not calculated in this mode',
+    existingSec:'Existing on-prem repository', existingSize:'Current backup size (TB)',
+    existingRetSec:'Retention to offload to VDC Vault',
+    moveOnlyNote:'With Move policy only, synthetic fulls are the only objects transferred to VDC Vault — daily change rate and incremental retention are not applicable.',
     footer:(email,url)=>`Developed by <a href="mailto:${email}">Martin Jorge</a> — complementary tool to the <a href="${url}" target="_blank">official Veeam VDC calculator</a>. Results are estimates and may vary based on actual configuration.`,
     why:[
       {h:'What is an immutable backup?',p:'An immutable restore point cannot be modified or deleted during the configured period. VDC Vault implements this via <strong>Object Lock</strong> (WORM — Write Once Read Many) on its S3-compatible storage, protecting you against ransomware and human error.'},
@@ -337,7 +406,7 @@ const T = {
     params:'Parámetros de entrada', sourceSec:'Datos de origen', src:'Datos fuente (TB)',
     cr:'Cambio diario (%)', comp:'Compresión (%)', bg:'Block generation (días)',
     gfsSec:'Retención GFS', daily:'Diarias', weekly:'Semanales', monthly:'Mensuales', yearly:'Anuales',
-    immSec:'Inmutabilidad', immEnable:'Activar inmutabilidad (Object Lock)',
+    immSec:'Inmutabilidad', immEnable:'Activar inmutabilidad (VDC Vault)',
     immPerf:'Performance tier (días)', immCap:'Capacity tier (días)',
     capSec:'Capacity Tier',
     copy:'Copy policy — copiar backups al Capacity Tier',
@@ -358,11 +427,15 @@ const T = {
     warnPerfTier:'Performance Tier', warnCapTier:'Capacity Tier',
     immutable:'Inmutable', noLock:'Sin lock', overhead:'Overhead',
     bwTitle:'Ancho de banda requerido por proxy',
-    bwDaily:'Incremental diario', bwFull:'Full sintético (por ciclo)',
+    bwDaily:'Incremental diario (por proxy)', bwPeak:'Pico — día de full sintético (por proxy)',
+    bwPeakEvery:'ocurre cada', bwProxiesLbl:'Proxies configurados',
+    bwPeakNote:'CPU/RAM dimensionado para el pico',
     bwRequired:'Requerido por proxy', bwTotal:'Total (todos los proxies)',
     bwNote:(win,prx)=>`Basado en una ventana de backup de <strong>${win}h</strong> con <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     cpuPerProxy:'CPU por proxy', ramPerProxy:'RAM por proxy',
     cpuNote:'Estimación CPU/RAM: 1 vCPU cada 100 Mbps, 2 GB RAM por vCPU (sizing recomendado por Veeam).',
+    diskRequired:'Disco del repositorio (pico)',
+    diskRead:'lectura', diskWrite:'escritura',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: el período de inmutabilidad (${ip} días) supera la retención diaria (${rd} días). Todos los restore points quedarán <strong>bloqueados hasta que expiren naturalmente</strong> — Veeam no puede eliminarlos antes aunque la política de retención ya los haya vencido. El overhead será máximo.`,
     warnImmGtRetTip:(rd)=>`Recomendación: igualá la inmutabilidad a la retención (${rd} días) o menor, para permitir la limpieza normal.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: la inmutabilidad (${ip} días) excede la retención GFS más larga (${max} días). Los restore points quedarán bloqueados <strong>más allá de su propia ventana de retención</strong>, impidiendo su eliminación y generando overhead innecesario.`,
@@ -370,6 +443,13 @@ const T = {
     warnImmNoSense:(tier,ip,bg)=>`${tier}: el período de inmutabilidad (${ip} días) es menor que el block generation period (${bg} días). Los fulls sintéticos rotan más rápido de lo que expira el lock — Object Lock <strong>no brinda protección real</strong> en este escenario ya que los bloques pueden sobrescribirse.`,
     warnImmNoSenseTip:(bg)=>`Recomendación: configurá la inmutabilidad ≥ al block generation period (${bg} días).`,
     badge:'Community Tool',
+    modeSec:'Modo de simulación',
+    modeSobrLbl:'SOBR completo (Performance + Capacity Tier)', modeSobrSub:'Nuevo despliegue — calcular ambos tiers desde cero',
+    modeCapLbl:'Solo Capacity Tier (extensión VDC Vault)', modeCapSub:'SOBR on-prem existente — calcular solo storage y ancho de banda del VDC Vault',
+    perfOnPrem:'On-premises (existente)', perfOnPremSub:'No calculado en este modo',
+    existingSec:'Repositorio on-prem existente', existingSize:'Tamaño actual del backup (TB)',
+    existingRetSec:'Retención a enviar al VDC Vault',
+    moveOnlyNote:'Con solo Move policy, únicamente los fulls sintéticos se transfieren al VDC Vault — la tasa de cambio diario y la retención de incrementales no aplican.',
     footer:(email,url)=>`Desarrollado por <a href="mailto:${email}">Martin Jorge</a> — herramienta complementaria a la <a href="${url}" target="_blank">calculadora oficial de Veeam VDC</a>. Los resultados son estimaciones y pueden variar según la configuración real.`,
     why:[
       {h:'¿Qué es un backup inmutable?',p:'Un restore point inmutable no puede ser modificado ni eliminado durante el período configurado. VDC Vault implementa esto mediante <strong>Object Lock</strong> (WORM — Write Once Read Many) en su almacenamiento S3-compatible, protegiéndote contra ransomware y errores humanos.'},
@@ -382,7 +462,7 @@ const T = {
     params:'Parâmetros de entrada', sourceSec:'Dados de origem', src:'Dados fonte (TB)',
     cr:'Taxa de mudança diária (%)', comp:'Compressão (%)', bg:'Block generation (dias)',
     gfsSec:'Retenção GFS', daily:'Diárias', weekly:'Semanais', monthly:'Mensais', yearly:'Anuais',
-    immSec:'Imutabilidade', immEnable:'Ativar imutabilidade (Object Lock)',
+    immSec:'Imutabilidade', immEnable:'Ativar imutabilidade (VDC Vault)',
     immPerf:'Performance tier (dias)', immCap:'Capacity tier (dias)',
     capSec:'Capacity Tier',
     copy:'Copy policy — copiar backups para o Capacity Tier',
@@ -403,11 +483,15 @@ const T = {
     warnPerfTier:'Performance Tier', warnCapTier:'Capacity Tier',
     immutable:'Imutável', noLock:'Sem lock', overhead:'Overhead',
     bwTitle:'Largura de banda necessária por proxy',
-    bwDaily:'Incremental diário', bwFull:'Full sintético (por ciclo)',
+    bwDaily:'Incremental diário (por proxy)', bwPeak:'Pico — dia do full sintético (por proxy)',
+    bwPeakEvery:'ocorre a cada', bwProxiesLbl:'Proxies configurados',
+    bwPeakNote:'CPU/RAM dimensionado para o pico',
     bwRequired:'Necessário por proxy', bwTotal:'Total (todos os proxies)',
     bwNote:(win,prx)=>`Com base em uma janela de backup de <strong>${win}h</strong> e <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     cpuPerProxy:'CPU por proxy', ramPerProxy:'RAM por proxy',
     cpuNote:'Estimativa CPU/RAM: 1 vCPU a cada 100 Mbps, 2 GB RAM por vCPU (sizing recomendado pelo Veeam).',
+    diskRequired:'Disco do repositório (pico)',
+    diskRead:'leitura', diskWrite:'escrita',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: o período de imutabilidade (${ip} dias) supera a retenção diária (${rd} dias). Todos os restore points ficarão <strong>bloqueados até expirar naturalmente</strong> — o Veeam não pode removê-los antes, mesmo que a política de retenção já os tenha expirado. O overhead será máximo.`,
     warnImmGtRetTip:(rd)=>`Recomendação: defina a imutabilidade ≤ retenção (${rd} dias) para permitir a limpeza normal.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: a imutabilidade (${ip} dias) excede a retenção GFS mais longa (${max} dias). Os restore points ficarão bloqueados <strong>além de sua própria janela de retenção</strong>, impedindo a exclusão e gerando overhead desnecessário.`,
@@ -415,6 +499,13 @@ const T = {
     warnImmNoSense:(tier,ip,bg)=>`${tier}: o período de imutabilidade (${ip} dias) é menor que o block generation period (${bg} dias). Os fulls sintéticos rotam mais rápido do que o lock expira — Object Lock <strong>não fornece proteção real</strong> neste cenário, pois os blocos podem ser sobrescritos.`,
     warnImmNoSenseTip:(bg)=>`Recomendação: configure a imutabilidade ≥ ao block generation period (${bg} dias).`,
     badge:'Community Tool',
+    modeSec:'Modo de simulação',
+    modeSobrLbl:'SOBR completo (Performance + Capacity Tier)', modeSobrSub:'Novo deployment — calcular ambas as camadas do zero',
+    modeCapLbl:'Apenas Capacity Tier (extensão VDC Vault)', modeCapSub:'SOBR on-prem existente — calcular apenas o storage e largura de banda do VDC Vault',
+    perfOnPrem:'On-premises (existente)', perfOnPremSub:'Não calculado neste modo',
+    existingSec:'Repositório on-prem existente', existingSize:'Tamanho atual do backup (TB)',
+    existingRetSec:'Retenção a enviar para o VDC Vault',
+    moveOnlyNote:'Com apenas Move policy, somente os fulls sintéticos são transferidos para o VDC Vault — a taxa de mudança diária e a retenção de incrementais não se aplicam.',
     footer:(email,url)=>`Desenvolvido por <a href="mailto:${email}">Martin Jorge</a> — ferramenta complementar à <a href="${url}" target="_blank">calculadora oficial do Veeam VDC</a>. Os resultados são estimativas e podem variar conforme a configuração real.`,
     why:[
       {h:'O que é um backup imutável?',p:'Um restore point imutável não pode ser modificado nem excluído durante o período configurado. O VDC Vault implementa isso via <strong>Object Lock</strong> (WORM — Write Once Read Many) em seu armazenamento compatível com S3, protegendo contra ransomware e erros humanos.'},
@@ -448,7 +539,15 @@ function applyT() {
     'tab-lbl-breakdown':'tabBreakdown','tab-lbl-sim':'tabSim','tab-lbl-why':'tabWhy',
     'lbl-breakdown-title':'breakdownTitle','lbl-sim-title':'simTitle','lbl-why-title':'whyTitle',
     'leg-inc':'legInc','leg-full':'legFull','leg-gfs':'legGfs','leg-ovh':'legOvh',
-    'badge-text':'badge'
+    'badge-text':'badge',
+    'lbl-mode-sec':'modeSec',
+    'lbl-mode-sobr':'modeSobrLbl','lbl-mode-sobr-sub':'modeSobrSub',
+    'lbl-mode-cap':'modeCapLbl','lbl-mode-cap-sub':'modeCapSub',
+    'lbl-existing-sec':'existingSec','lbl-existing-size':'existingSize',
+    'lbl-existing-cr':'cr','lbl-existing-comp':'comp','lbl-existing-bg':'bg',
+    'lbl-existing-ret-sec':'existingRetSec',
+    'lbl-existing-daily':'daily','lbl-existing-weekly':'weekly',
+    'lbl-existing-monthly':'monthly','lbl-existing-yearly':'yearly',
   };
   Object.entries(map).forEach(([id,k]) => { const el=document.getElementById(id); if(el) el.textContent=t(k); });
 
@@ -481,6 +580,13 @@ function fmtBW(mbps) {
 document.getElementById('immEnabled').addEventListener('change', function() {
   document.getElementById('imm-fields').style.opacity = this.checked?'1':'0.35';
   document.getElementById('imm-fields').style.pointerEvents = this.checked?'':'none';
+  calc();
+});
+
+document.getElementById('immPerfEnabled').addEventListener('change', function() {
+  const perfInput = document.getElementById('immPerf');
+  perfInput.style.opacity = this.checked ? '1' : '0.4';
+  perfInput.style.pointerEvents = this.checked ? '' : 'none';
   calc();
 });
 
@@ -534,45 +640,61 @@ function renderBW(src, cr, comp, bg, win, proxies) {
   const full = src*(1-comp);
   const inc  = src*cr*(1-comp);
   const tbToMbps = (tb) => (tb * 1024 * 1024 * 8) / (win * 3600);
+  const mbpsToMBs = (mbps) => mbps / 8;
 
-  const incMbps   = tbToMbps(inc);
-  const fullMbps  = tbToMbps(full);
-  const totalMbps = Math.max(incMbps, fullMbps);
-  const perProxy  = totalMbps / proxies;
+  // Daily: only the incremental travels every day
+  const incMbps  = tbToMbps(inc);
+  // Peak: on synthetic full day, incremental + full transfer to Capacity Tier
+  const peakMbps = tbToMbps(inc + full);
+  const perProxyDaily = incMbps  / proxies;
+  const perProxyPeak  = peakMbps / proxies;
 
-  // CPU: 1 vCPU per 100 Mbps throughput (Veeam recommended), min 2
-  const vcpuPerProxy = Math.max(2, Math.ceil(perProxy / 100));
-  // RAM: 2 GB per vCPU + 2 GB base, min 4 GB
+  // Disk throughput required at repository (peak, in MB/s)
+  // Repository must sustain reads for the full + writes for incoming data simultaneously
+  const diskReadMBs  = mbpsToMBs(peakMbps);          // reading blocks to send
+  const diskWriteMBs = mbpsToMBs(incMbps);            // writing incoming incrementals
+  const diskTotalMBs = diskReadMBs + diskWriteMBs;    // concurrent read+write on full day
+
+  // CPU: 1 vCPU per 100 Mbps of peak throughput, min 2
+  const vcpuPerProxy = Math.max(2, Math.ceil(perProxyPeak / 100));
   const ramPerProxy  = Math.max(4, vcpuPerProxy * 2 + 2);
-
   const cpuTotal = vcpuPerProxy * proxies;
   const ramTotal = ramPerProxy  * proxies;
+
+  const fmtMBs = (v) => v >= 1000 ? (v/1000).toFixed(2)+' GB/s' : v.toFixed(0)+' MB/s';
 
   document.getElementById('bw-result').innerHTML = `
     <div class="bw-card">
       <div class="bw-card-title"><i class="fa-solid fa-network-wired" style="font-size:12px"></i>${t('bwTitle')}</div>
-      <div class="bw-grid" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
         <div class="bw-metric">
           <div class="m-label">${t('bwDaily')}</div>
-          <div class="m-val">${fmtBW(incMbps)}</div>
-          <div class="m-unit">${inc.toFixed(3)} TB/day</div>
+          <div class="m-val">${fmtBW(perProxyDaily)}</div>
+          <div class="m-unit">${inc.toFixed(3)} TB/day · ${fmtBW(incMbps)} total</div>
         </div>
+        <div class="bw-metric" style="border-color:#fbbf24;background:#fffbeb">
+          <div class="m-label" style="color:#92400e">${t('bwPeak')}</div>
+          <div class="m-val" style="color:#78350f">${fmtBW(perProxyPeak)}</div>
+          <div class="m-unit" style="color:#b45309">${t('bwPeakEvery')} ${bg}d · ${fmtBW(peakMbps)} total</div>
+        </div>
+        <div class="bw-metric" style="border-color:#fbbf24;background:#fffbeb">
+          <div class="m-label" style="color:#92400e">${t('diskRequired')}</div>
+          <div class="m-val" style="color:#78350f">${fmtMBs(diskTotalMBs)}</div>
+          <div class="m-unit" style="color:#b45309">${t('diskRead')} ${fmtMBs(diskReadMBs)} + ${t('diskWrite')} ${fmtMBs(diskWriteMBs)}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div class="bw-metric">
-          <div class="m-label">${t('bwFull')} (/${bg}d)</div>
-          <div class="m-val">${fmtBW(fullMbps)}</div>
-          <div class="m-unit">${full.toFixed(3)} TB/cycle</div>
+          <div class="m-label">${t('bwProxiesLbl')}</div>
+          <div class="m-val" style="color:#1e3a8a">${proxies} proxy</div>
+          <div class="m-unit">${t('bwPeakNote')}</div>
         </div>
-        <div class="bw-metric">
-          <div class="m-label">${t('bwRequired')}</div>
-          <div class="m-val" style="color:#1e3a8a;font-size:18px">${fmtBW(perProxy)}</div>
-          <div class="m-unit">${fmtBW(totalMbps)} ${t('bwTotal').toLowerCase()}</div>
-        </div>
-        <div class="bw-metric" style="border-color:#bfdbfe">
+        <div class="bw-metric" style="border-color:#ddd6fe">
           <div class="m-label" style="color:#7c3aed">${t('cpuPerProxy')}</div>
           <div class="m-val" style="color:#4c1d95">${vcpuPerProxy} vCPU</div>
           <div class="m-unit" style="color:#8b5cf6">${cpuTotal} vCPU total</div>
         </div>
-        <div class="bw-metric" style="border-color:#bfdbfe">
+        <div class="bw-metric" style="border-color:#ddd6fe">
           <div class="m-label" style="color:#7c3aed">${t('ramPerProxy')}</div>
           <div class="m-val" style="color:#4c1d95">${ramPerProxy} GB</div>
           <div class="m-unit" style="color:#8b5cf6">${ramTotal} GB total</div>
@@ -582,8 +704,8 @@ function renderBW(src, cr, comp, bg, win, proxies) {
     </div>`;
 }
 
-// ─── Main calc ──────────────────────────────────────────────────────────────
-function calc() {
+// ─── Full SOBR calc ──────────────────────────────────────────────────────────
+function calcSobr() {
   const src   = getVal('srcTB');
   const cr    = getVal('changeRate')/100;
   const comp  = getVal('compress')/100;
@@ -592,9 +714,10 @@ function calc() {
   const rw    = getInt('retWeeks');
   const rm    = getInt('retMonths');
   const ry    = getInt('retYears');
-  const immOn = document.getElementById('immEnabled').checked;
-  const ip    = immOn ? getInt('immPerf') : 0;
-  const ic    = immOn ? getInt('immCap')  : 0;
+  const immOn    = document.getElementById('immEnabled').checked;
+  const immPerfOn= immOn && document.getElementById('immPerfEnabled').checked;
+  const ip       = immPerfOn ? getInt('immPerf') : 0;
+  const ic       = immOn ? getInt('immCap')  : 0;
   const copyOn= document.getElementById('copyPolicy').checked;
   const moveOn= document.getElementById('movePolicy').checked;
   const capOn = copyOn || moveOn;
@@ -609,7 +732,7 @@ function calc() {
   const inc  = src*cr*(1-comp);
 
   const perfData    = full + inc*(rd-1) + full*rw + full*rm + full*ry;
-  const immOvhPerf  = immOn ? full*(ip/bg) : 0;
+  const immOvhPerf  = immPerfOn ? full*(ip/bg) : 0;
   const perfTotal   = perfData + immOvhPerf;
 
   // With move-only: only synthetic fulls land in Capacity Tier (incrementals are consolidated before move)
@@ -626,7 +749,7 @@ function calc() {
     <div class="tier-box perf">
       <div class="tier-label">Performance Tier</div>
       <div class="tier-val">${fmt(perfTotal)}</div>
-      <div class="tier-sub">${fmt(perfData)} ${t('data')}<br>${immOn?fmt(immOvhPerf)+' '+t('immOvh'):t('noImm')}</div>
+      <div class="tier-sub">${fmt(perfData)} ${t('data')}<br>${immPerfOn?fmt(immOvhPerf)+' '+t('immOvh'):t('noImm')}</div>
     </div>
     ${capOn
       ?`<div class="tier-box cap">
@@ -654,14 +777,14 @@ function calc() {
     </div>`;
 
   document.getElementById('breakdown-content').innerHTML =
-    mkBreakdown('Performance Tier', inc, full, rw, rm, ry, immOvhPerf, perfTotal, rd, immOn) +
+    mkBreakdown('Performance Tier', inc, full, rw, rm, ry, immOvhPerf, perfTotal, rd, immPerfOn) +
     (capOn
       ? mkBreakdown('Capacity Tier', inc, full, rw, rm, ry, immOvhCap, capTotal, rd, immOn)
       : `<div><div class="breakdown-col-title">Capacity Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`
     );
 
   const isMoveOnly = moveOn && !copyOn;
-  renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip, immOn, false, isMoveOnly);
+  renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip, immPerfOn, false, isMoveOnly);
   if (capOn) renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn, isMoveOnly, false);
   else document.getElementById('sim-cap').innerHTML=`<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
 }
@@ -710,9 +833,124 @@ function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveO
   document.getElementById(cid).innerHTML=html;
 }
 
-document.querySelectorAll('input[type=number],input[type=checkbox]').forEach(el=>el.addEventListener('input',calc));
+// ─── Mode toggle ────────────────────────────────────────────────────────────
+function updateMode() {
+  const isCapOnly = document.getElementById('modeCap').checked;
+  document.getElementById('perf-tier-fields').style.display  = isCapOnly ? 'none' : '';
+  document.getElementById('cap-only-fields').style.display   = isCapOnly ? '' : 'none';
+  document.getElementById('imm-fields').querySelector('#lbl-imm-perf').closest('.field').style.display = isCapOnly ? 'none' : '';
+  document.getElementById('mode-sobr-box').style.borderColor = isCapOnly ? 'var(--gray-300)' : 'var(--green)';
+  document.getElementById('mode-sobr-box').style.background  = isCapOnly ? 'var(--white)' : 'var(--green-light)';
+  document.getElementById('mode-cap-box').style.borderColor  = isCapOnly ? 'var(--green)' : 'var(--gray-300)';
+  document.getElementById('mode-cap-box').style.background   = isCapOnly ? 'var(--green-light)' : 'var(--white)';
+  updateCapOnlyFields();
+  calc();
+}
+
+function updateCapOnlyFields() {
+  const isCapOnly = document.getElementById('modeCap').checked;
+  if (!isCapOnly) {
+    document.getElementById('cap-move-note').style.display = 'none';
+    return;
+  }
+  const copyOn = document.getElementById('copyPolicy').checked;
+  const moveOn = document.getElementById('movePolicy').checked;
+  const moveOnly = moveOn && !copyOn;
+
+  // Block generation never needed in cap-only (full already consolidated on-prem)
+  document.getElementById('cap-bg-field').style.display = 'none';
+  // Daily change rate only needed if Copy is active (incrementals are copied)
+  document.getElementById('cap-cr-field').style.display = moveOnly ? 'none' : '';
+  // Daily retention only if Copy is active
+  document.getElementById('cap-daily-field').style.display = moveOnly ? 'none' : '';
+  // Info note when move-only
+  const note = document.getElementById('cap-move-note');
+  note.style.display = moveOnly ? '' : 'none';
+  document.getElementById('lbl-move-note').textContent = t('moveOnlyNote');
+}
+
+function calc() {
+  const isCapOnly = document.getElementById('modeCap').checked;
+  if (isCapOnly) calcCapOnly(); else calcSobr();
+}
+
+function calcCapOnly() {
+  const src   = getVal('existingSize');
+  const cr    = getVal('existingCR')/100;
+  const comp  = getVal('existingComp')/100;
+  const bg    = Math.max(1, getInt('existingBG'));
+  const rd    = Math.max(0, getInt('existingDays'));
+  const rw    = getInt('existingWeeks');
+  const rm    = getInt('existingMonths');
+  const ry    = getInt('existingYears');
+  const immOn = document.getElementById('immEnabled').checked;
+  const ic    = immOn ? getInt('immCap') : 0;
+  const copyOn= document.getElementById('copyPolicy').checked;
+  const moveOn= document.getElementById('movePolicy').checked;
+  const capOn = copyOn || moveOn;
+  const win   = Math.max(1, getInt('bwWindow'));
+  const prx   = Math.max(1, getInt('bwProxies'));
+
+  renderWarnings(validateImm(rd, rw, rm, ry, 0, ic, immOn, bg));
+  if (capOn) renderBW(src, cr, comp, bg, win, prx);
+  else document.getElementById('bw-result').innerHTML = '';
+
+  const full = src*(1-comp);
+  const inc  = src*cr*(1-comp);
+  const isMoveOnly = moveOn && !copyOn;
+  const numFulls   = Math.ceil(Math.max(1,rd)/bg);
+  const capData    = capOn
+    ? (isMoveOnly
+        ? full*numFulls + full*rw + full*rm + full*ry
+        : full + inc*(Math.max(1,rd)-1) + full*rw + full*rm + full*ry)
+    : 0;
+  const immOvhCap = capOn && immOn ? full*(ic/bg) : 0;
+  const capTotal  = capOn ? capData + immOvhCap : 0;
+
+  document.getElementById('result-banner').innerHTML = `
+    <div class="tier-box disabled" style="opacity:.5">
+      <div class="tier-label">Performance Tier</div>
+      <div class="tier-val" style="font-size:13px;margin-top:6px">${t('perfOnPrem')}</div>
+      <div class="tier-sub">${t('perfOnPremSub')}</div>
+    </div>
+    ${capOn
+      ?`<div class="tier-box cap">
+          <div class="tier-label">Capacity Tier — VDC Vault</div>
+          <div class="tier-val">${fmt(capTotal)}</div>
+          <div class="tier-sub">${fmt(capData)} ${t('data')}<br>${immOn?fmt(immOvhCap)+' '+t('immOvh'):t('noImm')}</div>
+        </div>`
+      :`<div class="tier-box disabled">
+          <div class="tier-label">Capacity Tier</div>
+          <div class="tier-val" style="font-size:16px;margin-top:8px">${t('disabled')}</div>
+          <div class="tier-sub">${t('enableCopy')}</div>
+        </div>`}`;
+
+  const mkB = (label, ovh, total, showImm) => `
+    <div>
+      <div class="breakdown-col-title">${label}</div>
+      <div class="breakdown-row"><span class="lbl">${t('fullComp')}</span><span class="val">${fmt(full)}</span></div>
+      ${rd>0?`<div class="breakdown-row"><span class="lbl">${t('incrementals')} (${rd}d)</span><span class="val">${fmt(inc*(rd-1))}</span></div>`:''}
+      ${rw>0?`<div class="breakdown-row"><span class="lbl">${t('weeklies')} (${rw})</span><span class="val">${fmt(full*rw)}</span></div>`:''}
+      ${rm>0?`<div class="breakdown-row"><span class="lbl">${t('monthlies')} (${rm})</span><span class="val">${fmt(full*rm)}</span></div>`:''}
+      ${ry>0?`<div class="breakdown-row"><span class="lbl">${t('yearlies')} (${ry})</span><span class="val">${fmt(full*ry)}</span></div>`:''}
+      ${showImm?`<div class="breakdown-row"><span class="lbl">${t('ovhImm')}</span><span class="val overhead">${fmt(ovh)}</span></div>`:''}
+      <div class="breakdown-row"><span class="lbl"><strong>${t('totalEst')}</strong></span><span class="val total"><strong>${fmt(total)}</strong></span></div>
+    </div>`;
+
+  document.getElementById('breakdown-content').innerHTML =
+    `<div><div class="breakdown-col-title">Performance Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('perfOnPrem')}</p></div>` +
+    (capOn ? mkB('Capacity Tier — VDC Vault', immOvhCap, capTotal, immOn)
+           : `<div><div class="breakdown-col-title">Capacity Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`);
+
+  document.getElementById('sim-perf').innerHTML = `<p style="font-size:12px;color:var(--gray-500);padding:8px 0">${t('perfOnPrem')}</p>`;
+  if (capOn) renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn, isMoveOnly, false);
+  else document.getElementById('sim-cap').innerHTML = `<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
+}
+
+document.querySelectorAll('input[name=simMode]').forEach(r => r.addEventListener('change', updateMode));
+document.querySelectorAll('input[type=number],input[type=checkbox]').forEach(el=>el.addEventListener('input', () => { updateCapOnlyFields(); calc(); }));
 applyT();
-calc();
+updateMode();
 </script>
 </body>
 </html>
