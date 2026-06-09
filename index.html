@@ -261,6 +261,78 @@
           </div>
         </div>
 
+        <div class="section-label" id="lbl-net-sec">Network &amp; latency</div>
+        <div class="field-grid">
+          <div class="field">
+            <label id="lbl-net-origin">Client location (origin)</label>
+            <select id="netOrigin" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900)">
+              <optgroup label="AMER">
+                <option value="us_east">USA — East Coast</option>
+                <option value="us_west">USA — West Coast</option>
+                <option value="us_central">USA — Central</option>
+                <option value="canada">Canada</option>
+                <option value="latam_north">LATAM — Mexico / Colombia / Venezuela</option>
+                <option value="latam_south" selected>LATAM — Argentina / Chile / Uruguay</option>
+                <option value="latam_brazil">LATAM — Brazil</option>
+              </optgroup>
+              <optgroup label="EMEA">
+                <option value="europe_west">Europe — West (UK, France, Netherlands)</option>
+                <option value="europe_central">Europe — Central (Germany, Austria, Switzerland)</option>
+                <option value="europe_north">Europe — North (Nordics)</option>
+                <option value="europe_south">Europe — South (Spain, Italy)</option>
+                <option value="middle_east">Middle East (UAE, Saudi)</option>
+                <option value="africa">Africa (South Africa)</option>
+              </optgroup>
+              <optgroup label="APJ">
+                <option value="australia">Australia / New Zealand</option>
+                <option value="japan">Japan</option>
+                <option value="sea">Southeast Asia (Singapore, Indonesia)</option>
+                <option value="india">India</option>
+                <option value="korea">Korea</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="field">
+            <label id="lbl-net-vault">VDC Vault region (destination)</label>
+            <select id="netVault" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900)">
+              <optgroup label="AMER — Azure">
+                <option value="eastus">East US (Virginia)</option>
+                <option value="eastus2">East US 2 (Virginia)</option>
+                <option value="centralus">Central US (Iowa)</option>
+                <option value="westus">West US (California)</option>
+                <option value="southcentralus">South Central US (Texas)</option>
+                <option value="canadacentral">Canada Central (Toronto)</option>
+                <option value="brazilsouth">Brazil South (São Paulo)</option>
+              </optgroup>
+              <optgroup label="EMEA — Azure">
+                <option value="westeurope">West Europe (Netherlands)</option>
+                <option value="northeurope">North Europe (Ireland)</option>
+                <option value="uksouth">UK South (London)</option>
+                <option value="germanywestcentral">Germany West Central (Frankfurt)</option>
+                <option value="francecentral">France Central (Paris)</option>
+                <option value="swedencentral">Sweden Central</option>
+                <option value="uaenorth">UAE North (Dubai)</option>
+                <option value="southafricanorth">South Africa North (Johannesburg)</option>
+              </optgroup>
+              <optgroup label="APJ — Azure">
+                <option value="australiaeast">Australia East (Sydney)</option>
+                <option value="japaneast">Japan East (Tokyo)</option>
+                <option value="southeastasia">Southeast Asia (Singapore)</option>
+                <option value="centralindia">Central India (Pune)</option>
+                <option value="koreacentral">Korea Central (Seoul)</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <input type="checkbox" id="expressRoute" style="width:15px;height:15px;accent-color:#0078d4;cursor:pointer;flex-shrink:0">
+          <label for="expressRoute" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500;display:flex;align-items:center;gap:5px">
+            <i class="fa-solid fa-bolt" style="color:#0078d4;font-size:11px"></i>
+            <span id="lbl-expressroute">Azure ExpressRoute available</span>
+          </label>
+        </div>
+        <div id="net-result"></div>
+
         <div class="section-label" id="lbl-bw-sec">Backup window &amp; bandwidth</div>
         <div class="field-grid">
           <div class="field"><label id="lbl-bwwin">Backup window (hours)</label>
@@ -374,7 +446,7 @@ const T = {
     bwTitle:'Required bandwidth per proxy',
     bwDaily:'Daily incremental (per proxy)', bwPeak:'Peak — synthetic full day (per proxy)',
     bwPeakEvery:'occurs every', bwProxiesLbl:'Proxies configured',
-    bwPeakNote:'CPU/RAM sized for peak',
+    bwPeakNote:'CPU/RAM sized for peak', bwEffective:'Effective link (latency)', bwRequired:'Required',
     bwRequired:'Required per proxy', bwTotal:'Total (all proxies)',
     bwNote:(win,prx)=>`Based on a <strong>${win}h</strong> backup window across <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     cpuPerProxy:'CPU per proxy', ramPerProxy:'RAM per proxy',
@@ -395,6 +467,13 @@ const T = {
     existingSec:'Existing on-prem repository', existingSize:'Current backup size (TB)',
     existingRetSec:'Retention to offload to VDC Vault',
     moveOnlyNote:'With Move policy only, synthetic fulls are the only objects transferred to VDC Vault — daily change rate and incremental retention are not applicable.',
+    netSec:'Network & latency', netOrigin:'Client location (origin)', netVault:'VDC Vault region (destination)',
+    netRtt:'Estimated RTT', netEffective:'Effective throughput', netUtil:'Link utilization', netNominal:'Nominal', netStreams:'streams',
+    netMsgGood:(rtt,eff)=>`Good path. ~${rtt}ms RTT allows approximately ${eff}% of nominal bandwidth to be used effectively. No action required.`,
+    netMsgWarn:(rtt,eff,streams,win)=>`RTT of ~${rtt}ms is limiting throughput to ~${eff}% of the link. Consider increasing TCP window size or adding more parallel streams in VBR (currently estimated at ${streams} streams × ${win}KB). ExpressRoute or a VPN with QoS may help.`,
+    netMsgBad:(rtt,eff,nom,eff2,streams)=>`High latency (~${rtt}ms) severely limits throughput to ~${eff}% of the link (${Math.round(eff2)} Mbps of ${Math.round(nom)} Mbps nominal). The backup window may not be achievable. Strongly consider: (1) choosing a closer VDC Vault region, (2) Azure ExpressRoute, (3) increasing VBR parallel streams beyond ${streams}.`,
+    netMsgER:(rtt,baseRtt,eff)=>`ExpressRoute active. RTT reduced from ~${baseRtt}ms to ~${rtt}ms — ${eff}% of nominal bandwidth available. Private peering eliminates internet jitter and maximizes throughput consistency.`,
+    erPublic:'Public internet RTT', lbl_expressroute:'Azure ExpressRoute available',
     footer:(email,url)=>`Developed by <a href="mailto:${email}">Martin Jorge</a> — complementary tool to the <a href="${url}" target="_blank">official Veeam VDC calculator</a>. Results are estimates and may vary based on actual configuration.`,
     why:[
       {h:'What is an immutable backup?',p:'An immutable restore point cannot be modified or deleted during the configured period. VDC Vault implements this via <strong>Object Lock</strong> (WORM — Write Once Read Many) on its S3-compatible storage, protecting you against ransomware and human error.'},
@@ -430,7 +509,7 @@ const T = {
     bwTitle:'Ancho de banda requerido por proxy',
     bwDaily:'Incremental diario (por proxy)', bwPeak:'Pico — día de full sintético (por proxy)',
     bwPeakEvery:'ocurre cada', bwProxiesLbl:'Proxies configurados',
-    bwPeakNote:'CPU/RAM dimensionado para el pico',
+    bwPeakNote:'CPU/RAM dimensionado para el pico', bwEffective:'Enlace efectivo (latencia)', bwRequired:'Requerido',
     bwRequired:'Requerido por proxy', bwTotal:'Total (todos los proxies)',
     bwNote:(win,prx)=>`Basado en una ventana de backup de <strong>${win}h</strong> con <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     cpuPerProxy:'CPU por proxy', ramPerProxy:'RAM por proxy',
@@ -451,6 +530,13 @@ const T = {
     existingSec:'Repositorio on-prem existente', existingSize:'Tamaño actual del backup (TB)',
     existingRetSec:'Retención a enviar al VDC Vault',
     moveOnlyNote:'Con solo Move policy, únicamente los fulls sintéticos se transfieren al VDC Vault — la tasa de cambio diario y la retención de incrementales no aplican.',
+    netSec:'Red y latencia', netOrigin:'Ubicación del cliente (origen)', netVault:'Región VDC Vault (destino)',
+    netRtt:'RTT estimado', netEffective:'Throughput efectivo', netUtil:'Utilización del enlace', netNominal:'Nominal', netStreams:'streams',
+    netMsgGood:(rtt,eff)=>`Buen camino. ~${rtt}ms de RTT permite utilizar aproximadamente el ${eff}% del ancho de banda nominal. No se requiere acción.`,
+    netMsgWarn:(rtt,eff,streams,win)=>`El RTT de ~${rtt}ms está limitando el throughput al ~${eff}% del enlace. Considerá aumentar el tamaño de ventana TCP o agregar más streams paralelos en VBR (estimado en ${streams} streams × ${win}KB). ExpressRoute o VPN con QoS pueden ayudar.`,
+    netMsgBad:(rtt,eff,nom,eff2,streams)=>`Alta latencia (~${rtt}ms) limita severamente el throughput al ~${eff}% del enlace (${Math.round(eff2)} Mbps de ${Math.round(nom)} Mbps nominales). La ventana de backup puede no ser alcanzable. Se recomienda: (1) elegir una región VDC Vault más cercana, (2) Azure ExpressRoute, (3) aumentar los streams paralelos de VBR más allá de ${streams}.`,
+    netMsgER:(rtt,baseRtt,eff)=>`ExpressRoute activo. RTT reducido de ~${baseRtt}ms a ~${rtt}ms — ${eff}% del ancho de banda nominal disponible. El peering privado elimina el jitter de internet y maximiza la consistencia del throughput.`,
+    erPublic:'RTT internet público', lbl_expressroute:'Azure ExpressRoute disponible',
     footer:(email,url)=>`Desarrollado por <a href="mailto:${email}">Martin Jorge</a> — herramienta complementaria a la <a href="${url}" target="_blank">calculadora oficial de Veeam VDC</a>. Los resultados son estimaciones y pueden variar según la configuración real.`,
     why:[
       {h:'¿Qué es un backup inmutable?',p:'Un restore point inmutable no puede ser modificado ni eliminado durante el período configurado. VDC Vault implementa esto mediante <strong>Object Lock</strong> (WORM — Write Once Read Many) en su almacenamiento S3-compatible, protegiéndote contra ransomware y errores humanos.'},
@@ -486,7 +572,7 @@ const T = {
     bwTitle:'Largura de banda necessária por proxy',
     bwDaily:'Incremental diário (por proxy)', bwPeak:'Pico — dia do full sintético (por proxy)',
     bwPeakEvery:'ocorre a cada', bwProxiesLbl:'Proxies configurados',
-    bwPeakNote:'CPU/RAM dimensionado para o pico',
+    bwPeakNote:'CPU/RAM dimensionado para o pico', bwEffective:'Link efetivo (latência)', bwRequired:'Necessário',
     bwRequired:'Necessário por proxy', bwTotal:'Total (todos os proxies)',
     bwNote:(win,prx)=>`Com base em uma janela de backup de <strong>${win}h</strong> e <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     cpuPerProxy:'CPU por proxy', ramPerProxy:'RAM por proxy',
@@ -507,6 +593,13 @@ const T = {
     existingSec:'Repositório on-prem existente', existingSize:'Tamanho atual do backup (TB)',
     existingRetSec:'Retenção a enviar para o VDC Vault',
     moveOnlyNote:'Com apenas Move policy, somente os fulls sintéticos são transferidos para o VDC Vault — a taxa de mudança diária e a retenção de incrementais não se aplicam.',
+    netSec:'Rede e latência', netOrigin:'Localização do cliente (origem)', netVault:'Região VDC Vault (destino)',
+    netRtt:'RTT estimado', netEffective:'Throughput efetivo', netUtil:'Utilização do link', netNominal:'Nominal', netStreams:'streams',
+    netMsgGood:(rtt,eff)=>`Boa conectividade. ~${rtt}ms de RTT permite utilizar aproximadamente ${eff}% da largura de banda nominal. Nenhuma ação necessária.`,
+    netMsgWarn:(rtt,eff,streams,win)=>`O RTT de ~${rtt}ms está limitando o throughput a ~${eff}% do link. Considere aumentar o tamanho da janela TCP ou adicionar mais streams paralelos no VBR (estimado em ${streams} streams × ${win}KB). ExpressRoute ou VPN com QoS podem ajudar.`,
+    netMsgBad:(rtt,eff,nom,eff2,streams)=>`Alta latência (~${rtt}ms) limita severamente o throughput a ~${eff}% do link (${Math.round(eff2)} Mbps de ${Math.round(nom)} Mbps nominais). A janela de backup pode não ser atingível. Recomenda-se: (1) escolher uma região VDC Vault mais próxima, (2) Azure ExpressRoute, (3) aumentar os streams paralelos do VBR além de ${streams}.`,
+    netMsgER:(rtt,baseRtt,eff)=>`ExpressRoute ativo. RTT reduzido de ~${baseRtt}ms para ~${rtt}ms — ${eff}% da largura de banda nominal disponível. O peering privado elimina o jitter da internet e maximiza a consistência do throughput.`,
+    erPublic:'RTT internet público', lbl_expressroute:'Azure ExpressRoute disponível',
     footer:(email,url)=>`Desenvolvido por <a href="mailto:${email}">Martin Jorge</a> — ferramenta complementar à <a href="${url}" target="_blank">calculadora oficial do Veeam VDC</a>. Os resultados são estimativas e podem variar conforme a configuração real.`,
     why:[
       {h:'O que é um backup imutável?',p:'Um restore point imutável não pode ser modificado nem excluído durante o período configurado. O VDC Vault implementa isso via <strong>Object Lock</strong> (WORM — Write Once Read Many) em seu armazenamento compatível com S3, protegendo contra ransomware e erros humanos.'},
@@ -536,7 +629,9 @@ function applyT() {
     'lbl-weekly':'weekly','lbl-monthly':'monthly','lbl-yearly':'yearly',
     'lbl-imm-sec':'immSec','lbl-imm-enable':'immEnable','lbl-imm-perf':'immPerf',
     'lbl-imm-cap':'immCap','lbl-cap-sec':'capSec','lbl-copy':'copy','lbl-move':'move',
-    'lbl-bw-sec':'bwSec','lbl-bwwin':'bwWin','lbl-proxies':'proxies',
+    'lbl-bw-sec':'bwSec','lbl-bwwin':'bwWin','lbl-proxies-text':'proxies',
+    'lbl-net-sec':'netSec','lbl-net-origin':'netOrigin','lbl-net-vault':'netVault',
+    'lbl-expressroute':'lbl_expressroute',
     'tab-lbl-breakdown':'tabBreakdown','tab-lbl-sim':'tabSim','tab-lbl-why':'tabWhy',
     'lbl-breakdown-title':'breakdownTitle','lbl-sim-title':'simTitle','lbl-why-title':'whyTitle',
     'leg-inc':'legInc','leg-full':'legFull','leg-gfs':'legGfs','leg-ovh':'legOvh',
@@ -643,26 +738,41 @@ function renderBW(src, cr, comp, bg, win, proxies) {
   const tbToMbps = (tb) => (tb * 1024 * 1024 * 8) / (win * 3600);
   const mbpsToMBs = (mbps) => mbps / 8;
 
-  // Daily: only the incremental travels every day
-  const incMbps  = tbToMbps(inc);
-  // Peak: on synthetic full day, incremental + full transfer to Capacity Tier
-  const peakMbps = tbToMbps(inc + full);
+  const incMbps       = tbToMbps(inc);
+  const peakMbps      = tbToMbps(inc + full);
   const perProxyDaily = incMbps  / proxies;
   const perProxyPeak  = peakMbps / proxies;
 
-  // Disk throughput required at repository (peak, in MB/s)
-  // Repository must sustain reads for the full + writes for incoming data simultaneously
-  const diskReadMBs  = mbpsToMBs(peakMbps);          // reading blocks to send
-  const diskWriteMBs = mbpsToMBs(incMbps);            // writing incoming incrementals
-  const diskTotalMBs = diskReadMBs + diskWriteMBs;    // concurrent read+write on full day
+  // Effective throughput from latency/TCP model
+  const origin       = document.getElementById('netOrigin').value;
+  const vault        = document.getElementById('netVault').value;
+  const erOn         = document.getElementById('expressRoute').checked;
+  const baseRtt      = LATENCY[origin]?.[vault] ?? 100;
+  const rtt          = erOn ? Math.min(baseRtt, 5) : baseRtt;
+  const streams      = proxies * 4;
+  const windowKB     = 256;
+  const tcpLimitMbps = (streams * windowKB * 1024 * 8) / (rtt / 1000) / 1e6;
+  const effectivePeak        = Math.min(peakMbps, tcpLimitMbps);
+  const effectivePerProxy    = effectivePeak / proxies;
+  const linkUtil             = Math.round(effectivePeak / peakMbps * 100);
+  const linkColor = linkUtil >= 80 ? 'var(--green-dark)' : linkUtil >= 50 ? '#b45309' : 'var(--red)';
+  const linkBg    = linkUtil >= 80 ? '#e6f9ec'           : linkUtil >= 50 ? '#fffbeb' : '#fdecea';
 
-  // CPU: 1 vCPU per 100 Mbps of peak throughput, min 2
-  const vcpuPerProxy = Math.max(2, Math.ceil(perProxyPeak / 100));
+  // Disk I/O
+  const diskReadMBs  = mbpsToMBs(peakMbps);
+  const diskWriteMBs = mbpsToMBs(incMbps);
+  const diskTotalMBs = diskReadMBs + diskWriteMBs;
+
+  // CPU/RAM sized for effective (real) throughput
+  const vcpuPerProxy = Math.max(2, Math.ceil(effectivePerProxy / 100));
   const ramPerProxy  = Math.max(4, vcpuPerProxy * 2 + 2);
-  const cpuTotal = vcpuPerProxy * proxies;
-  const ramTotal = ramPerProxy  * proxies;
+  const cpuTotal     = vcpuPerProxy * proxies;
+  const ramTotal     = ramPerProxy  * proxies;
 
   const fmtMBs = (v) => v >= 1000 ? (v/1000).toFixed(2)+' GB/s' : v.toFixed(0)+' MB/s';
+  const erTag  = erOn
+    ? `<span style="background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:4px"><i class="fa-solid fa-bolt" style="font-size:8px;margin-right:2px"></i>ER</span>`
+    : `<span style="font-size:9px;color:var(--gray-500);margin-left:4px">~${rtt}ms</span>`;
 
   document.getElementById('bw-result').innerHTML = `
     <div class="bw-card">
@@ -674,21 +784,21 @@ function renderBW(src, cr, comp, bg, win, proxies) {
           <div class="m-unit">${inc.toFixed(3)} TB/day · ${fmtBW(incMbps)} total</div>
         </div>
         <div class="bw-metric" style="border-color:#fbbf24;background:#fffbeb">
-          <div class="m-label" style="color:#92400e">${t('bwPeak')}</div>
+          <div class="m-label" style="color:#92400e">${t('bwPeak')} (${t('bwRequired').toLowerCase()})</div>
           <div class="m-val" style="color:#78350f">${fmtBW(perProxyPeak)}</div>
           <div class="m-unit" style="color:#b45309">${t('bwPeakEvery')} ${bg}d · ${fmtBW(peakMbps)} total</div>
         </div>
+        <div class="bw-metric" style="border-color:${linkColor}44;background:${linkBg}">
+          <div class="m-label" style="color:${linkColor};display:flex;align-items:center">${t('bwEffective')}${erTag}</div>
+          <div class="m-val" style="color:${linkColor}">${fmtBW(effectivePerProxy)}</div>
+          <div class="m-unit" style="color:${linkColor}">${fmtBW(effectivePeak)} total · ${linkUtil}% ${t('netUtil').toLowerCase()}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div class="bw-metric" style="border-color:#fbbf24;background:#fffbeb">
           <div class="m-label" style="color:#92400e">${t('diskRequired')}</div>
           <div class="m-val" style="color:#78350f">${fmtMBs(diskTotalMBs)}</div>
           <div class="m-unit" style="color:#b45309">${t('diskRead')} ${fmtMBs(diskReadMBs)} + ${t('diskWrite')} ${fmtMBs(diskWriteMBs)}</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        <div class="bw-metric">
-          <div class="m-label">${t('bwProxiesLbl')}</div>
-          <div class="m-val" style="color:#1e3a8a">${proxies} proxy</div>
-          <div class="m-unit">${t('bwPeakNote')}</div>
         </div>
         <div class="bw-metric" style="border-color:#ddd6fe">
           <div class="m-label" style="color:#7c3aed">${t('cpuPerProxy')}</div>
@@ -705,7 +815,83 @@ function renderBW(src, cr, comp, bg, win, proxies) {
     </div>`;
 }
 
-// ─── Full SOBR calc ──────────────────────────────────────────────────────────
+// ─── Latency matrix (RTT in ms, typical values based on Azure network measurements) ──
+// Format: LATENCY[origin][vault_region] = { rtt, note }
+const LATENCY = {
+  us_east:        { eastus:2,    eastus2:3,    centralus:20,  westus:70,   southcentralus:25, canadacentral:15,  brazilsouth:120, westeurope:80,  northeurope:90,  uksouth:75,  germanywestcentral:90,  francecentral:85,  swedencentral:100, uaenorth:160, southafricanorth:200, australiaeast:220, japaneast:180, southeastasia:200, centralindia:200, koreacentral:190 },
+  us_west:        { eastus:70,   eastus2:70,   centralus:45,  westus:5,    southcentralus:40, canadacentral:55,  brazilsouth:170, westeurope:140, northeurope:150, uksouth:135, germanywestcentral:150, francecentral:140, swedencentral:160, uaenorth:220, southafricanorth:260, australiaeast:160, japaneast:120, southeastasia:150, centralindia:220, koreacentral:130 },
+  us_central:     { eastus:25,   eastus2:25,   centralus:3,   westus:45,   southcentralus:15, canadacentral:30,  brazilsouth:130, westeurope:100, northeurope:110, uksouth:95,  germanywestcentral:105, francecentral:100, swedencentral:115, uaenorth:175, southafricanorth:220, australiaeast:200, japaneast:160, southeastasia:185, centralindia:210, koreacentral:175 },
+  canada:         { eastus:15,   eastus2:16,   centralus:30,  westus:65,   southcentralus:35, canadacentral:5,   brazilsouth:130, westeurope:90,  northeurope:95,  uksouth:85,  germanywestcentral:100, francecentral:92,  swedencentral:105, uaenorth:175, southafricanorth:215, australiaeast:215, japaneast:175, southeastasia:195, centralindia:210, koreacentral:180 },
+  latam_north:    { eastus:60,   eastus2:60,   centralus:70,  westus:100,  southcentralus:55, canadacentral:70,  brazilsouth:80,  westeurope:135, northeurope:145, uksouth:130, germanywestcentral:140, francecentral:135, swedencentral:155, uaenorth:200, southafricanorth:230, australiaeast:260, japaneast:220, southeastasia:235, centralindia:250, koreacentral:225 },
+  latam_south:    { eastus:150,  eastus2:150,  centralus:160, westus:190,  southcentralus:145,canadacentral:155, brazilsouth:50,  westeurope:200, northeurope:215, uksouth:195, germanywestcentral:205, francecentral:200, swedencentral:220, uaenorth:270, southafricanorth:220, australiaeast:310, japaneast:290, southeastasia:300, centralindia:295, koreacentral:295 },
+  latam_brazil:   { eastus:115,  eastus2:115,  centralus:125, westus:155,  southcentralus:110,canadacentral:120, brazilsouth:5,   westeurope:170, northeurope:180, uksouth:165, germanywestcentral:175, francecentral:170, swedencentral:190, uaenorth:240, southafricanorth:190, australiaeast:275, japaneast:255, southeastasia:265, centralindia:265, koreacentral:260 },
+  europe_west:    { eastus:80,   eastus2:80,   centralus:100, westus:140,  southcentralus:105,canadacentral:90,  brazilsouth:170, westeurope:3,   northeurope:20,  uksouth:12,  germanywestcentral:15,  francecentral:10,  swedencentral:30,  uaenorth:95,  southafricanorth:160, australiaeast:250, japaneast:230, southeastasia:175, centralindia:115, koreacentral:240 },
+  europe_central: { eastus:90,   eastus2:90,   centralus:110, westus:150,  southcentralus:115,canadacentral:100, brazilsouth:180, westeurope:15,  northeurope:28,  uksouth:22,  germanywestcentral:5,   francecentral:18,  swedencentral:22,  uaenorth:85,  southafricanorth:155, australiaeast:245, japaneast:225, southeastasia:170, centralindia:110, koreacentral:235 },
+  europe_north:   { eastus:95,   eastus2:95,   centralus:115, westus:155,  southcentralus:120,canadacentral:105, brazilsouth:190, westeurope:25,  northeurope:5,   uksouth:30,  germanywestcentral:22,  francecentral:28,  swedencentral:8,   uaenorth:110, southafricanorth:175, australiaeast:260, japaneast:240, southeastasia:185, centralindia:130, koreacentral:245 },
+  europe_south:   { eastus:100,  eastus2:100,  centralus:115, westus:155,  southcentralus:120,canadacentral:110, brazilsouth:185, westeurope:20,  northeurope:35,  uksouth:28,  germanywestcentral:22,  francecentral:15,  swedencentral:40,  uaenorth:80,  southafricanorth:150, australiaeast:255, japaneast:235, southeastasia:175, centralindia:110, koreacentral:240 },
+  middle_east:    { eastus:160,  eastus2:160,  centralus:175, westus:210,  southcentralus:170,canadacentral:170, brazilsouth:240, westeurope:90,  northeurope:105, uksouth:95,  germanywestcentral:85,  francecentral:92,  swedencentral:110, uaenorth:5,   southafricanorth:110, australiaeast:200, japaneast:160, southeastasia:100, centralindia:35,  koreacentral:165 },
+  africa:         { eastus:200,  eastus2:200,  centralus:215, westus:250,  southcentralus:205,canadacentral:210, brazilsouth:190, westeurope:160, northeurope:175, uksouth:165, germanywestcentral:155, francecentral:162, swedencentral:180, uaenorth:110, southafricanorth:5,   australiaeast:280, japaneast:300, southeastasia:260, centralindia:180, koreacentral:305 },
+  australia:      { eastus:220,  eastus2:220,  centralus:210, westus:165,  southcentralus:205,canadacentral:215, brazilsouth:275, westeurope:250, northeurope:265, uksouth:255, germanywestcentral:250, francecentral:255, swedencentral:270, uaenorth:200, southafricanorth:280, australiaeast:5,   japaneast:110, southeastasia:90,  centralindia:160, koreacentral:115 },
+  japan:          { eastus:180,  eastus2:180,  centralus:170, westus:120,  southcentralus:165,canadacentral:175, brazilsouth:285, westeurope:230, northeurope:245, uksouth:235, germanywestcentral:225, francecentral:232, swedencentral:248, uaenorth:155, southafricanorth:300, australiaeast:110, japaneast:5,   southeastasia:75,  centralindia:120, koreacentral:35  },
+  sea:            { eastus:200,  eastus2:200,  centralus:190, westus:150,  southcentralus:185,canadacentral:195, brazilsouth:300, westeurope:175, northeurope:190, uksouth:180, germanywestcentral:170, francecentral:178, swedencentral:195, uaenorth:100, southafricanorth:260, australiaeast:90,  japaneast:75,  southeastasia:5,   centralindia:65,  koreacentral:65  },
+  india:          { eastus:200,  eastus2:200,  centralus:210, westus:220,  southcentralus:205,canadacentral:210, brazilsouth:295, westeurope:115, northeurope:130, uksouth:120, germanywestcentral:110, francecentral:118, swedencentral:135, uaenorth:35,  southafricanorth:180, australiaeast:160, japaneast:120, southeastasia:65,  centralindia:5,   koreacentral:100 },
+  korea:          { eastus:190,  eastus2:190,  centralus:180, westus:135,  southcentralus:175,canadacentral:185, brazilsouth:295, westeurope:240, northeurope:250, uksouth:245, germanywestcentral:235, francecentral:243, swedencentral:256, uaenorth:165, southafricanorth:305, australiaeast:115, japaneast:35,  southeastasia:65,  centralindia:100, koreacentral:5   },
+};
+
+function renderNetwork(nominalMbps) {
+  const origin  = document.getElementById('netOrigin').value;
+  const vault   = document.getElementById('netVault').value;
+  const erOn    = document.getElementById('expressRoute').checked;
+  const baseRtt = LATENCY[origin]?.[vault] ?? 100;
+  // ExpressRoute: private peering over MPLS, typical RTT 2-8ms regardless of geography
+  // We use 5ms as conservative best-case, keeping a small margin for edge/PE latency
+  const rtt     = erOn ? Math.min(baseRtt, 5) : baseRtt;
+  const prx     = Math.max(1, getInt('bwProxies'));
+
+  const streams      = prx * 4;
+  const windowKB     = 256;
+  const tcpLimitMbps = (streams * windowKB * 1024 * 8) / (rtt / 1000) / 1e6;
+  const effectiveMbps = Math.min(nominalMbps, tcpLimitMbps);
+  const efficiency    = Math.min(100, Math.round((effectiveMbps / nominalMbps) * 100));
+
+  const utilizationColor = efficiency >= 80 ? 'var(--green-dark)' : efficiency >= 50 ? '#b45309' : 'var(--red)';
+  const utilizationBg    = efficiency >= 80 ? '#e6f9ec' : efficiency >= 50 ? '#fffbeb' : '#fdecea';
+  const utilizationIcon  = efficiency >= 80 ? 'fa-circle-check' : efficiency >= 50 ? 'fa-triangle-exclamation' : 'fa-circle-xmark';
+
+  const erBadge = erOn ? `<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;margin-left:6px"><i class="fa-solid fa-bolt" style="margin-right:3px;font-size:9px"></i>ExpressRoute</span>` : '';
+
+  document.getElementById('net-result').innerHTML = `
+    <div style="background:${utilizationBg};border:1px solid ${utilizationColor}33;border-radius:var(--radius);padding:.75rem 1rem;margin-top:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netRtt')}${erBadge}</div>
+          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:var(--gray-900)">~${rtt} ms</div>
+          <div style="font-size:10px;color:var(--gray-500)">${erOn ? t('erPublic')+': ~'+baseRtt+'ms' : streams+' TCP '+t('netStreams')}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netEffective')}</div>
+          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:${utilizationColor}">${fmtBW(effectiveMbps)}</div>
+          <div style="font-size:10px;color:var(--gray-500)">${t('netNominal')}: ${fmtBW(nominalMbps)}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netUtil')}</div>
+          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:${utilizationColor}">${efficiency}%</div>
+          <div style="font-size:10px;color:var(--gray-500)">TCP limit: ${fmtBW(tcpLimitMbps)}</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:${utilizationColor};display:flex;align-items:flex-start;gap:5px;line-height:1.5">
+        <i class="fa-solid ${utilizationIcon}" style="margin-top:2px;flex-shrink:0"></i>
+        <span>${netMessage(efficiency, rtt, nominalMbps, effectiveMbps, streams, windowKB, erOn, baseRtt)}</span>
+      </div>
+    </div>`;
+}
+
+function netMessage(eff, rtt, nominal, effective, streams, windowKB, erOn, baseRtt) {
+  if (erOn && eff >= 80) return T[lang].netMsgER(rtt, baseRtt, Math.round(eff));
+  if (eff >= 80) return T[lang].netMsgGood(rtt, Math.round(eff));
+  if (eff >= 50) return T[lang].netMsgWarn(rtt, Math.round(eff), streams, windowKB);
+  return T[lang].netMsgBad(rtt, Math.round(eff), nominal, effective, streams);
+}
 function calcSobr() {
   const src   = getVal('srcTB');
   const cr    = getVal('changeRate')/100;
@@ -726,8 +912,8 @@ function calcSobr() {
   const prx   = Math.max(1, getInt('bwProxies'));
 
   renderWarnings(validateImm(rd, rw, rm, ry, ip, ic, immOn, bg));
-  if (capOn) renderBW(src, cr, comp, bg, win, prx);
-  else document.getElementById('bw-result').innerHTML = '';
+  if (capOn) { renderBW(src, cr, comp, bg, win, prx); renderNetwork(peakMbpsForNet(src,cr,comp,bg,win,prx)); }
+  else { document.getElementById('bw-result').innerHTML=''; document.getElementById('net-result').innerHTML=''; }
 
   const full = src*(1-comp);
   const inc  = src*cr*(1-comp);
@@ -901,8 +1087,8 @@ function calcCapOnly() {
   const prx   = Math.max(1, getInt('bwProxies'));
 
   renderWarnings(validateImm(rd, rw, rm, ry, 0, ic, immOn, bg));
-  if (capOn) renderBW(src, cr, comp, bg, win, prx);
-  else document.getElementById('bw-result').innerHTML = '';
+  if (capOn) { renderBW(src, cr, comp, bg, win, prx); renderNetwork(peakMbpsForNet(src,cr,comp,bg,win,prx)); }
+  else { document.getElementById('bw-result').innerHTML=''; document.getElementById('net-result').innerHTML=''; }
 
   const full = src*(1-comp);
   const inc  = src*cr*(1-comp);
@@ -956,7 +1142,16 @@ function calcCapOnly() {
   else document.getElementById('sim-cap').innerHTML = `<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
 }
 
-document.querySelectorAll('input[name=simMode]').forEach(r => r.addEventListener('change', updateMode));
+function peakMbpsForNet(src, cr, comp, bg, win, proxies) {
+  const full = src*(1-comp);
+  const inc  = src*cr*(1-comp);
+  const tbToMbps = (tb) => (tb * 1024 * 1024 * 8) / (win * 3600);
+  return tbToMbps(inc + full); // total peak — full link requirement
+}
+
+document.getElementById('netOrigin').addEventListener('change', calc);
+document.getElementById('netVault').addEventListener('change', calc);
+document.getElementById('expressRoute').addEventListener('change', calc);
 document.querySelectorAll('input[type=number],input[type=checkbox]').forEach(el=>el.addEventListener('input', () => { updateCapOnlyFields(); calc(); }));
 applyT();
 updateMode();
