@@ -839,54 +839,6 @@ const LATENCY = {
   korea:          { eastus:190,  eastus2:190,  centralus:180, westus:135,  southcentralus:175,canadacentral:185, brazilsouth:295, westeurope:240, northeurope:250, uksouth:245, germanywestcentral:235, francecentral:243, swedencentral:256, uaenorth:165, southafricanorth:305, australiaeast:115, japaneast:35,  southeastasia:65,  centralindia:100, koreacentral:5   },
 };
 
-function renderNetwork(nominalMbps) {
-  const origin  = document.getElementById('netOrigin').value;
-  const vault   = document.getElementById('netVault').value;
-  const erOn    = document.getElementById('expressRoute').checked;
-  const baseRtt = LATENCY[origin]?.[vault] ?? 100;
-  // ExpressRoute: private peering over MPLS, typical RTT 2-8ms regardless of geography
-  // We use 5ms as conservative best-case, keeping a small margin for edge/PE latency
-  const rtt     = erOn ? Math.min(baseRtt, 5) : baseRtt;
-  const prx     = Math.max(1, getInt('bwProxies'));
-
-  const streams      = prx * 4;
-  const windowKB     = 256;
-  const tcpLimitMbps = (streams * windowKB * 1024 * 8) / (rtt / 1000) / 1e6;
-  const effectiveMbps = Math.min(nominalMbps, tcpLimitMbps);
-  const efficiency    = Math.min(100, Math.round((effectiveMbps / nominalMbps) * 100));
-
-  const utilizationColor = efficiency >= 80 ? 'var(--green-dark)' : efficiency >= 50 ? '#b45309' : 'var(--red)';
-  const utilizationBg    = efficiency >= 80 ? '#e6f9ec' : efficiency >= 50 ? '#fffbeb' : '#fdecea';
-  const utilizationIcon  = efficiency >= 80 ? 'fa-circle-check' : efficiency >= 50 ? 'fa-triangle-exclamation' : 'fa-circle-xmark';
-
-  const erBadge = erOn ? `<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;margin-left:6px"><i class="fa-solid fa-bolt" style="margin-right:3px;font-size:9px"></i>ExpressRoute</span>` : '';
-
-  document.getElementById('net-result').innerHTML = `
-    <div style="background:${utilizationBg};border:1px solid ${utilizationColor}33;border-radius:var(--radius);padding:.75rem 1rem;margin-top:8px">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
-        <div>
-          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netRtt')}${erBadge}</div>
-          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:var(--gray-900)">~${rtt} ms</div>
-          <div style="font-size:10px;color:var(--gray-500)">${erOn ? t('erPublic')+': ~'+baseRtt+'ms' : streams+' TCP '+t('netStreams')}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netEffective')}</div>
-          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:${utilizationColor}">${fmtBW(effectiveMbps)}</div>
-          <div style="font-size:10px;color:var(--gray-500)">${t('netNominal')}: ${fmtBW(nominalMbps)}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netUtil')}</div>
-          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:${utilizationColor}">${efficiency}%</div>
-          <div style="font-size:10px;color:var(--gray-500)">TCP limit: ${fmtBW(tcpLimitMbps)}</div>
-        </div>
-      </div>
-      <div style="font-size:11px;color:${utilizationColor};display:flex;align-items:flex-start;gap:5px;line-height:1.5">
-        <i class="fa-solid ${utilizationIcon}" style="margin-top:2px;flex-shrink:0"></i>
-        <span>${netMessage(efficiency, rtt, nominalMbps, effectiveMbps, streams, windowKB, erOn, baseRtt)}</span>
-      </div>
-    </div>`;
-}
-
 function netMessage(eff, rtt, nominal, effective, streams, windowKB, erOn, baseRtt) {
   if (erOn && eff >= 80) return T[lang].netMsgER(rtt, baseRtt, Math.round(eff));
   if (eff >= 80) return T[lang].netMsgGood(rtt, Math.round(eff));
@@ -913,7 +865,7 @@ function calcSobr() {
   const prx   = Math.max(1, getInt('bwProxies'));
 
   renderWarnings(validateImm(rd, rw, rm, ry, ip, ic, immOn, bg));
-  if (capOn) { renderBW(src, cr, comp, bg, win, prx); renderNetwork(peakMbpsForNet(src,cr,comp,bg,win,prx)); }
+  if (capOn) { renderBW(src, cr, comp, bg, win, prx); renderNetwork(); }
   else { document.getElementById('bw-result').innerHTML=''; document.getElementById('net-result').innerHTML=''; }
 
   const full = src*(1-comp);
@@ -1088,7 +1040,7 @@ function calcCapOnly() {
   const prx   = Math.max(1, getInt('bwProxies'));
 
   renderWarnings(validateImm(rd, rw, rm, ry, 0, ic, immOn, bg));
-  if (capOn) { renderBW(src, cr, comp, bg, win, prx); renderNetwork(peakMbpsForNet(src,cr,comp,bg,win,prx)); }
+  if (capOn) { renderBW(src, cr, comp, bg, win, prx); renderNetwork(); }
   else { document.getElementById('bw-result').innerHTML=''; document.getElementById('net-result').innerHTML=''; }
 
   const full = src*(1-comp);
@@ -1143,12 +1095,21 @@ function calcCapOnly() {
   else document.getElementById('sim-cap').innerHTML = `<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
 }
 
-function peakMbpsForNet(src, cr, comp, bg, win, proxies) {
+function peakMbpsForNet() {
+  // Always reads fresh from DOM to avoid stale values
+  const isCapOnly = document.getElementById('modeCap').checked;
+  const src  = isCapOnly ? getVal('existingSize') : getVal('srcTB');
+  const cr   = isCapOnly ? getVal('existingCR')/100 : getVal('changeRate')/100;
+  const comp = isCapOnly ? getVal('existingComp')/100 : getVal('compress')/100;
+  const win  = Math.max(1, getInt('bwWindow'));
   const full = src*(1-comp);
   const inc  = src*cr*(1-comp);
   const tbToMbps = (tb) => (tb * 1024 * 1024 * 8) / (win * 3600);
-  return tbToMbps(inc + full); // total peak — full link requirement
+  return tbToMbps(inc + full);
 }
+
+function renderNetwork() {
+  const nominalMbps = peakMbpsForNet();
 
 document.getElementById('netOrigin').addEventListener('change', calc);
 document.getElementById('netVault').addEventListener('change', calc);
