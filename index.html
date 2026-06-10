@@ -471,7 +471,7 @@ const T = {
     netSec:'Network & latency', netOrigin:'Client location (origin)', netVault:'VDC Vault region (destination)',
     netRtt:'Estimated RTT', netEffective:'Effective throughput', netUtil:'Link utilization', netNominal:'Nominal', netStreams:'streams',
     netMsgGood:(rtt,eff)=>`Good path. ~${rtt}ms RTT allows approximately ${eff}% of nominal bandwidth to be used effectively. No action required.`,
-    netMsgWarn:(rtt,eff,streams,win)=>`RTT of ~${rtt}ms is limiting throughput to ~${eff}% of the link. Consider increasing TCP window size or adding more parallel streams in VBR (currently estimated at ${streams} streams × ${win}KB). ExpressRoute or a VPN with QoS may help.`,
+    netMsgWarn:(rtt,eff,streams,win)=>`RTT of ~${rtt}ms is limiting throughput to ~${eff}% of the link. Consider increasing TCP window size or adding more parallel streams in VBR (currently estimated at ${streams} streams × ${win}KB — <a href="https://helpcenter.veeam.com/docs/backup/vsphere/parallel_processing.html" target="_blank" style="color:inherit;text-decoration:underline">see VBR parallel processing docs</a>). ExpressRoute or a VPN with QoS may help.`,
     netMsgBad:(rtt,eff,nom,eff2,streams)=>`High latency (~${rtt}ms) severely limits throughput to ~${eff}% of the link (${Math.round(eff2)} Mbps of ${Math.round(nom)} Mbps nominal). The backup window may not be achievable. Strongly consider: (1) choosing a closer VDC Vault region, (2) Azure ExpressRoute, (3) increasing VBR parallel streams beyond ${streams}.`,
     netMsgER:(rtt,baseRtt,eff)=>`ExpressRoute active. RTT reduced from ~${baseRtt}ms to ~${rtt}ms — ${eff}% of nominal bandwidth available. Private peering eliminates internet jitter and maximizes throughput consistency.`,
     erPublic:'Public internet RTT', lbl_expressroute:'Azure ExpressRoute available',
@@ -534,7 +534,7 @@ const T = {
     netSec:'Red y latencia', netOrigin:'Ubicación del cliente (origen)', netVault:'Región VDC Vault (destino)',
     netRtt:'RTT estimado', netEffective:'Throughput efectivo', netUtil:'Utilización del enlace', netNominal:'Nominal', netStreams:'streams',
     netMsgGood:(rtt,eff)=>`Buen camino. ~${rtt}ms de RTT permite utilizar aproximadamente el ${eff}% del ancho de banda nominal. No se requiere acción.`,
-    netMsgWarn:(rtt,eff,streams,win)=>`El RTT de ~${rtt}ms está limitando el throughput al ~${eff}% del enlace. Considerá aumentar el tamaño de ventana TCP o agregar más streams paralelos en VBR (estimado en ${streams} streams × ${win}KB). ExpressRoute o VPN con QoS pueden ayudar.`,
+    netMsgWarn:(rtt,eff,streams,win)=>`El RTT de ~${rtt}ms está limitando el throughput al ~${eff}% del enlace. Considerá aumentar el tamaño de ventana TCP o agregar más streams paralelos en VBR (estimado en ${streams} streams × ${win}KB — <a href="https://helpcenter.veeam.com/docs/backup/vsphere/parallel_processing.html" target="_blank" style="color:inherit;text-decoration:underline">ver docs VBR procesamiento paralelo</a>). ExpressRoute o VPN con QoS pueden ayudar.`,
     netMsgBad:(rtt,eff,nom,eff2,streams)=>`Alta latencia (~${rtt}ms) limita severamente el throughput al ~${eff}% del enlace (${Math.round(eff2)} Mbps de ${Math.round(nom)} Mbps nominales). La ventana de backup puede no ser alcanzable. Se recomienda: (1) elegir una región VDC Vault más cercana, (2) Azure ExpressRoute, (3) aumentar los streams paralelos de VBR más allá de ${streams}.`,
     netMsgER:(rtt,baseRtt,eff)=>`ExpressRoute activo. RTT reducido de ~${baseRtt}ms a ~${rtt}ms — ${eff}% del ancho de banda nominal disponible. El peering privado elimina el jitter de internet y maximiza la consistencia del throughput.`,
     erPublic:'RTT internet público', lbl_expressroute:'Azure ExpressRoute disponible',
@@ -597,7 +597,7 @@ const T = {
     netSec:'Rede e latência', netOrigin:'Localização do cliente (origem)', netVault:'Região VDC Vault (destino)',
     netRtt:'RTT estimado', netEffective:'Throughput efetivo', netUtil:'Utilização do link', netNominal:'Nominal', netStreams:'streams',
     netMsgGood:(rtt,eff)=>`Boa conectividade. ~${rtt}ms de RTT permite utilizar aproximadamente ${eff}% da largura de banda nominal. Nenhuma ação necessária.`,
-    netMsgWarn:(rtt,eff,streams,win)=>`O RTT de ~${rtt}ms está limitando o throughput a ~${eff}% do link. Considere aumentar o tamanho da janela TCP ou adicionar mais streams paralelos no VBR (estimado em ${streams} streams × ${win}KB). ExpressRoute ou VPN com QoS podem ajudar.`,
+    netMsgWarn:(rtt,eff,streams,win)=>`O RTT de ~${rtt}ms está limitando o throughput a ~${eff}% do link. Considere aumentar o tamanho da janela TCP ou adicionar mais streams paralelos no VBR (estimado em ${streams} streams × ${win}KB — <a href="https://helpcenter.veeam.com/docs/backup/vsphere/parallel_processing.html" target="_blank" style="color:inherit;text-decoration:underline">ver docs VBR processamento paralelo</a>). ExpressRoute ou VPN com QoS podem ajudar.`,
     netMsgBad:(rtt,eff,nom,eff2,streams)=>`Alta latência (~${rtt}ms) limita severamente o throughput a ~${eff}% do link (${Math.round(eff2)} Mbps de ${Math.round(nom)} Mbps nominais). A janela de backup pode não ser atingível. Recomenda-se: (1) escolher uma região VDC Vault mais próxima, (2) Azure ExpressRoute, (3) aumentar os streams paralelos do VBR além de ${streams}.`,
     netMsgER:(rtt,baseRtt,eff)=>`ExpressRoute ativo. RTT reduzido de ~${baseRtt}ms para ~${rtt}ms — ${eff}% da largura de banda nominal disponível. O peering privado elimina o jitter da internet e maximiza a consistência do throughput.`,
     erPublic:'RTT internet público', lbl_expressroute:'Azure ExpressRoute disponível',
@@ -976,21 +976,42 @@ function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveO
 // ─── Mode toggle ────────────────────────────────────────────────────────────
 function updateMode() {
   const isCapOnly = document.getElementById('modeCap').checked;
-  document.getElementById('perf-tier-fields').style.display  = isCapOnly ? 'none' : '';
-  document.getElementById('cap-only-fields').style.display   = isCapOnly ? '' : 'none';
-  // In cap-only: VDC Vault always has immutability — hide toggle, always show cap field, hide perf field
-  document.getElementById('imm-toggle-row').style.display    = isCapOnly ? 'none' : '';
-  document.getElementById('imm-perf-field').style.display    = isCapOnly ? 'none' : '';
+
+  // 1. Show/hide input sections
+  document.getElementById('perf-tier-fields').style.display = isCapOnly ? 'none' : '';
+  document.getElementById('cap-only-fields').style.display  = isCapOnly ? '' : 'none';
+
+  // 2. Immutability: cap-only → hide toggle + perf field, force on
+  //    SOBR → restore toggle, restore perf field visibility
+  document.getElementById('imm-toggle-row').style.display = isCapOnly ? 'none' : '';
+  document.getElementById('imm-perf-field').style.display  = isCapOnly ? 'none' : '';
   if (isCapOnly) {
-    // Force immutability on for cap-only
     document.getElementById('immEnabled').checked = true;
     document.getElementById('imm-fields').style.opacity = '1';
     document.getElementById('imm-fields').style.pointerEvents = '';
+  } else {
+    // Restore imm-fields opacity based on checkbox state
+    const immOn = document.getElementById('immEnabled').checked;
+    document.getElementById('imm-fields').style.opacity = immOn ? '1' : '0.35';
+    document.getElementById('imm-fields').style.pointerEvents = immOn ? '' : 'none';
+    // Restore perf immutability input opacity based on its checkbox
+    const perfImmOn = document.getElementById('immPerfEnabled').checked;
+    document.getElementById('immPerf').style.opacity = perfImmOn ? '1' : '0.4';
+    document.getElementById('immPerf').style.pointerEvents = perfImmOn ? '' : 'none';
   }
+
+  // 3. Radio button highlight — always reflect actual checked state
   document.getElementById('mode-sobr-box').style.borderColor = isCapOnly ? 'var(--gray-300)' : 'var(--green)';
-  document.getElementById('mode-sobr-box').style.background  = isCapOnly ? 'var(--white)' : 'var(--green-light)';
-  document.getElementById('mode-cap-box').style.borderColor  = isCapOnly ? 'var(--green)' : 'var(--gray-300)';
-  document.getElementById('mode-cap-box').style.background   = isCapOnly ? 'var(--green-light)' : 'var(--white)';
+  document.getElementById('mode-sobr-box').style.background  = isCapOnly ? 'var(--white)'     : 'var(--green-light)';
+  document.getElementById('mode-cap-box').style.borderColor  = isCapOnly ? 'var(--green)'     : 'var(--gray-300)';
+  document.getElementById('mode-cap-box').style.background   = isCapOnly ? 'var(--green-light)': 'var(--white)';
+
+  // 4. Clear stale results when switching modes
+  document.getElementById('result-banner').innerHTML = '';
+  document.getElementById('breakdown-content').innerHTML = '';
+  document.getElementById('bw-result').innerHTML = '';
+  document.getElementById('net-result').innerHTML = '';
+
   updateCapOnlyFields();
   calc();
 }
