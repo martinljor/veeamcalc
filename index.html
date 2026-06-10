@@ -719,29 +719,107 @@ function fmtBW(mbps) {
   return mbps.toFixed(1)+' Mbps';
 }
 
-// VDC Vault immutability is always on — no toggle needed
-// Performance Tier immutability is optional
-document.getElementById('immPerfEnabled').addEventListener('change', function() {
-  const days = document.getElementById('imm-perf-days');
-  days.style.opacity = this.checked ? '1' : '0.4';
-  days.style.pointerEvents = this.checked ? '' : 'none';
-  calc();
-});
+// ─── Constants ──────────────────────────────────────────────────────────────
+const TCP_WINDOW_KB     = 256; // TCP window size for throughput model (KB)
+const STREAMS_PER_PROXY = 4;   // Parallel TCP streams per proxy (VBR default)
+const MBPS_PER_VCPU     = 100; // Veeam recommended: 1 vCPU per 100 Mbps
+const MIN_VCPU          = 2;   // Minimum vCPU per proxy
+const MIN_RAM_GB        = 4;   // Minimum RAM per proxy (GB)
+const MIN_RTT_ER_MS     = 5;   // ExpressRoute minimum assumed RTT (ms)
 
-// ─── Full validation ────────────────────────────────────────────────────────
+// ─── Input reader ───────────────────────────────────────────────────────────
+function readInputs() {
+  const isCapOnly = document.getElementById('modeCap').checked;
+  const immPerfOn = !isCapOnly && document.getElementById('immPerfEnabled').checked;
+  const common = {
+    immCapDays:   getInt('immCap'),
+    offloadDays:  getInt('offloadDays'),
+    copyEnabled:  document.getElementById('copyPolicy').checked,
+    moveEnabled:  document.getElementById('movePolicy').checked,
+    windowHours:  Math.max(1, getInt('bwWindow')),
+    proxies:      Math.max(1, getInt('bwProxies')),
+    origin:       document.getElementById('netOrigin').value,
+    vault:        document.getElementById('netVault').value,
+    expressRoute: document.getElementById('expressRoute').checked,
+  };
+  if (isCapOnly) {
+    return {
+      ...common, mode: 'capOnly',
+      sourceTB:       getVal('existingSize'),
+      changeRate:     getVal('existingCR') / 100,
+      compression:    getVal('existingComp') / 100,
+      blockGenDays:   Math.max(1, getInt('existingBG')),
+      retDays:        Math.max(0, getInt('existingDays')),
+      retWeeks:       getInt('existingWeeks'),
+      retMonths:      getInt('existingMonths'),
+      retYears:       getInt('existingYears'),
+      immPerfEnabled: false,
+      immPerfDays:    0,
+    };
+  }
+  return {
+    ...common, mode: 'sobr',
+    sourceTB:       getVal('srcTB'),
+    changeRate:     getVal('changeRate') / 100,
+    compression:    getVal('compress') / 100,
+    blockGenDays:   Math.max(1, getInt('blockGen')),
+    retDays:        Math.max(1, getInt('retDays')),
+    retWeeks:       getInt('retWeeks'),
+    retMonths:      getInt('retMonths'),
+    retYears:       getInt('retYears'),
+    immPerfEnabled: immPerfOn,
+    immPerfDays:    immPerfOn ? getInt('immPerf') : 0,
+  };
+}
+
+// ─── Pure storage calculation ────────────────────────────────────────────────
+function calcStorageTier({ sourceTB, changeRate, compression, blockGenDays,
+    retDays, retWeeks, retMonths, retYears, immDays, immEnabled, moveOnly }) {
+  const fullTB   = sourceTB * (1 - compression);
+  const incTB    = sourceTB * changeRate * (1 - compression);
+  const numFulls = Math.ceil(Math.max(1, retDays) / blockGenDays);
+  const dataTB   = moveOnly
+    ? fullTB * numFulls + fullTB * retWeeks + fullTB * retMonths + fullTB * retYears
+    : fullTB + incTB * (Math.max(1, retDays) - 1) + fullTB * retWeeks + fullTB * retMonths + fullTB * retYears;
+  const overheadTB = immEnabled ? fullTB * (immDays / blockGenDays) : 0;
+  return { fullTB, incTB, dataTB, overheadTB, totalTB: dataTB + overheadTB, numFulls };
+}
+
+// ─── Pure bandwidth calculation ──────────────────────────────────────────────
+function calcBandwidthMetrics({ sourceTB, changeRate, compression, windowHours, proxies }, rtt, streams) {
+  const fullTB   = sourceTB * (1 - compression);
+  const incTB    = sourceTB * changeRate * (1 - compression);
+  const toMbps   = tb => (tb * 1024 * 1024 * 8) / (windowHours * 3600);
+  const incMbps  = toMbps(incTB);
+  const peakMbps = toMbps(incTB + fullTB);
+  const tcpLimitMbps  = rtt > 0 ? (streams * TCP_WINDOW_KB * 1024 * 8) / (rtt / 1000) / 1e6 : Infinity;
+  const effectiveMbps = Math.min(peakMbps, tcpLimitMbps);
+  const linkUtilPct   = Math.min(100, Math.round(effectiveMbps / peakMbps * 100));
+  const perProxyEffMbps = effectiveMbps / proxies;
+  const vcpuPerProxy    = Math.max(MIN_VCPU, Math.ceil(perProxyEffMbps / MBPS_PER_VCPU));
+  const ramPerProxy     = Math.max(MIN_RAM_GB, vcpuPerProxy * 2 + 2);
+  return {
+    incTB, incMbps, peakMbps, effectiveMbps, tcpLimitMbps, linkUtilPct,
+    perProxyDailyMbps: incMbps  / proxies,
+    perProxyPeakMbps:  peakMbps / proxies,
+    perProxyEffMbps,
+    diskReadMBs:  peakMbps / 8,
+    diskWriteMBs: incMbps  / 8,
+    vcpuPerProxy, ramPerProxy,
+  };
+}
+
+// ─── Immutability validation ─────────────────────────────────────────────────
 function validateImm(rd, rw, rm, ry, ip, ic, immOn, bg) {
   const warns = [];
   if (!immOn) return warns;
-
   const maxRet = Math.max(rd, rw*7, rm*30, ry*365);
 
-  // 1. Immutability > daily retention (no GFS configured)
   if (ip > rd && rw===0 && rm===0 && ry===0)
     warns.push({ msg: T[lang].warnImmGtRet(T[lang].warnPerfTier, ip, rd), tip: T[lang].warnImmGtRetTip(rd) });
   if (ic > rd && rw===0 && rm===0 && ry===0)
     warns.push({ msg: T[lang].warnImmGtRet(T[lang].warnCapTier, ic, rd), tip: T[lang].warnImmGtRetTip(rd) });
 
-  // 2. Immutability > longest GFS retention (when GFS is configured)
   if (maxRet > rd) {
     if (ip > maxRet)
       warns.push({ msg: T[lang].warnImmGtGfs(T[lang].warnPerfTier, ip, maxRet), tip: T[lang].warnImmGtGfsTip });
@@ -749,16 +827,13 @@ function validateImm(rd, rw, rm, ry, ip, ic, immOn, bg) {
       warns.push({ msg: T[lang].warnImmGtGfs(T[lang].warnCapTier, ic, maxRet), tip: T[lang].warnImmGtGfsTip });
   }
 
-  // 3. Immutability < block generation period (lock provides no real protection)
   if (ip > 0 && ip < bg)
     warns.push({ msg: T[lang].warnImmNoSense(T[lang].warnPerfTier, ip, bg), tip: T[lang].warnImmNoSenseTip(bg) });
   if (ic > 0 && ic < bg)
     warns.push({ msg: T[lang].warnImmNoSense(T[lang].warnCapTier, ic, bg), tip: T[lang].warnImmNoSenseTip(bg) });
 
-  // Highlight fields
   document.getElementById('immPerf').classList.toggle('has-error', warns.some(w=>w.msg.includes(T[lang].warnPerfTier)));
-  document.getElementById('immCap').classList.toggle('has-error', warns.some(w=>w.msg.includes(T[lang].warnCapTier)));
-
+  document.getElementById('immCap').classList.toggle('has-error',  warns.some(w=>w.msg.includes(T[lang].warnCapTier)));
   return warns;
 }
 
@@ -773,46 +848,19 @@ function renderWarnings(warns) {
     </div>`).join('');
 }
 
-// ─── Bandwidth calc ─────────────────────────────────────────────────────────
-function renderBW(src, cr, comp, bg, win, proxies) {
-  const full = src*(1-comp);
-  const inc  = src*cr*(1-comp);
-  const tbToMbps = (tb) => (tb * 1024 * 1024 * 8) / (win * 3600);
-  const mbpsToMBs = (mbps) => mbps / 8;
-
-  const incMbps       = tbToMbps(inc);
-  const peakMbps      = tbToMbps(inc + full);
-  const perProxyDaily = incMbps  / proxies;
-  const perProxyPeak  = peakMbps / proxies;
-
-  // Effective throughput from latency/TCP model
-  const origin       = document.getElementById('netOrigin').value;
-  const vault        = document.getElementById('netVault').value;
-  const erOn         = document.getElementById('expressRoute').checked;
-  const baseRtt      = LATENCY[origin]?.[vault] ?? 100;
-  const rtt          = erOn ? Math.min(baseRtt, 5) : baseRtt;
-  const streams      = proxies * 4;
-  const windowKB     = 256;
-  const tcpLimitMbps = (streams * windowKB * 1024 * 8) / (rtt / 1000) / 1e6;
-  const effectivePeak        = Math.min(peakMbps, tcpLimitMbps);
-  const effectivePerProxy    = effectivePeak / proxies;
-  const linkUtil             = Math.round(effectivePeak / peakMbps * 100);
-  const linkColor = linkUtil >= 80 ? 'var(--green-dark)' : linkUtil >= 50 ? '#b45309' : 'var(--red)';
-  const linkBg    = linkUtil >= 80 ? '#e6f9ec'           : linkUtil >= 50 ? '#fffbeb' : '#fdecea';
-
-  // Disk I/O
-  const diskReadMBs  = mbpsToMBs(peakMbps);
-  const diskWriteMBs = mbpsToMBs(incMbps);
-  const diskTotalMBs = diskReadMBs + diskWriteMBs;
-
-  // CPU/RAM sized for effective (real) throughput
-  const vcpuPerProxy = Math.max(2, Math.ceil(effectivePerProxy / 100));
-  const ramPerProxy  = Math.max(4, vcpuPerProxy * 2 + 2);
+// ─── Render: bandwidth card ──────────────────────────────────────────────────
+function renderBW(inp, bw, rtt) {
+  const { proxies, blockGenDays, windowHours } = inp;
+  const { incTB, incMbps, peakMbps, effectiveMbps, linkUtilPct,
+          perProxyDailyMbps, perProxyPeakMbps, perProxyEffMbps,
+          diskReadMBs, diskWriteMBs, vcpuPerProxy, ramPerProxy } = bw;
   const cpuTotal     = vcpuPerProxy * proxies;
   const ramTotal     = ramPerProxy  * proxies;
-
-  const fmtMBs = (v) => v >= 1000 ? (v/1000).toFixed(2)+' GB/s' : v.toFixed(0)+' MB/s';
-  const erTag  = erOn
+  const diskTotalMBs = diskReadMBs + diskWriteMBs;
+  const linkColor = linkUtilPct >= 80 ? 'var(--green-dark)' : linkUtilPct >= 50 ? '#b45309' : 'var(--red)';
+  const linkBg    = linkUtilPct >= 80 ? '#e6f9ec'           : linkUtilPct >= 50 ? '#fffbeb' : '#fdecea';
+  const fmtMBs = v => v >= 1000 ? (v/1000).toFixed(2)+' GB/s' : v.toFixed(0)+' MB/s';
+  const erTag  = inp.expressRoute
     ? `<span style="background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin-left:4px"><i class="fa-solid fa-bolt" style="font-size:8px;margin-right:2px"></i>ER</span>`
     : `<span style="font-size:9px;color:var(--gray-500);margin-left:4px">~${rtt}ms</span>`;
 
@@ -822,18 +870,18 @@ function renderBW(src, cr, comp, bg, win, proxies) {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
         <div class="bw-metric">
           <div class="m-label">${t('bwDaily')}</div>
-          <div class="m-val">${fmtBW(perProxyDaily)}</div>
-          <div class="m-unit">${inc.toFixed(3)} TB/day · ${fmtBW(incMbps)} total</div>
+          <div class="m-val">${fmtBW(perProxyDailyMbps)}</div>
+          <div class="m-unit">${incTB.toFixed(3)} TB/day · ${fmtBW(incMbps)} total</div>
         </div>
         <div class="bw-metric" style="border-color:#fbbf24;background:#fffbeb">
           <div class="m-label" style="color:#92400e">${t('bwPeak')} (${t('bwRequired').toLowerCase()})</div>
-          <div class="m-val" style="color:#78350f">${fmtBW(perProxyPeak)}</div>
-          <div class="m-unit" style="color:#b45309">${t('bwPeakEvery')} ${bg}d · ${fmtBW(peakMbps)} total</div>
+          <div class="m-val" style="color:#78350f">${fmtBW(perProxyPeakMbps)}</div>
+          <div class="m-unit" style="color:#b45309">${t('bwPeakEvery')} ${blockGenDays}d · ${fmtBW(peakMbps)} total</div>
         </div>
         <div class="bw-metric" style="border-color:${linkColor}44;background:${linkBg}">
           <div class="m-label" style="color:${linkColor};display:flex;align-items:center">${t('bwEffective')}${erTag}</div>
-          <div class="m-val" style="color:${linkColor}">${fmtBW(effectivePerProxy)}</div>
-          <div class="m-unit" style="color:${linkColor}">${fmtBW(effectivePeak)} total · ${linkUtil}% ${t('netUtil').toLowerCase()}</div>
+          <div class="m-val" style="color:${linkColor}">${fmtBW(perProxyEffMbps)}</div>
+          <div class="m-unit" style="color:${linkColor}">${fmtBW(effectiveMbps)} total · ${linkUtilPct}% ${t('netUtil').toLowerCase()}</div>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
@@ -853,7 +901,7 @@ function renderBW(src, cr, comp, bg, win, proxies) {
           <div class="m-unit" style="color:#8b5cf6">${ramTotal} GB total</div>
         </div>
       </div>
-      <div style="font-size:10px;color:#3b82f6;margin-top:8px">${T[lang].bwNote(win, proxies)} ${t('cpuNote')}</div>
+      <div style="font-size:10px;color:#3b82f6;margin-top:8px">${T[lang].bwNote(windowHours, proxies)} ${t('cpuNote')}</div>
     </div>`;
 }
 
@@ -919,91 +967,169 @@ function netMessage(eff, rtt, nominal, effective, streams, windowKB, erOn, baseR
   if (eff >= 50) return T[lang].netMsgWarn(rtt, Math.round(eff), streams, windowKB);
   return T[lang].netMsgBad(rtt, Math.round(eff), nominal, effective, streams);
 }
-function calcSobr() {
-  const src   = getVal('srcTB');
-  const cr    = getVal('changeRate')/100;
-  const comp  = getVal('compress')/100;
-  const bg    = Math.max(1, getInt('blockGen'));
-  const rd    = Math.max(1, getInt('retDays'));
-  const rw    = getInt('retWeeks');
-  const rm    = getInt('retMonths');
-  const ry    = getInt('retYears');
-  // VDC Vault always has immutability — no toggle
-  const immOn     = true;
-  const immPerfOn = document.getElementById('immPerfEnabled').checked;
-  const ip        = immPerfOn ? getInt('immPerf') : 0;
-  const ic        = getInt('immCap');
-  const offload   = getInt('offloadDays');
-  const copyOn= document.getElementById('copyPolicy').checked;
-  const moveOn= document.getElementById('movePolicy').checked;
-  const capOn = copyOn || moveOn;
-  const win   = Math.max(1, getInt('bwWindow'));
-  const prx   = Math.max(1, getInt('bwProxies'));
 
-  renderWarnings(validateImm(rd, rw, rm, ry, ip, ic, immOn, bg));
-  renderLockSummary(ic, offload, bg);
-  if (capOn) { renderBW(src, cr, comp, bg, win, prx); renderNetwork(); }
-  else { document.getElementById('bw-result').innerHTML=''; document.getElementById('net-result').innerHTML=''; }
+// ─── Render: network panel ───────────────────────────────────────────────────
+function renderNetwork(inp, bw, rtt, baseRtt, streams) {
+  const { effectiveMbps, peakMbps, tcpLimitMbps } = bw;
+  const efficiency = Math.min(100, Math.round((effectiveMbps / peakMbps) * 100));
+  const utilizationColor = efficiency >= 80 ? 'var(--green-dark)' : efficiency >= 50 ? '#b45309' : 'var(--red)';
+  const utilizationBg    = efficiency >= 80 ? '#e6f9ec' : efficiency >= 50 ? '#fffbeb' : '#fdecea';
+  const utilizationIcon  = efficiency >= 80 ? 'fa-circle-check' : efficiency >= 50 ? 'fa-triangle-exclamation' : 'fa-circle-xmark';
+  const erBadge = inp.expressRoute
+    ? `<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;margin-left:6px"><i class="fa-solid fa-bolt" style="margin-right:3px;font-size:9px"></i>ExpressRoute</span>`
+    : '';
 
-  const full = src*(1-comp);
-  const inc  = src*cr*(1-comp);
+  document.getElementById('net-result').innerHTML = `
+    <div style="background:${utilizationBg};border:1px solid ${utilizationColor}33;border-radius:var(--radius);padding:.75rem 1rem;margin-top:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netRtt')}${erBadge}</div>
+          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:var(--gray-900)">~${rtt} ms</div>
+          <div style="font-size:10px;color:var(--gray-500)">${inp.expressRoute ? t('erPublic')+': ~'+baseRtt+'ms' : streams+' TCP '+t('netStreams')}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netEffective')}</div>
+          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:${utilizationColor}">${fmtBW(effectiveMbps)}</div>
+          <div style="font-size:10px;color:var(--gray-500)">${t('netNominal')}: ${fmtBW(peakMbps)}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netUtil')}</div>
+          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:${utilizationColor}">${efficiency}%</div>
+          <div style="font-size:10px;color:var(--gray-500)">TCP limit: ${fmtBW(tcpLimitMbps)}</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:${utilizationColor};display:flex;align-items:flex-start;gap:5px;line-height:1.5">
+        <i class="fa-solid ${utilizationIcon}" style="margin-top:2px;flex-shrink:0"></i>
+        <span>${netMessage(efficiency, rtt, peakMbps, effectiveMbps, streams, TCP_WINDOW_KB, inp.expressRoute, baseRtt)}</span>
+      </div>
+    </div>`;
+}
 
-  const perfData    = full + inc*(rd-1) + full*rw + full*rm + full*ry;
-  const immOvhPerf  = immPerfOn ? full*(ip/bg) : 0;
-  const perfTotal   = perfData + immOvhPerf;
+// ─── Render: result banner ───────────────────────────────────────────────────
+function renderBanner(inp, perfResult, capResult, capEnabled) {
+  const isCapOnly = inp.mode === 'capOnly';
+  const perfBox = isCapOnly
+    ? `<div class="tier-box disabled" style="opacity:.5">
+        <div class="tier-label">Performance Tier</div>
+        <div class="tier-val" style="font-size:13px;margin-top:6px">${t('perfOnPrem')}</div>
+        <div class="tier-sub">${t('perfOnPremSub')}</div>
+       </div>`
+    : `<div class="tier-box perf">
+        <div class="tier-label">Performance Tier</div>
+        <div class="tier-val">${fmt(perfResult.totalTB)}</div>
+        <div class="tier-sub">${fmt(perfResult.dataTB)} ${t('data')}<br>${inp.immPerfEnabled ? fmt(perfResult.overheadTB)+' '+t('immOvh') : t('noImm')}</div>
+       </div>`;
+  const capLabel = isCapOnly ? 'Capacity Tier — VDC Vault' : 'Capacity Tier';
+  const capBox = capEnabled
+    ? `<div class="tier-box cap">
+        <div class="tier-label">${capLabel}</div>
+        <div class="tier-val">${fmt(capResult.totalTB)}</div>
+        <div class="tier-sub">${fmt(capResult.dataTB)} ${t('data')}<br>${fmt(capResult.overheadTB)} ${t('immOvh')}</div>
+       </div>`
+    : `<div class="tier-box disabled">
+        <div class="tier-label">Capacity Tier</div>
+        <div class="tier-val" style="font-size:16px;margin-top:8px">${t('disabled')}</div>
+        <div class="tier-sub">${t('enableCopy')}</div>
+       </div>`;
+  document.getElementById('result-banner').innerHTML = perfBox + capBox;
+}
 
-  // With move-only: only synthetic fulls land in Capacity Tier (incrementals are consolidated before move)
-  const numFulls = Math.ceil(rd / bg);
-  const capData  = capOn
-    ? (moveOn && !copyOn
-        ? full * numFulls + full*rw + full*rm + full*ry   // move: fulls only
-        : full + inc*(rd-1) + full*rw + full*rm + full*ry) // copy: everything
-    : 0;
-  const immOvhCap   = capOn && immOn ? full*(ic/bg) : 0;
-  const capTotal    = capOn ? capData + immOvhCap : 0;
-
-  document.getElementById('result-banner').innerHTML = `
-    <div class="tier-box perf">
-      <div class="tier-label">Performance Tier</div>
-      <div class="tier-val">${fmt(perfTotal)}</div>
-      <div class="tier-sub">${fmt(perfData)} ${t('data')}<br>${immPerfOn?fmt(immOvhPerf)+' '+t('immOvh'):t('noImm')}</div>
-    </div>
-    ${capOn
-      ?`<div class="tier-box cap">
-          <div class="tier-label">Capacity Tier</div>
-          <div class="tier-val">${fmt(capTotal)}</div>
-          <div class="tier-sub">${fmt(capData)} ${t('data')}<br>${immOn?fmt(immOvhCap)+' '+t('immOvh'):t('noImm')}</div>
-        </div>`
-      :`<div class="tier-box disabled">
-          <div class="tier-label">Capacity Tier</div>
-          <div class="tier-val" style="font-size:16px;margin-top:8px">${t('disabled')}</div>
-          <div class="tier-sub">${t('enableCopy')}</div>
-        </div>`
-    }`;
-
-  const mkBreakdown = (label, inc_, full_, rw_, rm_, ry_, ovh, total, rd_, showImm) => `
+// ─── Render: storage breakdown (unified for both modes) ──────────────────────
+function mkBreakdown({ label, fullTB, incTB, retDays, retWeeks, retMonths, retYears, overheadTB, totalTB, showImm, showInc }) {
+  return `
     <div>
       <div class="breakdown-col-title">${label}</div>
-      <div class="breakdown-row"><span class="lbl">${t('fullComp')}</span><span class="val">${fmt(full_)}</span></div>
-      <div class="breakdown-row"><span class="lbl">${t('incrementals')} (${rd_}d)</span><span class="val">${fmt(inc_*(rd_-1))}</span></div>
-      ${rw_>0?`<div class="breakdown-row"><span class="lbl">${t('weeklies')} (${rw_})</span><span class="val">${fmt(full_*rw_)}</span></div>`:''}
-      ${rm_>0?`<div class="breakdown-row"><span class="lbl">${t('monthlies')} (${rm_})</span><span class="val">${fmt(full_*rm_)}</span></div>`:''}
-      ${ry_>0?`<div class="breakdown-row"><span class="lbl">${t('yearlies')} (${ry_})</span><span class="val">${fmt(full_*ry_)}</span></div>`:''}
-      ${showImm?`<div class="breakdown-row"><span class="lbl">${t('ovhImm')}</span><span class="val overhead">${fmt(ovh)}</span></div>`:''}
-      <div class="breakdown-row"><span class="lbl"><strong>${t('totalEst')}</strong></span><span class="val total"><strong>${fmt(total)}</strong></span></div>
+      <div class="breakdown-row"><span class="lbl">${t('fullComp')}</span><span class="val">${fmt(fullTB)}</span></div>
+      ${showInc && retDays > 0 ? `<div class="breakdown-row"><span class="lbl">${t('incrementals')} (${retDays}d)</span><span class="val">${fmt(incTB*(retDays-1))}</span></div>` : ''}
+      ${retWeeks  > 0 ? `<div class="breakdown-row"><span class="lbl">${t('weeklies')}  (${retWeeks})</span><span class="val">${fmt(fullTB*retWeeks)}</span></div>`  : ''}
+      ${retMonths > 0 ? `<div class="breakdown-row"><span class="lbl">${t('monthlies')} (${retMonths})</span><span class="val">${fmt(fullTB*retMonths)}</span></div>` : ''}
+      ${retYears  > 0 ? `<div class="breakdown-row"><span class="lbl">${t('yearlies')}  (${retYears})</span><span class="val">${fmt(fullTB*retYears)}</span></div>`   : ''}
+      ${showImm ? `<div class="breakdown-row"><span class="lbl">${t('ovhImm')}</span><span class="val overhead">${fmt(overheadTB)}</span></div>` : ''}
+      <div class="breakdown-row"><span class="lbl"><strong>${t('totalEst')}</strong></span><span class="val total"><strong>${fmt(totalTB)}</strong></span></div>
     </div>`;
+}
 
-  document.getElementById('breakdown-content').innerHTML =
-    mkBreakdown('Performance Tier', inc, full, rw, rm, ry, immOvhPerf, perfTotal, rd, immPerfOn) +
-    (capOn
-      ? mkBreakdown('Capacity Tier', inc, full, rw, rm, ry, immOvhCap, capTotal, rd, immOn)
-      : `<div><div class="breakdown-col-title">Capacity Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`
-    );
+function renderBreakdown(inp, perfResult, capResult, capEnabled) {
+  const isCapOnly = inp.mode === 'capOnly';
+  const { retDays, retWeeks, retMonths, retYears } = inp;
+  const capLabel = isCapOnly ? 'Capacity Tier — VDC Vault' : 'Capacity Tier';
 
-  const isMoveOnly = moveOn && !copyOn;
-  renderSim('sim-perf', src, cr, comp, bg, rd, rw, rm, ry, ip, immPerfOn, false, isMoveOnly);
-  if (capOn) renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn, isMoveOnly, false);
-  else document.getElementById('sim-cap').innerHTML=`<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
+  const perfCol = isCapOnly
+    ? `<div><div class="breakdown-col-title">Performance Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('perfOnPrem')}</p></div>`
+    : mkBreakdown({ label:'Performance Tier', fullTB:perfResult.fullTB, incTB:perfResult.incTB,
+        retDays, retWeeks, retMonths, retYears,
+        overheadTB:perfResult.overheadTB, totalTB:perfResult.totalTB,
+        showImm:inp.immPerfEnabled, showInc:true });
+
+  const capCol = capEnabled
+    ? mkBreakdown({ label:capLabel, fullTB:capResult.fullTB, incTB:capResult.incTB,
+        retDays, retWeeks, retMonths, retYears,
+        overheadTB:capResult.overheadTB, totalTB:capResult.totalTB,
+        showImm:true, showInc:!isCapOnly || retDays > 0 })
+    : `<div><div class="breakdown-col-title">${capLabel}</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`;
+
+  document.getElementById('breakdown-content').innerHTML = perfCol + capCol;
+}
+
+function renderSimulations(inp, capResult, capEnabled, moveOnly) {
+  const isCapOnly = inp.mode === 'capOnly';
+  const { sourceTB, changeRate, compression, blockGenDays,
+          retDays, retWeeks, retMonths, retYears, immPerfDays, immPerfEnabled, immCapDays } = inp;
+
+  if (isCapOnly) {
+    document.getElementById('sim-perf').innerHTML = `<p style="font-size:12px;color:var(--gray-500);padding:8px 0">${t('perfOnPrem')}</p>`;
+  } else {
+    renderSim('sim-perf', sourceTB, changeRate, compression, blockGenDays,
+      retDays, retWeeks, retMonths, retYears, immPerfDays, immPerfEnabled, false, moveOnly);
+  }
+
+  if (capEnabled) {
+    renderSim('sim-cap', sourceTB, changeRate, compression, blockGenDays,
+      retDays, retWeeks, retMonths, retYears, immCapDays, true, moveOnly, false);
+  } else {
+    document.getElementById('sim-cap').innerHTML = `<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
+  }
+}
+
+// ─── Unified calculation entry point ────────────────────────────────────────
+function calc() {
+  const inp        = readInputs();
+  const capEnabled = inp.copyEnabled || inp.moveEnabled;
+  const moveOnly   = inp.moveEnabled && !inp.copyEnabled;
+  const baseRtt    = LATENCY[inp.origin]?.[inp.vault] ?? 100;
+  const rtt        = inp.expressRoute ? Math.min(baseRtt, MIN_RTT_ER_MS) : baseRtt;
+  const streams    = inp.proxies * STREAMS_PER_PROXY;
+
+  renderWarnings(validateImm(inp.retDays, inp.retWeeks, inp.retMonths, inp.retYears,
+    inp.immPerfDays, inp.immCapDays, true, inp.blockGenDays));
+  renderLockSummary(inp.immCapDays, inp.offloadDays, inp.blockGenDays);
+
+  if (capEnabled) {
+    const bw = calcBandwidthMetrics(inp, rtt, streams);
+    renderBW(inp, bw, rtt);
+    renderNetwork(inp, bw, rtt, baseRtt, streams);
+  } else {
+    document.getElementById('bw-result').innerHTML = '';
+    document.getElementById('net-result').innerHTML = '';
+  }
+
+  const perfResult = inp.mode === 'sobr' ? calcStorageTier({
+    sourceTB:inp.sourceTB, changeRate:inp.changeRate, compression:inp.compression,
+    blockGenDays:inp.blockGenDays, retDays:inp.retDays,
+    retWeeks:inp.retWeeks, retMonths:inp.retMonths, retYears:inp.retYears,
+    immDays:inp.immPerfDays, immEnabled:inp.immPerfEnabled, moveOnly:false,
+  }) : null;
+
+  const capResult = capEnabled ? calcStorageTier({
+    sourceTB:inp.sourceTB, changeRate:inp.changeRate, compression:inp.compression,
+    blockGenDays:inp.blockGenDays, retDays:inp.retDays,
+    retWeeks:inp.retWeeks, retMonths:inp.retMonths, retYears:inp.retYears,
+    immDays:inp.immCapDays, immEnabled:true, moveOnly,
+  }) : null;
+
+  renderBanner(inp, perfResult, capResult, capEnabled);
+  renderBreakdown(inp, perfResult, capResult, capEnabled);
+  renderSimulations(inp, capResult, capEnabled, moveOnly);
 }
 
 function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveOnly, isPerfWithMove) {
@@ -1111,144 +1237,14 @@ function updateCapOnlyFields() {
   document.getElementById('lbl-move-note').textContent = t('moveOnlyNote');
 }
 
-function calc() {
-  const isCapOnly = document.getElementById('modeCap').checked;
-  if (isCapOnly) calcCapOnly(); else calcSobr();
-}
-
-function calcCapOnly() {
-  const src   = getVal('existingSize');
-  const cr    = getVal('existingCR')/100;
-  const comp  = getVal('existingComp')/100;
-  const bg    = Math.max(1, getInt('existingBG'));
-  const rd    = Math.max(0, getInt('existingDays'));
-  const rw    = getInt('existingWeeks');
-  const rm    = getInt('existingMonths');
-  const ry    = getInt('existingYears');
-  const immOn  = true; // VDC Vault always has immutability
-  const ic     = getInt('immCap');
-  const offload = getInt('offloadDays');
-  const copyOn= document.getElementById('copyPolicy').checked;
-  const moveOn= document.getElementById('movePolicy').checked;
-  const capOn = copyOn || moveOn;
-  const win   = Math.max(1, getInt('bwWindow'));
-  const prx   = Math.max(1, getInt('bwProxies'));
-
-  renderWarnings(validateImm(rd, rw, rm, ry, 0, ic, immOn, bg));
-  renderLockSummary(ic, offload, bg);
-  if (capOn) { renderBW(src, cr, comp, bg, win, prx); renderNetwork(); }
-  else { document.getElementById('bw-result').innerHTML=''; document.getElementById('net-result').innerHTML=''; }
-
-  const full = src*(1-comp);
-  const inc  = src*cr*(1-comp);
-  const isMoveOnly = moveOn && !copyOn;
-  const numFulls   = Math.ceil(Math.max(1,rd)/bg);
-  const capData    = capOn
-    ? (isMoveOnly
-        ? full*numFulls + full*rw + full*rm + full*ry
-        : full + inc*(Math.max(1,rd)-1) + full*rw + full*rm + full*ry)
-    : 0;
-  const immOvhCap = capOn && immOn ? full*(ic/bg) : 0;
-  const capTotal  = capOn ? capData + immOvhCap : 0;
-
-  document.getElementById('result-banner').innerHTML = `
-    <div class="tier-box disabled" style="opacity:.5">
-      <div class="tier-label">Performance Tier</div>
-      <div class="tier-val" style="font-size:13px;margin-top:6px">${t('perfOnPrem')}</div>
-      <div class="tier-sub">${t('perfOnPremSub')}</div>
-    </div>
-    ${capOn
-      ?`<div class="tier-box cap">
-          <div class="tier-label">Capacity Tier — VDC Vault</div>
-          <div class="tier-val">${fmt(capTotal)}</div>
-          <div class="tier-sub">${fmt(capData)} ${t('data')}<br>${immOn?fmt(immOvhCap)+' '+t('immOvh'):t('noImm')}</div>
-        </div>`
-      :`<div class="tier-box disabled">
-          <div class="tier-label">Capacity Tier</div>
-          <div class="tier-val" style="font-size:16px;margin-top:8px">${t('disabled')}</div>
-          <div class="tier-sub">${t('enableCopy')}</div>
-        </div>`}`;
-
-  const mkB = (label, ovh, total, showImm) => `
-    <div>
-      <div class="breakdown-col-title">${label}</div>
-      <div class="breakdown-row"><span class="lbl">${t('fullComp')}</span><span class="val">${fmt(full)}</span></div>
-      ${rd>0?`<div class="breakdown-row"><span class="lbl">${t('incrementals')} (${rd}d)</span><span class="val">${fmt(inc*(rd-1))}</span></div>`:''}
-      ${rw>0?`<div class="breakdown-row"><span class="lbl">${t('weeklies')} (${rw})</span><span class="val">${fmt(full*rw)}</span></div>`:''}
-      ${rm>0?`<div class="breakdown-row"><span class="lbl">${t('monthlies')} (${rm})</span><span class="val">${fmt(full*rm)}</span></div>`:''}
-      ${ry>0?`<div class="breakdown-row"><span class="lbl">${t('yearlies')} (${ry})</span><span class="val">${fmt(full*ry)}</span></div>`:''}
-      ${showImm?`<div class="breakdown-row"><span class="lbl">${t('ovhImm')}</span><span class="val overhead">${fmt(ovh)}</span></div>`:''}
-      <div class="breakdown-row"><span class="lbl"><strong>${t('totalEst')}</strong></span><span class="val total"><strong>${fmt(total)}</strong></span></div>
-    </div>`;
-
-  document.getElementById('breakdown-content').innerHTML =
-    `<div><div class="breakdown-col-title">Performance Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('perfOnPrem')}</p></div>` +
-    (capOn ? mkB('Capacity Tier — VDC Vault', immOvhCap, capTotal, immOn)
-           : `<div><div class="breakdown-col-title">Capacity Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`);
-
-  document.getElementById('sim-perf').innerHTML = `<p style="font-size:12px;color:var(--gray-500);padding:8px 0">${t('perfOnPrem')}</p>`;
-  if (capOn) renderSim('sim-cap', src, cr, comp, bg, rd, rw, rm, ry, ic, immOn, isMoveOnly, false);
-  else document.getElementById('sim-cap').innerHTML = `<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
-}
-
-function peakMbpsForNet() {
-  // Always reads fresh from DOM to avoid stale values
-  const isCapOnly = document.getElementById('modeCap').checked;
-  const src  = isCapOnly ? getVal('existingSize') : getVal('srcTB');
-  const cr   = isCapOnly ? getVal('existingCR')/100 : getVal('changeRate')/100;
-  const comp = isCapOnly ? getVal('existingComp')/100 : getVal('compress')/100;
-  const win  = Math.max(1, getInt('bwWindow'));
-  const full = src*(1-comp);
-  const inc  = src*cr*(1-comp);
-  const tbToMbps = (tb) => (tb * 1024 * 1024 * 8) / (win * 3600);
-  return tbToMbps(inc + full);
-}
-
-function renderNetwork() {
-  const nominalMbps = peakMbpsForNet();
-  const origin  = document.getElementById('netOrigin').value;
-  const vault   = document.getElementById('netVault').value;
-  const erOn    = document.getElementById('expressRoute').checked;
-  const baseRtt = LATENCY[origin]?.[vault] ?? 100;
-  const rtt     = erOn ? Math.min(baseRtt, 5) : baseRtt;
-  const prx     = Math.max(1, getInt('bwProxies'));
-
-  const streams      = prx * 4;
-  const windowKB     = 256;
-  const tcpLimitMbps = (streams * windowKB * 1024 * 8) / (rtt / 1000) / 1e6;
-  const effectiveMbps = Math.min(nominalMbps, tcpLimitMbps);
-  const efficiency    = Math.min(100, Math.round((effectiveMbps / nominalMbps) * 100));
-
-  const utilizationColor = efficiency >= 80 ? 'var(--green-dark)' : efficiency >= 50 ? '#b45309' : 'var(--red)';
-  const utilizationBg    = efficiency >= 80 ? '#e6f9ec' : efficiency >= 50 ? '#fffbeb' : '#fdecea';
-  const utilizationIcon  = efficiency >= 80 ? 'fa-circle-check' : efficiency >= 50 ? 'fa-triangle-exclamation' : 'fa-circle-xmark';
-  const erBadge = erOn ? `<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;margin-left:6px"><i class="fa-solid fa-bolt" style="margin-right:3px;font-size:9px"></i>ExpressRoute</span>` : '';
-
-  document.getElementById('net-result').innerHTML = `
-    <div style="background:${utilizationBg};border:1px solid ${utilizationColor}33;border-radius:var(--radius);padding:.75rem 1rem;margin-top:8px">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
-        <div>
-          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netRtt')}${erBadge}</div>
-          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:var(--gray-900)">~${rtt} ms</div>
-          <div style="font-size:10px;color:var(--gray-500)">${erOn ? t('erPublic')+': ~'+baseRtt+'ms' : streams+' TCP '+t('netStreams')}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netEffective')}</div>
-          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:${utilizationColor}">${fmtBW(effectiveMbps)}</div>
-          <div style="font-size:10px;color:var(--gray-500)">${t('netNominal')}: ${fmtBW(nominalMbps)}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netUtil')}</div>
-          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:${utilizationColor}">${efficiency}%</div>
-          <div style="font-size:10px;color:var(--gray-500)">TCP limit: ${fmtBW(tcpLimitMbps)}</div>
-        </div>
-      </div>
-      <div style="font-size:11px;color:${utilizationColor};display:flex;align-items:flex-start;gap:5px;line-height:1.5">
-        <i class="fa-solid ${utilizationIcon}" style="margin-top:2px;flex-shrink:0"></i>
-        <span>${netMessage(efficiency, rtt, nominalMbps, effectiveMbps, streams, windowKB, erOn, baseRtt)}</span>
-      </div>
-    </div>`;
-}
+// ─── Event listeners ─────────────────────────────────────────────────────────
+document.getElementById('immPerfEnabled').addEventListener('change', function() {
+  const days = document.getElementById('imm-perf-days');
+  days.style.opacity = this.checked ? '1' : '0.4';
+  days.style.pointerEvents = this.checked ? '' : 'none';
+  calc();
+});
+document.querySelectorAll('input[name="simMode"]').forEach(el => el.addEventListener('change', updateMode));
 document.getElementById('netVault').addEventListener('change', calc);
 document.getElementById('expressRoute').addEventListener('change', calc);
 document.querySelectorAll('input[type=number],input[type=checkbox]').forEach(el=>el.addEventListener('input', () => { updateCapOnlyFields(); calc(); }));
