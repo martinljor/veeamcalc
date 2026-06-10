@@ -33,9 +33,8 @@
     .lang-btn.active{opacity:1;transform:scale(1.15)}
     .header-badge{font-size:11px;background:var(--green-light);color:var(--green-dark);padding:3px 10px;border-radius:20px;font-weight:500}
 
-    .page{max-width:1600px;margin:0 auto;padding:2rem 1.5rem;display:grid;grid-template-columns:400px 1fr;gap:1.5rem;align-items:start}
-    @media(min-width:1400px){.page{grid-template-columns:440px 1fr;gap:2rem}}
-    @media(max-width:820px){.page{grid-template-columns:1fr;padding:1rem}}
+    .page{max-width:960px;margin:0 auto;padding:2rem 1.5rem;display:flex;flex-direction:column;gap:1.5rem}
+    @media(max-width:820px){.page{padding:1rem}}
 
     .card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
     .card-header{padding:.875rem 1.25rem;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:8px}
@@ -152,8 +151,8 @@
 </header>
 
 <div class="page">
-  <!-- LEFT: Inputs -->
-  <div>
+  <!-- TOP: Inputs -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
     <div class="card">
       <div class="card-body">
 
@@ -264,6 +263,12 @@
           <i class="fa-solid fa-circle-info" style="margin-right:5px"></i><span id="lbl-move-note"></span>
         </div>
 
+      </div>
+    </div><!-- /card 1: simulation + source + GFS + immutability -->
+
+    <div class="card">
+      <div class="card-body">
+
         <div class="section-label" id="lbl-cap-sec">Capacity Tier</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;align-items:center;gap:8px">
@@ -365,9 +370,9 @@
 
       </div>
     </div>
-  </div>
+  </div><!-- /inputs 2-col grid -->
 
-  <!-- RIGHT: Results -->
+  <!-- BOTTOM: Results (full width) -->
   <div>
     <div id="result-banner" class="result-banner"></div>
     <div id="bw-result"></div>
@@ -1058,16 +1063,19 @@ function updateMode() {
 
   // 2. Immutability — perf field only in Full SOBR mode; VDC Vault always on
   const immPerfFld = document.getElementById('imm-perf-field');
-  immPerfFld.style.setProperty('display', isCapOnly ? 'none' : '', 'important');
-  // VDC Vault fields always visible (no toggle)
+  immPerfFld.style.cssText = isCapOnly
+    ? 'display:none !important'
+    : (immPerfFld.style.cssText.replace('display:none !important',''));
+  // VDC Vault fields always visible
   document.getElementById('imm-fields').style.opacity = '1';
   document.getElementById('imm-fields').style.pointerEvents = '';
 
-  // 3. Radio highlight
-  document.getElementById('mode-sobr-box').style.borderColor = isCapOnly ? 'var(--gray-300)'   : 'var(--green)';
-  document.getElementById('mode-sobr-box').style.background  = isCapOnly ? 'var(--white)'       : 'var(--green-light)';
-  document.getElementById('mode-cap-box').style.borderColor  = isCapOnly ? 'var(--green)'       : 'var(--gray-300)';
-  document.getElementById('mode-cap-box').style.background   = isCapOnly ? 'var(--green-light)' : 'var(--white)';
+  // 3. Radio highlight — always based on actual checked state
+  const sobrChecked = !isCapOnly;
+  document.getElementById('mode-sobr-box').style.borderColor = sobrChecked ? 'var(--green)'       : 'var(--gray-300)';
+  document.getElementById('mode-sobr-box').style.background  = sobrChecked ? 'var(--green-light)' : 'var(--white)';
+  document.getElementById('mode-cap-box').style.borderColor  = isCapOnly   ? 'var(--green)'       : 'var(--gray-300)';
+  document.getElementById('mode-cap-box').style.background   = isCapOnly   ? 'var(--green-light)' : 'var(--white)';
 
   // 4. Only clear stale results when user actually switches mode
   if (modeChanged) {
