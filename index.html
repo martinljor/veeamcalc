@@ -211,7 +211,7 @@
                 <input type="checkbox" id="immPerfEnabled" style="width:13px;height:13px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
                 <label for="immPerfEnabled" id="lbl-imm-perf" style="font-size:11px;color:var(--gray-500);cursor:pointer;font-weight:500">Performance tier (days)</label>
               </div>
-              <input type="number" id="immPerf" value="7" min="1" max="365" style="opacity:.4;pointer-events:none">
+              <input type="number" id="immPerf" value="7" min="1" max="365">
             </div>
             <div class="field"><label id="lbl-imm-cap">Capacity tier — VDC Vault (days)</label>
               <input type="number" id="immCap" value="7" min="1" max="365"></div>
@@ -341,7 +341,7 @@
           <div class="field">
             <label id="lbl-proxies" style="display:flex;align-items:center;gap:4px">
               <span id="lbl-proxies-text">Proxies assigned to VDC Vault repo</span>
-              <a href="https://helpcenter.veeam.com/docs/backup/vsphere/sobr_capacity_tier.html" target="_blank" title="Veeam docs: assigning proxies to SOBR Capacity Tier" style="color:var(--green-dark);line-height:1">
+              <a href="https://helpcenter.veeam.com/docs/vbr/userguide/capacity_tier.html?ver=13" target="_blank" title="Veeam docs: assigning proxies to SOBR Capacity Tier" style="color:var(--green-dark);line-height:1">
                 <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
               </a>
             </label>
@@ -471,7 +471,7 @@ const T = {
     netSec:'Network & latency', netOrigin:'Client location (origin)', netVault:'VDC Vault region (destination)',
     netRtt:'Estimated RTT', netEffective:'Effective throughput', netUtil:'Link utilization', netNominal:'Nominal', netStreams:'streams',
     netMsgGood:(rtt,eff)=>`Good path. ~${rtt}ms RTT allows approximately ${eff}% of nominal bandwidth to be used effectively. No action required.`,
-    netMsgWarn:(rtt,eff,streams,win)=>`RTT of ~${rtt}ms is limiting throughput to ~${eff}% of the link. Consider increasing TCP window size or adding more parallel streams in VBR (currently estimated at ${streams} streams × ${win}KB — <a href="https://helpcenter.veeam.com/docs/backup/vsphere/parallel_processing.html" target="_blank" style="color:inherit;text-decoration:underline">see VBR parallel processing docs</a>). ExpressRoute or a VPN with QoS may help.`,
+    netMsgWarn:(rtt,eff,streams,win)=>`RTT of ~${rtt}ms is limiting throughput to ~${eff}% of the link. Consider increasing TCP window size or adding more parallel streams in VBR (currently estimated at ${streams} streams × ${win}KB — <a href="https://helpcenter.veeam.com/docs/vbr/userguide/capacity_tier.html?ver=13" target="_blank" style="color:inherit;text-decoration:underline">see VBR parallel processing docs</a>). ExpressRoute or a VPN with QoS may help.`,
     netMsgBad:(rtt,eff,nom,eff2,streams)=>`High latency (~${rtt}ms) severely limits throughput to ~${eff}% of the link (${Math.round(eff2)} Mbps of ${Math.round(nom)} Mbps nominal). The backup window may not be achievable. Strongly consider: (1) choosing a closer VDC Vault region, (2) Azure ExpressRoute, (3) increasing VBR parallel streams beyond ${streams}.`,
     netMsgER:(rtt,baseRtt,eff)=>`ExpressRoute active. RTT reduced from ~${baseRtt}ms to ~${rtt}ms — ${eff}% of nominal bandwidth available. Private peering eliminates internet jitter and maximizes throughput consistency.`,
     erPublic:'Public internet RTT', lbl_expressroute:'Azure ExpressRoute available',
@@ -534,7 +534,7 @@ const T = {
     netSec:'Red y latencia', netOrigin:'Ubicación del cliente (origen)', netVault:'Región VDC Vault (destino)',
     netRtt:'RTT estimado', netEffective:'Throughput efectivo', netUtil:'Utilización del enlace', netNominal:'Nominal', netStreams:'streams',
     netMsgGood:(rtt,eff)=>`Buen camino. ~${rtt}ms de RTT permite utilizar aproximadamente el ${eff}% del ancho de banda nominal. No se requiere acción.`,
-    netMsgWarn:(rtt,eff,streams,win)=>`El RTT de ~${rtt}ms está limitando el throughput al ~${eff}% del enlace. Considerá aumentar el tamaño de ventana TCP o agregar más streams paralelos en VBR (estimado en ${streams} streams × ${win}KB — <a href="https://helpcenter.veeam.com/docs/backup/vsphere/parallel_processing.html" target="_blank" style="color:inherit;text-decoration:underline">ver docs VBR procesamiento paralelo</a>). ExpressRoute o VPN con QoS pueden ayudar.`,
+    netMsgWarn:(rtt,eff,streams,win)=>`El RTT de ~${rtt}ms está limitando el throughput al ~${eff}% del enlace. Considerá aumentar el tamaño de ventana TCP o agregar más streams paralelos en VBR (estimado en ${streams} streams × ${win}KB — <a href="https://helpcenter.veeam.com/docs/vbr/userguide/capacity_tier.html?ver=13" target="_blank" style="color:inherit;text-decoration:underline">ver docs VBR procesamiento paralelo</a>). ExpressRoute o VPN con QoS pueden ayudar.`,
     netMsgBad:(rtt,eff,nom,eff2,streams)=>`Alta latencia (~${rtt}ms) limita severamente el throughput al ~${eff}% del enlace (${Math.round(eff2)} Mbps de ${Math.round(nom)} Mbps nominales). La ventana de backup puede no ser alcanzable. Se recomienda: (1) elegir una región VDC Vault más cercana, (2) Azure ExpressRoute, (3) aumentar los streams paralelos de VBR más allá de ${streams}.`,
     netMsgER:(rtt,baseRtt,eff)=>`ExpressRoute activo. RTT reducido de ~${baseRtt}ms a ~${rtt}ms — ${eff}% del ancho de banda nominal disponible. El peering privado elimina el jitter de internet y maximiza la consistencia del throughput.`,
     erPublic:'RTT internet público', lbl_expressroute:'Azure ExpressRoute disponible',
@@ -597,7 +597,7 @@ const T = {
     netSec:'Rede e latência', netOrigin:'Localização do cliente (origem)', netVault:'Região VDC Vault (destino)',
     netRtt:'RTT estimado', netEffective:'Throughput efetivo', netUtil:'Utilização do link', netNominal:'Nominal', netStreams:'streams',
     netMsgGood:(rtt,eff)=>`Boa conectividade. ~${rtt}ms de RTT permite utilizar aproximadamente ${eff}% da largura de banda nominal. Nenhuma ação necessária.`,
-    netMsgWarn:(rtt,eff,streams,win)=>`O RTT de ~${rtt}ms está limitando o throughput a ~${eff}% do link. Considere aumentar o tamanho da janela TCP ou adicionar mais streams paralelos no VBR (estimado em ${streams} streams × ${win}KB — <a href="https://helpcenter.veeam.com/docs/backup/vsphere/parallel_processing.html" target="_blank" style="color:inherit;text-decoration:underline">ver docs VBR processamento paralelo</a>). ExpressRoute ou VPN com QoS podem ajudar.`,
+    netMsgWarn:(rtt,eff,streams,win)=>`O RTT de ~${rtt}ms está limitando o throughput a ~${eff}% do link. Considere aumentar o tamanho da janela TCP ou adicionar mais streams paralelos no VBR (estimado em ${streams} streams × ${win}KB — <a href="https://helpcenter.veeam.com/docs/vbr/userguide/capacity_tier.html?ver=13" target="_blank" style="color:inherit;text-decoration:underline">ver docs VBR processamento paralelo</a>). ExpressRoute ou VPN com QoS podem ajudar.`,
     netMsgBad:(rtt,eff,nom,eff2,streams)=>`Alta latência (~${rtt}ms) limita severamente o throughput a ~${eff}% do link (${Math.round(eff2)} Mbps de ${Math.round(nom)} Mbps nominais). A janela de backup pode não ser atingível. Recomenda-se: (1) escolher uma região VDC Vault mais próxima, (2) Azure ExpressRoute, (3) aumentar os streams paralelos do VBR além de ${streams}.`,
     netMsgER:(rtt,baseRtt,eff)=>`ExpressRoute ativo. RTT reduzido de ~${baseRtt}ms para ~${rtt}ms — ${eff}% da largura de banda nominal disponível. O peering privado elimina o jitter da internet e maximiza a consistência do throughput.`,
     erPublic:'RTT internet público', lbl_expressroute:'Azure ExpressRoute disponível',
@@ -684,8 +684,16 @@ document.getElementById('immPerfEnabled').addEventListener('change', function() 
   const perfInput = document.getElementById('immPerf');
   perfInput.style.opacity = this.checked ? '1' : '0.4';
   perfInput.style.pointerEvents = this.checked ? '' : 'none';
+  if (this.checked) perfInput.focus();
   calc();
 });
+// Sync immPerf input to its checkbox state on load
+(function() {
+  const cb = document.getElementById('immPerfEnabled');
+  const inp = document.getElementById('immPerf');
+  inp.style.opacity = cb.checked ? '1' : '0.4';
+  inp.style.pointerEvents = cb.checked ? '' : 'none';
+})();
 
 // ─── Full validation ────────────────────────────────────────────────────────
 function validateImm(rd, rw, rm, ry, ip, ic, immOn, bg) {
@@ -974,43 +982,48 @@ function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveO
 }
 
 // ─── Mode toggle ────────────────────────────────────────────────────────────
+let _lastMode = null;
 function updateMode() {
   const isCapOnly = document.getElementById('modeCap').checked;
+  const modeChanged = _lastMode !== null && _lastMode !== isCapOnly;
+  _lastMode = isCapOnly;
 
   // 1. Show/hide input sections
   document.getElementById('perf-tier-fields').style.display = isCapOnly ? 'none' : '';
   document.getElementById('cap-only-fields').style.display  = isCapOnly ? '' : 'none';
 
-  // 2. Immutability: cap-only → hide toggle + perf field, force on
-  //    SOBR → restore toggle, restore perf field visibility
-  document.getElementById('imm-toggle-row').style.display = isCapOnly ? 'none' : '';
-  document.getElementById('imm-perf-field').style.display  = isCapOnly ? 'none' : '';
+  // 2. Immutability — hide perf tier field and main toggle in cap-only
+  const immToggle  = document.getElementById('imm-toggle-row');
+  const immPerfFld = document.getElementById('imm-perf-field');
+  immToggle.style.setProperty('display',  isCapOnly ? 'none' : 'flex', 'important');
+  immPerfFld.style.setProperty('display', isCapOnly ? 'none' : '',     'important');
   if (isCapOnly) {
     document.getElementById('immEnabled').checked = true;
     document.getElementById('imm-fields').style.opacity = '1';
     document.getElementById('imm-fields').style.pointerEvents = '';
   } else {
-    // Restore imm-fields opacity based on checkbox state
     const immOn = document.getElementById('immEnabled').checked;
     document.getElementById('imm-fields').style.opacity = immOn ? '1' : '0.35';
     document.getElementById('imm-fields').style.pointerEvents = immOn ? '' : 'none';
-    // Restore perf immutability input opacity based on its checkbox
     const perfImmOn = document.getElementById('immPerfEnabled').checked;
-    document.getElementById('immPerf').style.opacity = perfImmOn ? '1' : '0.4';
-    document.getElementById('immPerf').style.pointerEvents = perfImmOn ? '' : 'none';
+    const perfInput = document.getElementById('immPerf');
+    perfInput.style.opacity = perfImmOn ? '1' : '0.4';
+    perfInput.style.pointerEvents = perfImmOn ? '' : 'none';
   }
 
-  // 3. Radio button highlight — always reflect actual checked state
-  document.getElementById('mode-sobr-box').style.borderColor = isCapOnly ? 'var(--gray-300)' : 'var(--green)';
-  document.getElementById('mode-sobr-box').style.background  = isCapOnly ? 'var(--white)'     : 'var(--green-light)';
-  document.getElementById('mode-cap-box').style.borderColor  = isCapOnly ? 'var(--green)'     : 'var(--gray-300)';
-  document.getElementById('mode-cap-box').style.background   = isCapOnly ? 'var(--green-light)': 'var(--white)';
+  // 3. Radio highlight
+  document.getElementById('mode-sobr-box').style.borderColor = isCapOnly ? 'var(--gray-300)'   : 'var(--green)';
+  document.getElementById('mode-sobr-box').style.background  = isCapOnly ? 'var(--white)'       : 'var(--green-light)';
+  document.getElementById('mode-cap-box').style.borderColor  = isCapOnly ? 'var(--green)'       : 'var(--gray-300)';
+  document.getElementById('mode-cap-box').style.background   = isCapOnly ? 'var(--green-light)' : 'var(--white)';
 
-  // 4. Clear stale results when switching modes
-  document.getElementById('result-banner').innerHTML = '';
-  document.getElementById('breakdown-content').innerHTML = '';
-  document.getElementById('bw-result').innerHTML = '';
-  document.getElementById('net-result').innerHTML = '';
+  // 4. Only clear stale results when user actually switches mode
+  if (modeChanged) {
+    document.getElementById('result-banner').innerHTML = '';
+    document.getElementById('breakdown-content').innerHTML = '';
+    document.getElementById('bw-result').innerHTML = '';
+    document.getElementById('net-result').innerHTML = '';
+  }
 
   updateCapOnlyFields();
   calc();
@@ -1131,13 +1144,55 @@ function peakMbpsForNet() {
 
 function renderNetwork() {
   const nominalMbps = peakMbpsForNet();
+  const origin  = document.getElementById('netOrigin').value;
+  const vault   = document.getElementById('netVault').value;
+  const erOn    = document.getElementById('expressRoute').checked;
+  const baseRtt = LATENCY[origin]?.[vault] ?? 100;
+  const rtt     = erOn ? Math.min(baseRtt, 5) : baseRtt;
+  const prx     = Math.max(1, getInt('bwProxies'));
 
-document.getElementById('netOrigin').addEventListener('change', calc);
+  const streams      = prx * 4;
+  const windowKB     = 256;
+  const tcpLimitMbps = (streams * windowKB * 1024 * 8) / (rtt / 1000) / 1e6;
+  const effectiveMbps = Math.min(nominalMbps, tcpLimitMbps);
+  const efficiency    = Math.min(100, Math.round((effectiveMbps / nominalMbps) * 100));
+
+  const utilizationColor = efficiency >= 80 ? 'var(--green-dark)' : efficiency >= 50 ? '#b45309' : 'var(--red)';
+  const utilizationBg    = efficiency >= 80 ? '#e6f9ec' : efficiency >= 50 ? '#fffbeb' : '#fdecea';
+  const utilizationIcon  = efficiency >= 80 ? 'fa-circle-check' : efficiency >= 50 ? 'fa-triangle-exclamation' : 'fa-circle-xmark';
+  const erBadge = erOn ? `<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;margin-left:6px"><i class="fa-solid fa-bolt" style="margin-right:3px;font-size:9px"></i>ExpressRoute</span>` : '';
+
+  document.getElementById('net-result').innerHTML = `
+    <div style="background:${utilizationBg};border:1px solid ${utilizationColor}33;border-radius:var(--radius);padding:.75rem 1rem;margin-top:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netRtt')}${erBadge}</div>
+          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:var(--gray-900)">~${rtt} ms</div>
+          <div style="font-size:10px;color:var(--gray-500)">${erOn ? t('erPublic')+': ~'+baseRtt+'ms' : streams+' TCP '+t('netStreams')}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netEffective')}</div>
+          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:${utilizationColor}">${fmtBW(effectiveMbps)}</div>
+          <div style="font-size:10px;color:var(--gray-500)">${t('netNominal')}: ${fmtBW(nominalMbps)}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netUtil')}</div>
+          <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:${utilizationColor}">${efficiency}%</div>
+          <div style="font-size:10px;color:var(--gray-500)">TCP limit: ${fmtBW(tcpLimitMbps)}</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:${utilizationColor};display:flex;align-items:flex-start;gap:5px;line-height:1.5">
+        <i class="fa-solid ${utilizationIcon}" style="margin-top:2px;flex-shrink:0"></i>
+        <span>${netMessage(efficiency, rtt, nominalMbps, effectiveMbps, streams, windowKB, erOn, baseRtt)}</span>
+      </div>
+    </div>`;
+}
 document.getElementById('netVault').addEventListener('change', calc);
 document.getElementById('expressRoute').addEventListener('change', calc);
 document.querySelectorAll('input[type=number],input[type=checkbox]').forEach(el=>el.addEventListener('input', () => { updateCapOnlyFields(); calc(); }));
 applyT();
-updateMode();
+// Defer so browser finishes restoring any saved form state before we read checked state
+setTimeout(() => { _lastMode = null; updateMode(); }, 0);
 </script>
 </body>
 </html>
