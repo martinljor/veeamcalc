@@ -218,14 +218,10 @@
           <div style="background:var(--green-light);border-left:3px solid var(--green);border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .75rem;margin-bottom:8px;font-size:11px;color:var(--green-dark)">
             <i class="fa-solid fa-lock" style="margin-right:5px"></i><span id="lbl-vault-always-imm">VDC Vault always enforces immutability (Object Lock). Configure the lock period below.</span>
           </div>
-          <div class="field-grid">
+          <div style="max-width:200px;margin-top:4px">
             <div class="field">
               <label id="lbl-imm-cap">VDC Vault lock period (days)</label>
               <input type="number" id="immCap" value="7" min="1" max="365">
-            </div>
-            <div class="field">
-              <label id="lbl-offload-days">Offload trigger — days before move/copy</label>
-              <input type="number" id="offloadDays" value="7" min="1" max="365">
             </div>
           </div>
           <div id="imm-lock-summary" style="margin-top:8px"></div>
@@ -275,9 +271,14 @@
             <input type="checkbox" id="copyPolicy" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
             <label for="copyPolicy" id="lbl-copy" style="font-size:12px;color:var(--gray-700);cursor:pointer">Copy policy — copy backups to Capacity Tier</label>
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <input type="checkbox" id="movePolicy" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
             <label for="movePolicy" id="lbl-move" style="font-size:12px;color:var(--gray-700);cursor:pointer">Move policy — move backups to Capacity Tier</label>
+            <span id="move-days-row" style="display:flex;align-items:center;gap:6px;margin-left:4px">
+              <span id="lbl-move-older" style="font-size:12px;color:var(--gray-500)">older than</span>
+              <input type="number" id="offloadDays" value="14" min="1" max="365" style="width:60px;padding:3px 6px;font-size:12px;border:1px solid var(--gray-300);border-radius:var(--radius);text-align:center">
+              <span style="font-size:12px;color:var(--gray-500)" id="lbl-move-days-unit">days</span>
+            </span>
           </div>
         </div>
 
@@ -524,6 +525,7 @@ const T = {
     diskRead:'read', diskWrite:'write',
     lockPeriod:'VDC Vault lock period', lockPeriodSub:'Object Lock duration',
     offloadTrigger:'Offload trigger', offloadTriggerSub:'Days before move/copy to Vault',
+    moveOlderThan:'older than', moveDays:'days',
     remainingLock:'Remaining lock on arrival', lockExpiredOnArrival:'Lock already expired — object can be deleted when retention ends', lockRemainingOnArrival:'Object still locked after arriving at Vault',
     lbl_vaultAlwaysImm:'VDC Vault always enforces immutability (Object Lock). Configure the lock period below.',
     lbl_offloadDays:'Offload trigger — days before move/copy',
@@ -605,6 +607,7 @@ const T = {
     diskRead:'lectura', diskWrite:'escritura',
     lockPeriod:'Período de lock VDC Vault', lockPeriodSub:'Duración del Object Lock',
     offloadTrigger:'Trigger de offload', offloadTriggerSub:'Días antes de mover/copiar al Vault',
+    moveOlderThan:'más antiguo que', moveDays:'días',
     remainingLock:'Lock restante al llegar', lockExpiredOnArrival:'Lock ya expirado — el objeto puede eliminarse cuando venza la retención', lockRemainingOnArrival:'El objeto sigue bloqueado al llegar al Vault',
     lbl_vaultAlwaysImm:'VDC Vault siempre aplica inmutabilidad (Object Lock). Configurá el período de lock abajo.',
     lbl_offloadDays:'Trigger de offload — días antes de mover/copiar',
@@ -686,6 +689,7 @@ const T = {
     diskRead:'leitura', diskWrite:'escrita',
     lockPeriod:'Período de lock VDC Vault', lockPeriodSub:'Duração do Object Lock',
     offloadTrigger:'Trigger de offload', offloadTriggerSub:'Dias antes de mover/copiar para o Vault',
+    moveOlderThan:'mais antigo que', moveDays:'dias',
     remainingLock:'Lock restante na chegada', lockExpiredOnArrival:'Lock já expirado — objeto pode ser excluído quando a retenção terminar', lockRemainingOnArrival:'Objeto ainda bloqueado ao chegar no Vault',
     lbl_vaultAlwaysImm:'O VDC Vault sempre aplica imutabilidade (Object Lock). Configure o período de lock abaixo.',
     lbl_offloadDays:'Trigger de offload — dias antes de mover/copiar',
@@ -744,6 +748,7 @@ function applyT() {
     'lbl-imm-perf':'lbl_immPerf',
     'lbl-imm-cap':'lbl-imm-cap',
     'lbl-vault-always-imm':'lbl_vaultAlwaysImm',
+    'lbl-move-older':'moveOlderThan','lbl-move-days-unit':'moveDays',
     'lbl-offload-days':'lbl_offloadDays','lbl-imm-enable':'immEnable','lbl-imm-perf':'immPerf',
     'lbl-imm-cap':'immCap','lbl-cap-sec':'capSec','lbl-copy':'copy','lbl-move':'move',
     'lbl-bw-sec':'bwSec','lbl-bwwin':'bwWin','lbl-proxies-text':'proxies',
@@ -1326,12 +1331,15 @@ function updateMode() {
 
 function updateCapOnlyFields() {
   const isCapOnly = document.getElementById('modeCap').checked;
+  const moveOn = document.getElementById('movePolicy').checked;
+  // Show/hide the inline "older than X days" row based on Move Policy state
+  document.getElementById('move-days-row').style.display = moveOn ? '' : 'none';
+
   if (!isCapOnly) {
     document.getElementById('cap-move-note').style.display = 'none';
     return;
   }
   const copyOn = document.getElementById('copyPolicy').checked;
-  const moveOn = document.getElementById('movePolicy').checked;
   const moveOnly = moveOn && !copyOn;
 
   // Block generation never needed in cap-only (full already consolidated on-prem)
