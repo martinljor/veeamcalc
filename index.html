@@ -392,11 +392,11 @@
               </a>
             </label>
             <select id="blockSizeKB" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
-              <option value="256" selected id="lbl-bs-256">256 KB — WAN target (default)</option>
-              <option value="512" id="lbl-bs-512">512 KB — LAN target</option>
-              <option value="1024" id="lbl-bs-1024">1 MB — Local target</option>
-              <option value="4096" id="lbl-bs-4096">4 MB — Local target (recommended)</option>
-              <option value="8192" id="lbl-bs-8192">8 MB — Large appliance / NAS</option>
+              <option value="256" selected id="lbl-bs-256">256 KB</option>
+              <option value="512" id="lbl-bs-512">512 KB</option>
+              <option value="1024" id="lbl-bs-1024">1 MB</option>
+              <option value="4096" id="lbl-bs-4096">4 MB</option>
+              <option value="8192" id="lbl-bs-8192">8 MB</option>
             </select>
           </div>
           <div style="display:flex;align-items:flex-end;padding-bottom:2px">
@@ -513,8 +513,8 @@ const T = {
     blockSizeLabel:'Storage optimization (block size)',
     blockSizeTip:'VBR docs: backup job storage settings — storage optimization',
     blockSizeNote:'Set in VBR: Job → Storage → Advanced → Storage optimization. Affects the number of S3 objects created in VDC Vault.',
-    bs256:'256 KB — WAN target (default)', bs512:'512 KB — LAN target',
-    bs1024:'1 MB — Local target', bs4096:'4 MB — Local target (recommended)', bs8192:'8 MB — Large appliance / NAS',
+    bs256:'256 KB', bs512:'512 KB',
+    bs1024:'1 MB', bs4096:'4 MB (Recommended for S3)', bs8192:'8 MB',
     s3Objects:'S3 objects (daily inc.)', s3ObjectsPeak:'S3 objects (full day)',
     s3EffHigh:'Optimal for cloud — fewer PUT requests', s3EffMid:'Acceptable for cloud',
     s3EffLow:'High API overhead — consider 1 MB+ for VDC Vault',
@@ -594,8 +594,8 @@ const T = {
     blockSizeLabel:'Optimización de almacenamiento (tamaño de bloque)',
     blockSizeTip:'Docs VBR: configuración de almacenamiento del job — optimización de almacenamiento',
     blockSizeNote:'Se configura en VBR: Job → Almacenamiento → Avanzado → Optimización. Afecta la cantidad de objetos S3 creados en VDC Vault.',
-    bs256:'256 KB — WAN target (default)', bs512:'512 KB — LAN target',
-    bs1024:'1 MB — Local target', bs4096:'4 MB — Local target (recomendado)', bs8192:'8 MB — Appliance grande / NAS',
+    bs256:'256 KB', bs512:'512 KB',
+    bs1024:'1 MB', bs4096:'4 MB (Recomendado para S3)', bs8192:'8 MB',
     s3Objects:'Objetos S3 (inc. diario)', s3ObjectsPeak:'Objetos S3 (día de full)',
     s3EffHigh:'Óptimo para cloud — menos PUT requests', s3EffMid:'Aceptable para cloud',
     s3EffLow:'Alto overhead de API — considerar 1 MB+ para VDC Vault',
@@ -675,8 +675,8 @@ const T = {
     blockSizeLabel:'Otimização de armazenamento (tamanho do bloco)',
     blockSizeTip:'Docs VBR: configurações de armazenamento do job — otimização de armazenamento',
     blockSizeNote:'Configure no VBR: Job → Armazenamento → Avançado → Otimização. Afeta o número de objetos S3 criados no VDC Vault.',
-    bs256:'256 KB — WAN target (padrão)', bs512:'512 KB — LAN target',
-    bs1024:'1 MB — Local target', bs4096:'4 MB — Local target (recomendado)', bs8192:'8 MB — Appliance grande / NAS',
+    bs256:'256 KB', bs512:'512 KB',
+    bs1024:'1 MB', bs4096:'4 MB (Recomendado para S3)', bs8192:'8 MB',
     s3Objects:'Objetos S3 (inc. diário)', s3ObjectsPeak:'Objetos S3 (dia de full)',
     s3EffHigh:'Ótimo para cloud — menos PUT requests', s3EffMid:'Aceitável para cloud',
     s3EffLow:'Alto overhead de API — considere 1 MB+ para VDC Vault',
