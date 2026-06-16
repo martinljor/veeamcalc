@@ -199,32 +199,37 @@
 
         <div class="section-label" id="lbl-imm-sec">Immutability</div>
 
-        <!-- Performance Tier: optional (on-prem). Only shown in Full SOBR mode -->
-        <div id="imm-perf-field" style="margin-bottom:10px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <input type="checkbox" id="immPerfEnabled" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
-            <label for="immPerfEnabled" id="lbl-imm-perf-toggle" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500">Enable immutability on Performance Tier (on-prem)</label>
-          </div>
-          <div id="imm-perf-days" style="opacity:.4;pointer-events:none">
-            <div class="field">
-              <label id="lbl-imm-perf">Performance tier lock period (days)</label>
-              <input type="number" id="immPerf" value="7" min="1" max="365">
-            </div>
-          </div>
-        </div>
+        <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 14px;background:var(--gray-50);display:flex;flex-direction:column;gap:12px">
 
-        <!-- Capacity Tier: VDC Vault always has immutability — no toggle -->
-        <div id="imm-fields">
-          <div style="background:var(--green-light);border-left:3px solid var(--green);border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .75rem;margin-bottom:8px;font-size:11px;color:var(--green-dark)">
-            <i class="fa-solid fa-lock" style="margin-right:5px"></i><span id="lbl-vault-always-imm">VDC Vault always enforces immutability (Object Lock). Configure the lock period below.</span>
-          </div>
-          <div style="max-width:200px;margin-top:4px">
-            <div class="field">
-              <label id="lbl-imm-cap">VDC Vault lock period (days)</label>
-              <input type="number" id="immCap" value="7" min="1" max="365">
+          <!-- Performance Tier: optional (on-prem). Only shown in Full SOBR mode -->
+          <div id="imm-perf-field">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <input type="checkbox" id="immPerfEnabled" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+              <label for="immPerfEnabled" id="lbl-imm-perf-toggle" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500">Enable immutability on Performance Tier (on-prem)</label>
+            </div>
+            <div id="imm-perf-days" style="opacity:.4;pointer-events:none;max-width:200px">
+              <div class="field">
+                <label id="lbl-imm-perf">Performance tier lock period (days)</label>
+                <input type="number" id="immPerf" value="7" min="1" max="365">
+              </div>
             </div>
           </div>
-          <div id="imm-lock-summary" style="margin-top:8px"></div>
+
+          <!-- Capacity Tier: toggleable, mirrors Performance Tier pattern -->
+          <div id="imm-fields">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <input type="checkbox" id="immCapEnabled" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+              <label for="immCapEnabled" id="lbl-imm-cap-toggle" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500">Enable immutability on Capacity Tier (VDC Vault / Object Lock)</label>
+            </div>
+            <div id="imm-cap-days" style="max-width:200px">
+              <div class="field">
+                <label id="lbl-imm-cap">VDC Vault lock period (days)</label>
+                <input type="number" id="immCap" value="7" min="1" max="365">
+              </div>
+            </div>
+            <div id="imm-lock-summary" style="margin-top:8px"></div>
+          </div>
+
         </div>
         <div id="imm-warnings"></div>
 
@@ -530,6 +535,7 @@ const T = {
     lbl_vaultAlwaysImm:'VDC Vault always enforces immutability (Object Lock). Configure the lock period below.',
     lbl_offloadDays:'Offload trigger — days before move/copy',
     lbl_immPerfToggle:'Enable immutability on Performance Tier (on-prem)',
+    lbl_immCapToggle:'Enable immutability on Capacity Tier (VDC Vault / Object Lock)',
     lbl_immPerf:'Performance tier lock period (days)',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: immutability period (${ip} days) exceeds daily retention (${rd} days). All restore points will remain <strong>locked until they naturally expire</strong> — Veeam cannot remove them earlier even when the retention policy says so. This maximizes overhead.`,
     warnImmGtRetTip:(rd)=>`Recommendation: set immutability ≤ retention (${rd} days) to allow normal cleanup.`,
@@ -612,6 +618,7 @@ const T = {
     lbl_vaultAlwaysImm:'VDC Vault siempre aplica inmutabilidad (Object Lock). Configurá el período de lock abajo.',
     lbl_offloadDays:'Trigger de offload — días antes de mover/copiar',
     lbl_immPerfToggle:'Activar inmutabilidad en Performance Tier (on-prem)',
+    lbl_immCapToggle:'Activar inmutabilidad en Capacity Tier (VDC Vault / Object Lock)',
     lbl_immPerf:'Período de lock Performance Tier (días)',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: el período de inmutabilidad (${ip} días) supera la retención diaria (${rd} días). Todos los restore points quedarán <strong>bloqueados hasta que expiren naturalmente</strong> — Veeam no puede eliminarlos antes aunque la política de retención ya los haya vencido. El overhead será máximo.`,
     warnImmGtRetTip:(rd)=>`Recomendación: igualá la inmutabilidad a la retención (${rd} días) o menor, para permitir la limpieza normal.`,
@@ -694,6 +701,7 @@ const T = {
     lbl_vaultAlwaysImm:'O VDC Vault sempre aplica imutabilidade (Object Lock). Configure o período de lock abaixo.',
     lbl_offloadDays:'Trigger de offload — dias antes de mover/copiar',
     lbl_immPerfToggle:'Ativar imutabilidade no Performance Tier (on-prem)',
+    lbl_immCapToggle:'Ativar imutabilidade no Capacity Tier (VDC Vault / Object Lock)',
     lbl_immPerf:'Período de lock Performance Tier (dias)',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: o período de imutabilidade (${ip} dias) supera a retenção diária (${rd} dias). Todos os restore points ficarão <strong>bloqueados até expirar naturalmente</strong> — o Veeam não pode removê-los antes, mesmo que a política de retenção já os tenha expirado. O overhead será máximo.`,
     warnImmGtRetTip:(rd)=>`Recomendação: defina a imutabilidade ≤ retenção (${rd} dias) para permitir a limpeza normal.`,
@@ -745,6 +753,7 @@ function applyT() {
     'lbl-weekly':'weekly','lbl-monthly':'monthly','lbl-yearly':'yearly',
     'lbl-imm-sec':'immSec',
     'lbl-imm-perf-toggle':'lbl_immPerfToggle',
+    'lbl-imm-cap-toggle':'lbl_immCapToggle',
     'lbl-imm-perf':'lbl_immPerf',
     'lbl-imm-cap':'lbl-imm-cap',
     'lbl-vault-always-imm':'lbl_vaultAlwaysImm',
@@ -814,8 +823,10 @@ const MIN_RTT_ER_MS     = 5;   // ExpressRoute minimum assumed RTT (ms)
 function readInputs() {
   const isCapOnly = document.getElementById('modeCap').checked;
   const immPerfOn = !isCapOnly && document.getElementById('immPerfEnabled').checked;
+  const immCapOn  = document.getElementById('immCapEnabled').checked;
   const common = {
-    immCapDays:   getInt('immCap'),
+    immCapEnabled: immCapOn,
+    immCapDays:   immCapOn ? getInt('immCap') : 0,
     offloadDays:  getInt('offloadDays'),
     copyEnabled:  document.getElementById('copyPolicy').checked,
     moveEnabled:  document.getElementById('movePolicy').checked,
@@ -1042,9 +1053,10 @@ const LATENCY = {
   korea:          { eastus:190,  eastus2:190,  centralus:180, westus:135,  southcentralus:175,canadacentral:185, brazilsouth:295, westeurope:240, northeurope:250, uksouth:245, germanywestcentral:235, francecentral:243, swedencentral:256, uaenorth:165, southafricanorth:305, australiaeast:115, japaneast:35,  southeastasia:65,  centralindia:100, koreacentral:5   },
 };
 
-function renderLockSummary(ic, offload, bg) {
+function renderLockSummary(ic, offload, bg, immCapEnabled) {
   const el = document.getElementById('imm-lock-summary');
   if (!el) return;
+  if (!immCapEnabled) { el.innerHTML = ''; return; }
   // Max time an object can stay locked:
   // Object written on day 0, lock = ic days
   // Object can only be moved/copied after offload trigger days
@@ -1199,7 +1211,7 @@ function renderSimulations(inp, capResult, capEnabled, moveOnly) {
 
   if (capEnabled) {
     renderSim('sim-cap', sourceTB, changeRate, compression, blockGenDays,
-      retDays, retWeeks, retMonths, retYears, immCapDays, true, moveOnly, false);
+      retDays, retWeeks, retMonths, retYears, immCapDays, inp.immCapEnabled, moveOnly, false);
   } else {
     document.getElementById('sim-cap').innerHTML = `<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
   }
@@ -1215,8 +1227,8 @@ function calc() {
   const streams    = inp.proxies * inp.streamsPerProxy;
 
   renderWarnings(validateImm(inp.retDays, inp.retWeeks, inp.retMonths, inp.retYears,
-    inp.immPerfDays, inp.immCapDays, true, inp.blockGenDays));
-  renderLockSummary(inp.immCapDays, inp.offloadDays, inp.blockGenDays);
+    inp.immPerfDays, inp.immCapDays, inp.immCapEnabled, inp.blockGenDays));
+  renderLockSummary(inp.immCapDays, inp.offloadDays, inp.blockGenDays, inp.immCapEnabled);
 
   if (capEnabled) {
     const bw = calcBandwidthMetrics(inp, rtt, streams);
@@ -1238,7 +1250,7 @@ function calc() {
     sourceTB:inp.sourceTB, changeRate:inp.changeRate, compression:inp.compression,
     blockGenDays:inp.blockGenDays, retDays:inp.retDays,
     retWeeks:inp.retWeeks, retMonths:inp.retMonths, retYears:inp.retYears,
-    immDays:inp.immCapDays, immEnabled:true, moveOnly,
+    immDays:inp.immCapDays, immEnabled:inp.immCapEnabled, moveOnly,
   }) : null;
 
   renderBanner(inp, perfResult, capResult, capEnabled);
@@ -1334,6 +1346,11 @@ function updateCapOnlyFields() {
   const moveOn = document.getElementById('movePolicy').checked;
   // Show/hide the inline "older than X days" row based on Move Policy state
   document.getElementById('move-days-row').style.display = moveOn ? '' : 'none';
+  // Sync imm-cap-days enabled/disabled state
+  const immCapOn = document.getElementById('immCapEnabled').checked;
+  const capDaysEl = document.getElementById('imm-cap-days');
+  capDaysEl.style.opacity = immCapOn ? '1' : '0.4';
+  capDaysEl.style.pointerEvents = immCapOn ? '' : 'none';
 
   if (!isCapOnly) {
     document.getElementById('cap-move-note').style.display = 'none';
@@ -1357,6 +1374,12 @@ function updateCapOnlyFields() {
 // ─── Event listeners ─────────────────────────────────────────────────────────
 document.getElementById('immPerfEnabled').addEventListener('change', function() {
   const days = document.getElementById('imm-perf-days');
+  days.style.opacity = this.checked ? '1' : '0.4';
+  days.style.pointerEvents = this.checked ? '' : 'none';
+  calc();
+});
+document.getElementById('immCapEnabled').addEventListener('change', function() {
+  const days = document.getElementById('imm-cap-days');
   days.style.opacity = this.checked ? '1' : '0.4';
   days.style.pointerEvents = this.checked ? '' : 'none';
   calc();
