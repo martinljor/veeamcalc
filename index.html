@@ -383,6 +383,28 @@
             </div>
           </div>
         </div>
+        <div class="field-grid" style="margin-top:10px">
+          <div class="field">
+            <label id="lbl-blocksize" style="display:flex;align-items:center;gap:4px">
+              <span id="lbl-blocksize-text">Storage optimization (block size)</span>
+              <a href="https://helpcenter.veeam.com/docs/vbr/userguide/backup_job_storage_vm.html?ver=13" target="_blank" id="lbl-blocksize-tip" style="color:var(--green-dark);line-height:1">
+                <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
+              </a>
+            </label>
+            <select id="blockSizeKB" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
+              <option value="256" selected id="lbl-bs-256">256 KB — WAN target (default)</option>
+              <option value="512" id="lbl-bs-512">512 KB — LAN target</option>
+              <option value="1024" id="lbl-bs-1024">1 MB — Local target</option>
+              <option value="4096" id="lbl-bs-4096">4 MB — Local target (recommended)</option>
+              <option value="8192" id="lbl-bs-8192">8 MB — Large appliance / NAS</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:flex-end;padding-bottom:2px">
+            <div style="background:var(--blue-light);border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;padding:.45rem .7rem;font-size:10px;color:#1e40af;line-height:1.5">
+              <i class="fa-solid fa-circle-info" style="margin-right:4px"></i><span id="lbl-blocksize-note"></span>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
@@ -488,6 +510,14 @@ const T = {
     parallelTasks:'Parallel tasks per proxy',
     parallelTasksTip:'VBR docs: SOBR Capacity Tier settings — parallel processing',
     parallelTasksNote:'Set in VBR console: SOBR → Edit → Capacity Tier → Advanced. Controls TCP streams per proxy. Default: 4.',
+    blockSizeLabel:'Storage optimization (block size)',
+    blockSizeTip:'VBR docs: backup job storage settings — storage optimization',
+    blockSizeNote:'Set in VBR: Job → Storage → Advanced → Storage optimization. Affects the number of S3 objects created in VDC Vault.',
+    bs256:'256 KB — WAN target (default)', bs512:'512 KB — LAN target',
+    bs1024:'1 MB — Local target', bs4096:'4 MB — Local target (recommended)', bs8192:'8 MB — Large appliance / NAS',
+    s3Objects:'S3 objects (daily inc.)', s3ObjectsPeak:'S3 objects (full day)',
+    s3EffHigh:'Optimal for cloud — fewer PUT requests', s3EffMid:'Acceptable for cloud',
+    s3EffLow:'High API overhead — consider 1 MB+ for VDC Vault',
     cpuPerProxy:'CPU per proxy', ramPerProxy:'RAM per proxy',
     cpuNote:'CPU/RAM estimates: 1 vCPU per 100 Mbps, 2 GB RAM per vCPU (Veeam recommended sizing).',
     diskRequired:'Repository disk throughput (peak)',
@@ -561,6 +591,14 @@ const T = {
     parallelTasks:'Tareas paralelas por proxy',
     parallelTasksTip:'Docs VBR: configuración Capacity Tier SOBR — procesamiento paralelo',
     parallelTasksNote:'Se configura en la consola VBR: SOBR → Editar → Capacity Tier → Avanzado. Controla los streams TCP por proxy. Default: 4.',
+    blockSizeLabel:'Optimización de almacenamiento (tamaño de bloque)',
+    blockSizeTip:'Docs VBR: configuración de almacenamiento del job — optimización de almacenamiento',
+    blockSizeNote:'Se configura en VBR: Job → Almacenamiento → Avanzado → Optimización. Afecta la cantidad de objetos S3 creados en VDC Vault.',
+    bs256:'256 KB — WAN target (default)', bs512:'512 KB — LAN target',
+    bs1024:'1 MB — Local target', bs4096:'4 MB — Local target (recomendado)', bs8192:'8 MB — Appliance grande / NAS',
+    s3Objects:'Objetos S3 (inc. diario)', s3ObjectsPeak:'Objetos S3 (día de full)',
+    s3EffHigh:'Óptimo para cloud — menos PUT requests', s3EffMid:'Aceptable para cloud',
+    s3EffLow:'Alto overhead de API — considerar 1 MB+ para VDC Vault',
     cpuPerProxy:'CPU por proxy', ramPerProxy:'RAM por proxy',
     cpuNote:'Estimación CPU/RAM: 1 vCPU cada 100 Mbps, 2 GB RAM por vCPU (sizing recomendado por Veeam).',
     diskRequired:'Disco del repositorio (pico)',
@@ -634,6 +672,14 @@ const T = {
     parallelTasks:'Tarefas paralelas por proxy',
     parallelTasksTip:'Docs VBR: configurações Capacity Tier SOBR — processamento paralelo',
     parallelTasksNote:'Configure no console VBR: SOBR → Editar → Capacity Tier → Avançado. Controla os streams TCP por proxy. Padrão: 4.',
+    blockSizeLabel:'Otimização de armazenamento (tamanho do bloco)',
+    blockSizeTip:'Docs VBR: configurações de armazenamento do job — otimização de armazenamento',
+    blockSizeNote:'Configure no VBR: Job → Armazenamento → Avançado → Otimização. Afeta o número de objetos S3 criados no VDC Vault.',
+    bs256:'256 KB — WAN target (padrão)', bs512:'512 KB — LAN target',
+    bs1024:'1 MB — Local target', bs4096:'4 MB — Local target (recomendado)', bs8192:'8 MB — Appliance grande / NAS',
+    s3Objects:'Objetos S3 (inc. diário)', s3ObjectsPeak:'Objetos S3 (dia de full)',
+    s3EffHigh:'Ótimo para cloud — menos PUT requests', s3EffMid:'Aceitável para cloud',
+    s3EffLow:'Alto overhead de API — considere 1 MB+ para VDC Vault',
     cpuPerProxy:'CPU por proxy', ramPerProxy:'RAM por proxy',
     cpuNote:'Estimativa CPU/RAM: 1 vCPU a cada 100 Mbps, 2 GB RAM por vCPU (sizing recomendado pelo Veeam).',
     diskRequired:'Disco do repositório (pico)',
@@ -702,6 +748,8 @@ function applyT() {
     'lbl-imm-cap':'immCap','lbl-cap-sec':'capSec','lbl-copy':'copy','lbl-move':'move',
     'lbl-bw-sec':'bwSec','lbl-bwwin':'bwWin','lbl-proxies-text':'proxies',
     'lbl-streams-text':'parallelTasks','lbl-streams-note':'parallelTasksNote',
+    'lbl-blocksize-text':'blockSizeLabel','lbl-blocksize-note':'blockSizeNote',
+    'lbl-bs-256':'bs256','lbl-bs-512':'bs512','lbl-bs-1024':'bs1024','lbl-bs-4096':'bs4096','lbl-bs-8192':'bs8192',
     'lbl-net-sec':'netSec','lbl-net-origin':'netOrigin','lbl-net-vault':'netVault',
     'lbl-expressroute':'lbl_expressroute',
     'tab-lbl-breakdown':'tabBreakdown','tab-lbl-sim':'tabSim','tab-lbl-why':'tabWhy',
@@ -720,6 +768,8 @@ function applyT() {
   Object.entries(map).forEach(([id,k]) => { const el=document.getElementById(id); if(el) el.textContent=t(k); });
   const streamsLink = document.getElementById('lbl-streams-tip');
   if (streamsLink) streamsLink.title = t('parallelTasksTip');
+  const bsLink = document.getElementById('lbl-blocksize-tip');
+  if (bsLink) bsLink.title = t('blockSizeTip');
 
   document.getElementById('why-body').innerHTML = T[lang].why.map((s,i)=>`
     <div class="explainer-step">
@@ -767,6 +817,7 @@ function readInputs() {
     windowHours:    Math.max(1, getInt('bwWindow')),
     proxies:        Math.max(1, getInt('bwProxies')),
     streamsPerProxy: Math.max(1, getInt('bwStreams')),
+    blockSizeKB:     parseInt(document.getElementById('blockSizeKB').value) || 256,
     origin:       document.getElementById('netOrigin').value,
     vault:        document.getElementById('netVault').value,
     expressRoute: document.getElementById('expressRoute').checked,
@@ -879,7 +930,7 @@ function renderWarnings(warns) {
 
 // ─── Render: bandwidth card ──────────────────────────────────────────────────
 function renderBW(inp, bw, rtt) {
-  const { proxies, blockGenDays, windowHours } = inp;
+  const { proxies, blockGenDays, windowHours, blockSizeKB } = inp;
   const { incTB, incMbps, peakMbps, effectiveMbps, linkUtilPct,
           perProxyDailyMbps, perProxyPeakMbps, perProxyEffMbps,
           diskReadMBs, diskWriteMBs, vcpuPerProxy, ramPerProxy } = bw;
@@ -931,6 +982,35 @@ function renderBW(inp, bw, rtt) {
         </div>
       </div>
       <div style="font-size:10px;color:#3b82f6;margin-top:8px">${T[lang].bwNote(windowHours, proxies)} ${t('cpuNote')}</div>
+      ${(() => {
+        const fmtObj  = n => n >= 1e6 ? (n/1e6).toFixed(1)+' M' : n >= 1e3 ? Math.round(n/1e3)+' K' : String(n);
+        // peakMbps uses tb*1024*1024*8/win_sec, so inverse: tb = mbps*win_sec/(1024*1024*8)
+        // objects = tb * 1024^3 / blockSizeKB = mbps * win_sec * 128 / blockSizeKB
+        const toObj   = mbps => Math.round(mbps * windowHours * 3600 * 128 / blockSizeKB);
+        const objInc  = toObj(bw.incMbps);
+        const objPeak = toObj(bw.peakMbps);
+        const effColor = blockSizeKB >= 1024 ? 'var(--green-dark)' : blockSizeKB >= 512 ? '#b45309' : 'var(--red)';
+        const effBg    = blockSizeKB >= 1024 ? 'var(--green-light)' : blockSizeKB >= 512 ? '#fffbeb' : '#fdecea';
+        const effIcon  = blockSizeKB >= 1024 ? 'fa-circle-check' : blockSizeKB >= 512 ? 'fa-triangle-exclamation' : 'fa-circle-xmark';
+        const effMsg   = blockSizeKB >= 1024 ? t('s3EffHigh') : blockSizeKB >= 512 ? t('s3EffMid') : t('s3EffLow');
+        return `<div style="margin-top:10px;border-top:1px solid #bfdbfe;padding-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="bw-metric">
+              <div class="m-label">${t('s3Objects')}</div>
+              <div class="m-val" style="font-size:14px">${fmtObj(objInc)}</div>
+              <div class="m-unit">${blockSizeKB >= 1024 ? blockSizeKB/1024+' MB' : blockSizeKB+' KB'} blocks</div>
+            </div>
+            <div class="bw-metric">
+              <div class="m-label">${t('s3ObjectsPeak')}</div>
+              <div class="m-val" style="font-size:14px">${fmtObj(objPeak)}</div>
+              <div class="m-unit">every ${blockGenDays}d</div>
+            </div>
+          </div>
+          <div style="background:${effBg};border-left:3px solid ${effColor};border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .75rem;font-size:10px;color:${effColor};line-height:1.5">
+            <i class="fa-solid ${effIcon}" style="margin-right:4px"></i>${effMsg}
+          </div>
+        </div>`;
+      })()}
     </div>`;
 }
 
@@ -1274,6 +1354,7 @@ document.getElementById('immPerfEnabled').addEventListener('change', function() 
   calc();
 });
 document.querySelectorAll('input[name="simMode"]').forEach(el => el.addEventListener('change', updateMode));
+document.getElementById('blockSizeKB').addEventListener('change', calc);
 document.getElementById('netVault').addEventListener('change', calc);
 document.getElementById('expressRoute').addEventListener('change', calc);
 document.querySelectorAll('input[type=number],input[type=checkbox]').forEach(el=>el.addEventListener('input', () => { updateCapOnlyFields(); calc(); }));
