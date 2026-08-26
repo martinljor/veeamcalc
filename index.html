@@ -36,6 +36,14 @@
 
     .page{max-width:960px;margin:0 auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem}
     @media(max-width:820px){.page{padding:.75rem}}
+    /* Narrow screens: let the header wrap instead of pushing the page sideways */
+    @media(max-width:620px){
+      header{height:auto;flex-wrap:wrap;row-gap:8px;padding:8px 1rem;position:static}
+      .header-brand{min-width:0}
+      .header-sub{font-size:11px}
+      .header-right{margin-left:auto}
+      .page{padding-top:1rem}
+    }
 
     .card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg)}
     .card-header{padding:.75rem 1.25rem;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:8px;background:var(--gray-50)}
@@ -84,6 +92,15 @@
     .vbr-link-select:hover{text-decoration:underline}
     .vbr-link-select:focus-visible{outline:1px solid var(--win-accent);border-radius:2px}
     .vbr-foot-lbl{font-size:12.5px;color:var(--win-text)}
+
+    /* Radio option cards (measurement basis) */
+    .opt-card{display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:9px 11px;
+      border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);transition:border-color .15s,background .15s}
+    .opt-card:hover{border-color:var(--green-mid)}
+    .opt-card input{margin-top:2px;accent-color:var(--green);flex-shrink:0}
+    .opt-card:has(input:checked){border-color:var(--green);background:var(--green-light)}
+    .opt-title{display:block;font-size:12px;font-weight:500;color:var(--gray-900)}
+    .opt-sub{display:block;font-size:10.5px;color:var(--gray-500);margin-top:2px;line-height:1.45}
 
     /* VBR-style section dividers */
     .section-label{font-size:12px;font-weight:600;color:var(--gray-700);background:var(--gray-100);border:1px solid var(--gray-200);border-radius:var(--radius);padding:5px 10px;margin:18px 0 12px 0;display:block}
@@ -167,6 +184,39 @@
 
     footer{text-align:center;padding:1.5rem;font-size:11px;color:var(--gray-500)}
     footer a{color:var(--green-dark);text-decoration:none}
+
+    /* Summary + printable report */
+    #summary-card .card-header{justify-content:space-between}
+    .print-btn{display:flex;align-items:center;gap:6px;font-family:var(--font);font-size:11.5px;font-weight:500;
+      padding:5px 12px;border:1px solid var(--green);border-radius:var(--radius);background:var(--green-light);
+      color:var(--green-dark);cursor:pointer;margin-left:auto}
+    .print-btn:hover{background:var(--green-mid)}
+    .summary-cols{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+    @media(max-width:820px){.summary-cols{grid-template-columns:1fr}}
+    .sum-group{font-size:11px;font-weight:600;color:var(--gray-700);text-transform:uppercase;letter-spacing:.05em;
+      margin:14px 0 6px;padding-bottom:5px;border-bottom:2px solid var(--green)}
+    .sum-group:first-child{margin-top:0}
+    .sum-row{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid var(--gray-100);font-size:11.5px}
+    .sum-row:last-child{border-bottom:none}
+    .sum-row .k{color:var(--gray-500)}
+    .sum-row .v{font-family:var(--mono);color:var(--gray-900);text-align:right}
+    .sum-row .v.hi{color:var(--green-dark);font-weight:500}
+    .sum-row .v.warn{color:var(--red)}
+    .print-only{display:none}
+
+    @media print {
+      @page{margin:14mm}
+      body{background:#fff}
+      header{position:static;border-bottom:1px solid #ccc;padding:0 0 8px}
+      .lang-switcher,.tabs,.no-print,#imm-mode-note,.print-btn{display:none !important}
+      .print-only{display:block}
+      .page{max-width:none;padding:0;gap:.6rem}
+      .tab-pane{display:block !important;margin-top:.6rem}
+      .card,.vbr-dialog,.bw-card,.tier-box{break-inside:avoid;page-break-inside:avoid;box-shadow:none}
+      .sim-rows{max-height:none;overflow:visible}
+      #summary-card{break-before:page;page-break-before:always}
+      a{color:inherit;text-decoration:none}
+    }
   </style>
 </head>
 <body>
@@ -199,15 +249,23 @@
   <div class="vbr-dialog">
       <div class="vbr-titlebar"><span id="lbl-dlg-title">Edit Scale-out Backup Repository</span></div>
       <div class="vbr-head">
-        <svg width="52" height="52" viewBox="0 0 52 52" style="flex-shrink:0" aria-hidden="true">
-          <ellipse cx="20" cy="9"  rx="16" ry="5.5" fill="#b9d9ef" stroke="#5f9bc7" stroke-width="1.2"/>
-          <path d="M4 9v13c0 3 7.2 5.5 16 5.5s16-2.5 16-5.5V9" fill="#d6e9f7" stroke="#5f9bc7" stroke-width="1.2"/>
-          <ellipse cx="20" cy="9" rx="16" ry="5.5" fill="#cfe4f4" stroke="#5f9bc7" stroke-width="1.2"/>
-          <rect x="24" y="18" width="8" height="8" fill="#4caf50"/>
-          <path d="M20 27.5v6M10 33.5h20M10 33.5v4M20 33.5v4M30 33.5v4" stroke="#7d7d7d" stroke-width="1.2" fill="none"/>
-          <rect x="4"  y="37" width="12" height="9" fill="#fff" stroke="#7d7d7d" stroke-width="1.2"/>
-          <rect x="18" y="37" width="12" height="9" fill="#fff" stroke="#7d7d7d" stroke-width="1.2"/>
-          <rect x="32" y="37" width="12" height="9" fill="#fff" stroke="#7d7d7d" stroke-width="1.2"/>
+        <!-- SOBR glyph: a stack of disk platters over three extents, with the capacity-tier accent -->
+        <svg width="54" height="54" viewBox="0 0 54 54" style="flex-shrink:0" aria-hidden="true">
+          <g stroke="#4f8cb8" stroke-width="1.1" stroke-linejoin="round">
+            <path d="M5 22.5c0 2.6 6.3 4.7 14 4.7s14-2.1 14-4.7v-4.7H5z" fill="#9cc9e8"/>
+            <ellipse cx="19" cy="17.8" rx="14" ry="4.7" fill="#c3e0f4"/>
+            <path d="M5 16c0 2.6 6.3 4.7 14 4.7s14-2.1 14-4.7v-4.7H5z" fill="#9cc9e8"/>
+            <ellipse cx="19" cy="11.3" rx="14" ry="4.7" fill="#c3e0f4"/>
+            <path d="M5 9.5c0 2.6 6.3 4.7 14 4.7s14-2.1 14-4.7V4.8H5z" fill="#9cc9e8"/>
+            <ellipse cx="19" cy="4.8" rx="14" ry="4.7" fill="#d9ecf9"/>
+          </g>
+          <rect x="25" y="19" width="11" height="11" fill="#5cb85c" stroke="#3f9142" stroke-width="1"/>
+          <path d="M19 28v7M7 35h24M7 35v4M19 35v4M31 35v4" stroke="#8a8a8a" stroke-width="1.1" fill="none"/>
+          <g fill="#fdfdfd" stroke="#8a8a8a" stroke-width="1.1">
+            <rect x="1.5"  y="39" width="11" height="9"/>
+            <rect x="13.5" y="39" width="11" height="9"/>
+            <rect x="25.5" y="39" width="11" height="9"/>
+          </g>
         </svg>
         <div class="vbr-head-txt">
           <h3 id="lbl-cap-sec">Capacity Tier</h3>
@@ -277,209 +335,233 @@
       </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
-    <div class="card">
-      <div class="card-body">
+  <div class="card">
+    <div class="card-body">
 
-        <div class="section-label" id="lbl-source-sec">Source data</div>
-        <div class="field-grid">
-          <div class="field"><label id="lbl-src">Source data (TB)</label>
-            <input type="number" id="srcTB" value="1" min="0.1" max="500" step="0.1"></div>
-          <div class="field"><label id="lbl-cr">Daily change rate (%)</label>
-            <input type="number" id="changeRate" value="3" min="1" max="50" step="0.5"></div>
-          <div class="field"><label id="lbl-comp">Compression (%)</label>
-            <input type="number" id="compress" value="50" min="0" max="80" step="5"></div>
-          <div class="field"><label id="lbl-bg">Block generation (days)</label>
-            <input type="number" id="blockGen" value="7" min="1" max="30" step="1"></div>
-        </div>
-
-        <div class="section-label" id="lbl-gfs-sec">GFS Retention</div>
-        <div class="field-grid-4">
-          <div class="field"><label id="lbl-daily">Daily</label>
-            <input type="number" id="retDays" value="7" min="1" max="365"></div>
-          <div class="field"><label id="lbl-weekly">Weekly</label>
-            <input type="number" id="retWeeks" value="0" min="0" max="52"></div>
-          <div class="field"><label id="lbl-monthly">Monthly</label>
-            <input type="number" id="retMonths" value="0" min="0" max="60"></div>
-          <div class="field"><label id="lbl-yearly">Yearly</label>
-            <input type="number" id="retYears" value="0" min="0" max="10"></div>
-        </div>
-
-        <div class="section-label" id="lbl-imm-sec">Immutability Settings</div>
-
-        <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 14px;background:var(--gray-50)">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span id="lbl-imm-min" style="font-size:12px;color:var(--gray-700)">Minimum immutability duration:</span>
-            <input type="number" id="immCap" value="7" min="1" max="3650" style="width:64px;padding:3px 6px;font-size:12px;font-family:var(--mono);border:1px solid var(--gray-300);border-radius:var(--radius);text-align:center">
-            <span id="lbl-imm-min-unit" style="font-size:12px;color:var(--gray-500)">days</span>
-          </div>
-          <div id="lbl-imm-min-desc" style="font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:6px">Defines guaranteed immutability duration for every backup on this repository. Provides additional layer of protection against accidental or malicious retention policy changes.</div>
-
-          <div id="lbl-imm-mode-title" style="font-size:12px;color:var(--gray-700);margin-top:12px;margin-bottom:6px">Make backups immutable:</div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
-              <input type="radio" name="immMode" id="immModeRetention" value="retention" checked style="margin-top:2px;accent-color:var(--green);flex-shrink:0">
-              <span id="lbl-imm-mode-ret" style="font-size:12px;color:var(--gray-700)">For the entire duration of their retention policy (recommended)</span>
-            </label>
-            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
-              <input type="radio" name="immMode" id="immModeMinimum" value="minimum" style="margin-top:2px;accent-color:var(--green);flex-shrink:0">
-              <span id="lbl-imm-mode-min" style="font-size:12px;color:var(--gray-700)">For the minimum immutability period only</span>
-            </label>
-          </div>
-
-          <div id="imm-mode-note" style="margin-top:10px"></div>
-          <div id="imm-lock-summary" style="margin-top:8px"></div>
-        </div>
-        <div id="imm-warnings"></div>
-
+      <div class="section-label" id="lbl-source-sec">Source data</div>
+      <div class="field-grid">
+        <div class="field"><label id="lbl-src">Source data (TB)</label>
+          <input type="number" id="srcTB" value="1" min="0.1" max="500" step="0.1"></div>
+        <div class="field"><label id="lbl-cr">Daily change rate (%)</label>
+          <input type="number" id="changeRate" value="3" min="1" max="50" step="0.5"></div>
+        <div class="field"><label id="lbl-comp">Compression (%)</label>
+          <input type="number" id="compress" value="50" min="0" max="80" step="5"></div>
+        <div class="field"><label id="lbl-bg">Block generation (days)</label>
+          <input type="number" id="blockGen" value="7" min="1" max="30" step="1"></div>
       </div>
-    </div><!-- /card 1: source + GFS + immutability -->
 
-    <div class="card">
-      <div class="card-body">
+      <div class="section-label" id="lbl-gfs-sec">GFS Retention</div>
+      <div class="field-grid-4">
+        <div class="field"><label id="lbl-daily">Daily</label>
+          <input type="number" id="retDays" value="7" min="1" max="365"></div>
+        <div class="field"><label id="lbl-weekly">Weekly</label>
+          <input type="number" id="retWeeks" value="0" min="0" max="52"></div>
+        <div class="field"><label id="lbl-monthly">Monthly</label>
+          <input type="number" id="retMonths" value="0" min="0" max="60"></div>
+        <div class="field"><label id="lbl-yearly">Yearly</label>
+          <input type="number" id="retYears" value="0" min="0" max="10"></div>
+      </div>
 
-        <div class="section-label" id="lbl-net-sec">Network &amp; latency</div>
-        <div class="field-grid">
-          <div class="field">
-            <label id="lbl-net-origin">Client location (origin)</label>
-            <select id="netOrigin" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
-              <optgroup label="AMER">
-                <option value="us_east">USA — East Coast</option>
-                <option value="us_west">USA — West Coast</option>
-                <option value="us_central">USA — Central</option>
-                <option value="canada">Canada</option>
-                <option value="latam_north">LATAM — Mexico / Colombia / Venezuela</option>
-                <option value="latam_south" selected>LATAM — Argentina / Chile / Uruguay</option>
-                <option value="latam_brazil">LATAM — Brazil</option>
-              </optgroup>
-              <optgroup label="EMEA">
-                <option value="europe_west">Europe — West (UK, France, Netherlands)</option>
-                <option value="europe_central">Europe — Central (Germany, Austria, Switzerland)</option>
-                <option value="europe_north">Europe — North (Nordics)</option>
-                <option value="europe_south">Europe — South (Spain, Italy)</option>
-                <option value="middle_east">Middle East (UAE, Saudi)</option>
-                <option value="africa">Africa (South Africa)</option>
-              </optgroup>
-              <optgroup label="APJ">
-                <option value="australia">Australia / New Zealand</option>
-                <option value="japan">Japan</option>
-                <option value="sea">Southeast Asia (Singapore, Indonesia)</option>
-                <option value="india">India</option>
-                <option value="korea">Korea</option>
-              </optgroup>
-            </select>
-          </div>
-          <div class="field">
-            <label id="lbl-net-vault">VDC Vault region (destination)</label>
-            <select id="netVault" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
-              <optgroup label="AMER — Azure">
-                <option value="eastus">East US (Virginia)</option>
-                <option value="eastus2">East US 2 (Virginia)</option>
-                <option value="centralus">Central US (Iowa)</option>
-                <option value="westus">West US (California)</option>
-                <option value="southcentralus">South Central US (Texas)</option>
-                <option value="canadacentral">Canada Central (Toronto)</option>
-                <option value="brazilsouth">Brazil South (São Paulo)</option>
-              </optgroup>
-              <optgroup label="EMEA — Azure">
-                <option value="westeurope">West Europe (Netherlands)</option>
-                <option value="northeurope">North Europe (Ireland)</option>
-                <option value="uksouth">UK South (London)</option>
-                <option value="germanywestcentral">Germany West Central (Frankfurt)</option>
-                <option value="francecentral">France Central (Paris)</option>
-                <option value="swedencentral">Sweden Central</option>
-                <option value="uaenorth">UAE North (Dubai)</option>
-                <option value="southafricanorth">South Africa North (Johannesburg)</option>
-              </optgroup>
-              <optgroup label="APJ — Azure">
-                <option value="australiaeast">Australia East (Sydney)</option>
-                <option value="japaneast">Japan East (Tokyo)</option>
-                <option value="southeastasia">Southeast Asia (Singapore)</option>
-                <option value="centralindia">Central India (Pune)</option>
-                <option value="koreacentral">Korea Central (Seoul)</option>
-              </optgroup>
-            </select>
-          </div>
+    </div>
+  </div><!-- source data + GFS retention -->
+
+  <div class="card">
+    <div class="card-body">
+
+      <div class="section-label" id="lbl-imm-sec">Immutability Settings</div>
+
+      <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 14px;background:var(--gray-50)">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span id="lbl-imm-min" style="font-size:12px;color:var(--gray-700)">Minimum immutability duration:</span>
+          <input type="number" id="immCap" value="7" min="1" max="3650" style="width:64px;padding:3px 6px;font-size:12px;font-family:var(--mono);border:1px solid var(--gray-300);border-radius:var(--radius);text-align:center">
+          <span id="lbl-imm-min-unit" style="font-size:12px;color:var(--gray-500)">days</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
-          <input type="checkbox" id="expressRoute" style="width:15px;height:15px;accent-color:#0078d4;cursor:pointer;flex-shrink:0">
-          <label for="expressRoute" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500;display:flex;align-items:center;gap:5px">
-            <i class="fa-solid fa-bolt" style="color:#0078d4;font-size:11px"></i>
-            <span id="lbl-expressroute">Azure ExpressRoute available</span>
+        <div id="lbl-imm-min-desc" style="font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:6px">Defines guaranteed immutability duration for every backup on this repository. Provides additional layer of protection against accidental or malicious retention policy changes.</div>
+
+        <div id="lbl-imm-mode-title" style="font-size:12px;color:var(--gray-700);margin-top:12px;margin-bottom:6px">Make backups immutable:</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
+            <input type="radio" name="immMode" id="immModeRetention" value="retention" checked style="margin-top:2px;accent-color:var(--green);flex-shrink:0">
+            <span id="lbl-imm-mode-ret" style="font-size:12px;color:var(--gray-700)">For the entire duration of their retention policy (recommended)</span>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
+            <input type="radio" name="immMode" id="immModeMinimum" value="minimum" style="margin-top:2px;accent-color:var(--green);flex-shrink:0">
+            <span id="lbl-imm-mode-min" style="font-size:12px;color:var(--gray-700)">For the minimum immutability period only</span>
           </label>
         </div>
-        <div id="net-result"></div>
 
-        <div class="section-label" id="lbl-bw-sec">Backup window &amp; bandwidth</div>
-        <div class="field-grid">
-          <div class="field">
-            <label id="lbl-bwmode">Calculate</label>
-            <select id="bwMode" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
-              <option value="bandwidth" selected id="lbl-bwmode-bw">Required bandwidth</option>
-              <option value="window" id="lbl-bwmode-win">Backup duration</option>
-            </select>
-          </div>
-          <div class="field" id="bw-avail-field" style="display:none">
-            <label id="lbl-bwavail">Available bandwidth (Mbps)</label>
-            <input type="number" id="bwAvail" value="500" min="1" max="100000" step="10">
-          </div>
-        </div>
-        <div class="field-grid" style="margin-top:10px">
-          <div class="field"><label id="lbl-bwwin">Backup window (hours)</label>
-            <input type="number" id="bwWindow" value="12" min="1" max="24" step="1"></div>
-          <div class="field">
-            <label id="lbl-proxies" style="display:flex;align-items:center;gap:4px">
-              <span id="lbl-proxies-text">Proxies assigned to VDC Vault repo</span>
-              <a href="https://helpcenter.veeam.com/docs/vbr/userguide/capacity_tier.html?ver=13" target="_blank" title="Veeam docs: assigning proxies to SOBR Capacity Tier" style="color:var(--green-dark);line-height:1">
-                <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
-              </a>
-            </label>
-            <input type="number" id="bwProxies" value="1" min="1" max="50" step="1">
-          </div>
-        </div>
-        <div class="field-grid" style="margin-top:10px">
-          <div class="field">
-            <label id="lbl-streams" style="display:flex;align-items:center;gap:4px">
-              <span id="lbl-streams-text">Parallel tasks per proxy</span>
-              <a href="https://helpcenter.veeam.com/docs/vbr/userguide/sobr_cap_tier_settings.html?ver=13" target="_blank" id="lbl-streams-tip" style="color:var(--green-dark);line-height:1">
-                <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
-              </a>
-            </label>
-            <input type="number" id="bwStreams" value="4" min="1" max="64" step="1">
-          </div>
-          <div style="display:flex;align-items:flex-end;padding-bottom:2px">
-            <div style="background:var(--blue-light);border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;padding:.45rem .7rem;font-size:10px;color:#1e40af;line-height:1.5">
-              <i class="fa-solid fa-circle-info" style="margin-right:4px"></i><span id="lbl-streams-note"></span>
-            </div>
-          </div>
-        </div>
-        <div class="field-grid" style="margin-top:10px">
-          <div class="field">
-            <label id="lbl-blocksize" style="display:flex;align-items:center;gap:4px">
-              <span id="lbl-blocksize-text">Storage optimization (block size)</span>
-              <a href="https://helpcenter.veeam.com/docs/vbr/userguide/backup_job_storage_vm.html?ver=13" target="_blank" id="lbl-blocksize-tip" style="color:var(--green-dark);line-height:1">
-                <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
-              </a>
-            </label>
-            <select id="blockSizeKB" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
-              <option value="256" selected id="lbl-bs-256">256 KB</option>
-              <option value="512" id="lbl-bs-512">512 KB</option>
-              <option value="1024" id="lbl-bs-1024">1 MB</option>
-              <option value="4096" id="lbl-bs-4096">4 MB</option>
-              <option value="8192" id="lbl-bs-8192">8 MB</option>
-            </select>
-          </div>
-          <div style="display:flex;align-items:flex-end;padding-bottom:2px">
-            <div style="background:var(--blue-light);border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;padding:.45rem .7rem;font-size:10px;color:#1e40af;line-height:1.5">
-              <i class="fa-solid fa-circle-info" style="margin-right:4px"></i><span id="lbl-blocksize-note"></span>
-            </div>
-          </div>
-        </div>
+        <div id="imm-mode-note" style="margin-top:10px"></div>
+        <div id="imm-lock-summary" style="margin-top:8px"></div>
+      </div>
+      <div id="imm-warnings"></div>
 
+    </div>
+  </div><!-- immutability -->
+
+  <div class="card">
+    <div class="card-body">
+
+    <div class="section-label" id="lbl-bw-sec">Backup window &amp; bandwidth</div>
+
+    <div id="lbl-basis-title" style="font-size:12px;color:var(--gray-700);margin-bottom:7px">Measure by:</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <label class="opt-card" id="basis-time-box">
+        <input type="radio" name="bwBasis" id="basisTime" value="time" checked>
+        <span>
+          <span class="opt-title" id="lbl-basis-time">Time — backup window</span>
+          <span class="opt-sub" id="lbl-basis-time-sub">You set the window; the calculator returns the bandwidth you need</span>
+        </span>
+      </label>
+      <label class="opt-card" id="basis-bw-box">
+        <input type="radio" name="bwBasis" id="basisBandwidth" value="bandwidth">
+        <span>
+          <span class="opt-title" id="lbl-basis-bw">Bandwidth — available link</span>
+          <span class="opt-sub" id="lbl-basis-bw-sub">You set the link; the calculator returns how long the upload takes</span>
+        </span>
+      </label>
+    </div>
+
+    <div class="field-grid" id="bw-basis-fields">
+      <div class="field" id="bw-window-field">
+        <label id="lbl-bwwin">Backup window (hours)</label>
+        <input type="number" id="bwWindow" value="12" min="1" max="24" step="1">
+      </div>
+      <div class="field" id="bw-avail-field" style="display:none">
+        <label id="lbl-bwavail">Available bandwidth (Mbps)</label>
+        <input type="number" id="bwAvail" value="500" min="1" max="100000" step="10">
       </div>
     </div>
 
-  </div><!-- /inputs 2-col grid -->
+    <div class="field-grid" style="margin-top:10px">
+      <div class="field">
+        <label id="lbl-proxies" style="display:flex;align-items:center;gap:4px">
+          <span id="lbl-proxies-text">Proxies assigned to VDC Vault repo</span>
+          <a href="https://helpcenter.veeam.com/docs/vbr/userguide/capacity_tier.html?ver=13" target="_blank" title="Veeam docs: assigning proxies to SOBR Capacity Tier" style="color:var(--green-dark);line-height:1">
+            <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
+          </a>
+        </label>
+        <input type="number" id="bwProxies" value="1" min="1" max="50" step="1">
+      </div>
+      <div class="field">
+        <label id="lbl-streams" style="display:flex;align-items:center;gap:4px">
+          <span id="lbl-streams-text">Parallel tasks per proxy</span>
+          <a href="https://helpcenter.veeam.com/docs/vbr/userguide/sobr_cap_tier_settings.html?ver=13" target="_blank" id="lbl-streams-tip" style="color:var(--green-dark);line-height:1">
+            <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
+          </a>
+        </label>
+        <input type="number" id="bwStreams" value="4" min="1" max="64" step="1">
+      </div>
+    </div>
+
+    <div class="field-grid" style="margin-top:10px">
+      <div class="field">
+        <label id="lbl-blocksize" style="display:flex;align-items:center;gap:4px">
+          <span id="lbl-blocksize-text">Storage optimization (block size)</span>
+          <a href="https://helpcenter.veeam.com/docs/vbr/userguide/backup_job_storage_vm.html?ver=13" target="_blank" id="lbl-blocksize-tip" style="color:var(--green-dark);line-height:1">
+            <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
+          </a>
+        </label>
+        <select id="blockSizeKB" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
+          <option value="256" selected id="lbl-bs-256">256 KB</option>
+          <option value="512" id="lbl-bs-512">512 KB</option>
+          <option value="1024" id="lbl-bs-1024">1 MB</option>
+          <option value="4096" id="lbl-bs-4096">4 MB</option>
+          <option value="8192" id="lbl-bs-8192">8 MB</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;justify-content:flex-end;padding-bottom:2px">
+        <div style="background:var(--blue-light);border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;padding:.45rem .7rem;font-size:10px;color:#1e40af;line-height:1.5">
+          <i class="fa-solid fa-circle-info" style="margin-right:4px"></i><span id="lbl-streams-note"></span>
+        </div>
+        <div style="background:var(--blue-light);border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;padding:.45rem .7rem;font-size:10px;color:#1e40af;line-height:1.5">
+          <i class="fa-solid fa-circle-info" style="margin-right:4px"></i><span id="lbl-blocksize-note"></span>
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div><!-- backup window + bandwidth -->
+
+  <div class="card">
+    <div class="card-body">
+
+    <div class="section-label" id="lbl-net-sec">Network &amp; latency</div>
+    <div class="field-grid">
+      <div class="field">
+        <label id="lbl-net-origin">Client location (origin)</label>
+        <select id="netOrigin" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
+          <optgroup label="AMER">
+            <option value="us_east">USA — East Coast</option>
+            <option value="us_west">USA — West Coast</option>
+            <option value="us_central">USA — Central</option>
+            <option value="canada">Canada</option>
+            <option value="latam_north">LATAM — Mexico / Colombia / Venezuela</option>
+            <option value="latam_south" selected>LATAM — Argentina / Chile / Uruguay</option>
+            <option value="latam_brazil">LATAM — Brazil</option>
+          </optgroup>
+          <optgroup label="EMEA">
+            <option value="europe_west">Europe — West (UK, France, Netherlands)</option>
+            <option value="europe_central">Europe — Central (Germany, Austria, Switzerland)</option>
+            <option value="europe_north">Europe — North (Nordics)</option>
+            <option value="europe_south">Europe — South (Spain, Italy)</option>
+            <option value="middle_east">Middle East (UAE, Saudi)</option>
+            <option value="africa">Africa (South Africa)</option>
+          </optgroup>
+          <optgroup label="APJ">
+            <option value="australia">Australia / New Zealand</option>
+            <option value="japan">Japan</option>
+            <option value="sea">Southeast Asia (Singapore, Indonesia)</option>
+            <option value="india">India</option>
+            <option value="korea">Korea</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="field">
+        <label id="lbl-net-vault">VDC Vault region (destination)</label>
+        <select id="netVault" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
+          <optgroup label="AMER — Azure">
+            <option value="eastus">East US (Virginia)</option>
+            <option value="eastus2">East US 2 (Virginia)</option>
+            <option value="centralus">Central US (Iowa)</option>
+            <option value="westus">West US (California)</option>
+            <option value="southcentralus">South Central US (Texas)</option>
+            <option value="canadacentral">Canada Central (Toronto)</option>
+            <option value="brazilsouth">Brazil South (São Paulo)</option>
+          </optgroup>
+          <optgroup label="EMEA — Azure">
+            <option value="westeurope">West Europe (Netherlands)</option>
+            <option value="northeurope">North Europe (Ireland)</option>
+            <option value="uksouth">UK South (London)</option>
+            <option value="germanywestcentral">Germany West Central (Frankfurt)</option>
+            <option value="francecentral">France Central (Paris)</option>
+            <option value="swedencentral">Sweden Central</option>
+            <option value="uaenorth">UAE North (Dubai)</option>
+            <option value="southafricanorth">South Africa North (Johannesburg)</option>
+          </optgroup>
+          <optgroup label="APJ — Azure">
+            <option value="australiaeast">Australia East (Sydney)</option>
+            <option value="japaneast">Japan East (Tokyo)</option>
+            <option value="southeastasia">Southeast Asia (Singapore)</option>
+            <option value="centralindia">Central India (Pune)</option>
+            <option value="koreacentral">Korea Central (Seoul)</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+      <input type="checkbox" id="expressRoute" style="width:15px;height:15px;accent-color:#0078d4;cursor:pointer;flex-shrink:0">
+      <label for="expressRoute" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500;display:flex;align-items:center;gap:5px">
+        <i class="fa-solid fa-bolt" style="color:#0078d4;font-size:11px"></i>
+        <span id="lbl-expressroute">Azure ExpressRoute available</span>
+      </label>
+    </div>
+    <div id="net-result"></div>
+    <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:.55rem .8rem;margin-top:10px;font-size:10px;color:var(--gray-500);line-height:1.55">
+      <i class="fa-solid fa-circle-info" style="margin-right:5px"></i><span id="lbl-latency-source"></span>
+    </div>
+
+    </div>
+  </div><!-- network + latency -->
 
   <!-- BOTTOM: Results (full width) -->
   <div>
@@ -533,6 +615,22 @@
         </div>
         <div class="card-body" id="why-body"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Summary + printable report -->
+  <div class="card" id="summary-card">
+    <div class="card-header">
+      <div class="card-header-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+      <h3 id="lbl-summary-title">Summary</h3>
+      <button type="button" id="btn-print" class="print-btn no-print" onclick="window.print()">
+        <i class="fa-solid fa-file-pdf"></i><span id="lbl-print">Save as PDF</span>
+      </button>
+    </div>
+    <div class="card-body">
+      <div id="print-meta" class="print-only"></div>
+      <div id="summary-content" class="summary-cols"></div>
+      <p id="lbl-summary-disclaimer" style="font-size:10px;color:var(--gray-500);line-height:1.55;margin-top:14px;padding-top:10px;border-top:1px solid var(--gray-200)"></p>
     </div>
   </div>
 </div>
@@ -600,8 +698,22 @@ const T = {
     bwPeakNote:'CPU/RAM sized for peak', bwEffective:'Effective link (latency)', bwRequired:'Required',
     bwRequired:'Required per proxy', bwTotal:'Total (all proxies)',
     bwNote:(win,prx)=>`Based on a <strong>${win}h</strong> backup window across <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
-    bwModeLabel:'Calculate', bwModeBw:'Required bandwidth', bwModeWin:'Backup duration',
-    bwAvail:'Available bandwidth (Mbps)', bwWinTarget:'Target window (hours)',
+    basisTitle:'Measure by:',
+    summaryTitle:'Summary', printBtn:'Save as PDF',
+    sumYes:'Yes', sumNo:'No',
+    sumCapTier:'Capacity Tier', sumObjStorage:'Object storage', sumPolicy:'Policy', sumOffload:'Move older than',
+    sumCopyMove:'Copy + Move', sumCopyOnly:'Copy only', sumMoveOnly:'Move only',
+    sumImmMode:'Mode', sumEffLock:'Effective lock',
+    sumResults:'Results', sumVaultStorage:'Vault storage', sumDataStored:'Data stored',
+    sumUpload:'Upload', sumDailyInc:'Daily incremental', sumSeedNights:'Seeding spread',
+    sumPeakDur:'Peak day duration', sumFits:'Meets the maintenance window', sumFitsYes:'Yes', sumFitsNo:'No — exceeds',
+    sumThroughput:'Throughput', sumProxySizing:'Proxy sizing', sumApi:'S3 API',
+    printMeta:(d)=>`SOBR Calculator by MJ — VDC Vault sizing report. Generated ${d}.`,
+    sumDisclaimer:'Estimates for planning only. Storage figures assume the stated change rate and compression hold steady; upload times assume the link is dedicated to the offload and that the modelled RTT matches reality. Validate against a pilot before committing to a window or a subscription.',
+    basisTime:'Time — backup window', basisTimeSub:'You set the window; the calculator returns the bandwidth you need',
+    basisBw:'Bandwidth — available link', basisBwSub:'You set the link; the calculator returns how long the upload takes',
+    latencySource:'Round-trip times come from a built-in matrix of typical internet paths between each client region and each Azure region hosting VDC Vault — they are planning estimates, not live measurements. Your real RTT depends on your ISP, peering and routing, so measure it before committing to a window: from a proxy, ping or run a traceroute to the Vault endpoint and use the observed figure here.',
+    bwAvail:'Available bandwidth (Mbps)', bwWinTarget:'Maintenance window (hours)',
     durTitle:'Backup duration', durDaily:'Daily incremental', durPeak:'Peak — synthetic full day',
     durFirstFull:'First full (initial seed)', durOneTime:'one-time', perDay:'day', blocksUnit:'blocks',
     durSeedNote:(dur,nights,win)=>`Seeding the first full takes <strong>${dur}</strong> of transfer — a one-time upload of the whole compressed source. Spread over a ${win}h nightly window that is about <strong>${nights} ${nights===1?'night':'nights'}</strong>. The window check below applies to the recurring cycle, once seeding is done.`,
@@ -710,8 +822,22 @@ const T = {
     bwPeakNote:'CPU/RAM dimensionado para el pico', bwEffective:'Enlace efectivo (latencia)', bwRequired:'Requerido',
     bwRequired:'Requerido por proxy', bwTotal:'Total (todos los proxies)',
     bwNote:(win,prx)=>`Basado en una ventana de backup de <strong>${win}h</strong> con <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
-    bwModeLabel:'Calcular', bwModeBw:'Ancho de banda requerido', bwModeWin:'Duración del backup',
-    bwAvail:'Ancho de banda disponible (Mbps)', bwWinTarget:'Ventana objetivo (horas)',
+    basisTitle:'Medición por:',
+    summaryTitle:'Resumen', printBtn:'Guardar como PDF',
+    sumYes:'Sí', sumNo:'No',
+    sumCapTier:'Capacity Tier', sumObjStorage:'Object storage', sumPolicy:'Política', sumOffload:'Mover más antiguos que',
+    sumCopyMove:'Copy + Move', sumCopyOnly:'Solo Copy', sumMoveOnly:'Solo Move',
+    sumImmMode:'Modo', sumEffLock:'Lock efectivo',
+    sumResults:'Resultados', sumVaultStorage:'Storage en el Vault', sumDataStored:'Datos almacenados',
+    sumUpload:'Subida', sumDailyInc:'Incremental diario', sumSeedNights:'Carga inicial repartida',
+    sumPeakDur:'Duración del día de pico', sumFits:'Cumple la ventana de mantenimiento', sumFitsYes:'Sí', sumFitsNo:'No — la excede',
+    sumThroughput:'Throughput', sumProxySizing:'Dimensionamiento de proxies', sumApi:'API S3',
+    printMeta:(d)=>`SOBR Calculator by MJ — reporte de dimensionamiento de VDC Vault. Generado ${d}.`,
+    sumDisclaimer:'Estimaciones solo para planificación. Las cifras de storage suponen que la tasa de cambio y la compresión indicadas se mantienen estables; los tiempos de subida suponen que el enlace está dedicado al offload y que el RTT modelado coincide con el real. Validá con un piloto antes de comprometer una ventana o una suscripción.',
+    basisTime:'Tiempo — ventana de backup', basisTimeSub:'Vos definís la ventana; la calculadora devuelve el ancho de banda necesario',
+    basisBw:'Ancho de banda — enlace disponible', basisBwSub:'Vos definís el enlace; la calculadora devuelve cuánto tarda la subida',
+    latencySource:'Los tiempos de ida y vuelta salen de una matriz interna de rutas de internet típicas entre cada región de cliente y cada región de Azure donde corre VDC Vault — son estimaciones de planificación, no mediciones en vivo. El RTT real depende de tu ISP, del peering y del ruteo, así que medilo antes de comprometer una ventana: desde un proxy, hacé ping o traceroute al endpoint del Vault y usá acá el valor observado.',
+    bwAvail:'Ancho de banda disponible (Mbps)', bwWinTarget:'Ventana de mantenimiento (horas)',
     durTitle:'Duración del backup', durDaily:'Incremental diario', durPeak:'Pico — día de full sintético',
     durFirstFull:'Primer full (carga inicial)', durOneTime:'una sola vez', perDay:'día', blocksUnit:'bloques',
     durSeedNote:(dur,nights,win)=>`El primer full requiere <strong>${dur}</strong> de transferencia — una subida única de todo el origen comprimido. Repartido en una ventana nocturna de ${win}h son unas <strong>${nights} ${nights===1?'noche':'noches'}</strong>. La verificación de ventana de abajo aplica al ciclo recurrente, una vez terminada la carga inicial.`,
@@ -820,8 +946,22 @@ const T = {
     bwPeakNote:'CPU/RAM dimensionado para o pico', bwEffective:'Link efetivo (latência)', bwRequired:'Necessário',
     bwRequired:'Necessário por proxy', bwTotal:'Total (todos os proxies)',
     bwNote:(win,prx)=>`Com base em uma janela de backup de <strong>${win}h</strong> e <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
-    bwModeLabel:'Calcular', bwModeBw:'Largura de banda necessária', bwModeWin:'Duração do backup',
-    bwAvail:'Largura de banda disponível (Mbps)', bwWinTarget:'Janela alvo (horas)',
+    basisTitle:'Medição por:',
+    summaryTitle:'Resumo', printBtn:'Salvar como PDF',
+    sumYes:'Sim', sumNo:'Não',
+    sumCapTier:'Capacity Tier', sumObjStorage:'Object storage', sumPolicy:'Política', sumOffload:'Mover mais antigos que',
+    sumCopyMove:'Copy + Move', sumCopyOnly:'Apenas Copy', sumMoveOnly:'Apenas Move',
+    sumImmMode:'Modo', sumEffLock:'Lock efetivo',
+    sumResults:'Resultados', sumVaultStorage:'Storage no Vault', sumDataStored:'Dados armazenados',
+    sumUpload:'Upload', sumDailyInc:'Incremental diário', sumSeedNights:'Carga inicial distribuída',
+    sumPeakDur:'Duração do dia de pico', sumFits:'Cumpre a janela de manutenção', sumFitsYes:'Sim', sumFitsNo:'Não — excede',
+    sumThroughput:'Throughput', sumProxySizing:'Dimensionamento de proxies', sumApi:'API S3',
+    printMeta:(d)=>`SOBR Calculator by MJ — relatório de dimensionamento do VDC Vault. Gerado ${d}.`,
+    sumDisclaimer:'Estimativas apenas para planejamento. Os números de storage assumem que a taxa de mudança e a compressão informadas se mantêm estáveis; os tempos de upload assumem que o link está dedicado ao offload e que o RTT modelado corresponde ao real. Valide com um piloto antes de assumir uma janela ou uma assinatura.',
+    basisTime:'Tempo — janela de backup', basisTimeSub:'Você define a janela; a calculadora retorna a largura de banda necessária',
+    basisBw:'Largura de banda — link disponível', basisBwSub:'Você define o link; a calculadora retorna quanto tempo leva o upload',
+    latencySource:'Os tempos de ida e volta vêm de uma matriz interna de rotas de internet típicas entre cada região de cliente e cada região do Azure onde roda o VDC Vault — são estimativas de planejamento, não medições ao vivo. O RTT real depende do seu ISP, do peering e do roteamento, então meça antes de assumir uma janela: de um proxy, faça ping ou traceroute ao endpoint do Vault e use aqui o valor observado.',
+    bwAvail:'Largura de banda disponível (Mbps)', bwWinTarget:'Janela de manutenção (horas)',
     durTitle:'Duração do backup', durDaily:'Incremental diário', durPeak:'Pico — dia do full sintético',
     durFirstFull:'Primeiro full (carga inicial)', durOneTime:'uma única vez', perDay:'dia', blocksUnit:'blocos',
     durSeedNote:(dur,nights,win)=>`O primeiro full exige <strong>${dur}</strong> de transferência — um upload único de toda a origem comprimida. Distribuído em uma janela noturna de ${win}h são cerca de <strong>${nights} ${nights===1?'noite':'noites'}</strong>. A verificação de janela abaixo se aplica ao ciclo recorrente, depois de concluída a carga inicial.`,
@@ -903,7 +1043,10 @@ function applyT() {
     'lbl-health':'healthLabel','lbl-hc-off':'hcOff','lbl-hc-monthly':'hcMonthly','lbl-hc-weekly':'hcWeekly',
     'lbl-sim-vault':'vaultTotal',
     'lbl-bw-sec':'bwSec','lbl-bwwin':'bwWin','lbl-proxies-text':'proxies',
-    'lbl-bwmode':'bwModeLabel','lbl-bwmode-bw':'bwModeBw','lbl-bwmode-win':'bwModeWin',
+    'lbl-basis-title':'basisTitle','lbl-summary-title':'summaryTitle','lbl-print':'printBtn',
+    'lbl-basis-time':'basisTime','lbl-basis-time-sub':'basisTimeSub',
+    'lbl-basis-bw':'basisBw','lbl-basis-bw-sub':'basisBwSub',
+    'lbl-latency-source':'latencySource',
     'lbl-bwavail':'bwAvail',
     'lbl-streams-text':'parallelTasks','lbl-streams-note':'parallelTasksNote',
     'lbl-blocksize-text':'blockSizeLabel','lbl-blocksize-note':'blockSizeNote',
@@ -934,11 +1077,12 @@ function applyT() {
   updateBwMode(); // re-applies the mode-dependent window label after the map pass
 }
 
-// Toggles the bandwidth/duration direction: which value is the input and which is solved for
+// Shows only the field the selected measurement basis needs. In bandwidth mode the window
+// stays visible because the fit verdict and the seeding-nights figure both depend on it.
 function updateBwMode() {
-  const windowMode = document.getElementById('bwMode').value === 'window';
-  document.getElementById('bw-avail-field').style.display = windowMode ? '' : 'none';
-  document.getElementById('lbl-bwwin').textContent = t(windowMode ? 'bwWinTarget' : 'bwWin');
+  const byBandwidth = document.getElementById('basisBandwidth').checked;
+  document.getElementById('bw-avail-field').style.display = byBandwidth ? '' : 'none';
+  document.getElementById('lbl-bwwin').textContent = t(byBandwidth ? 'bwWinTarget' : 'bwWin');
 }
 
 function switchTab(name) {
@@ -964,7 +1108,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '2.2.0'; // Bump on each release — shown in the header
+const APP_VERSION       = '2.3.0'; // Bump on each release — shown in the header
 const TCP_WINDOW_KB     = 256; // TCP window size for throughput model (KB)
 const STREAMS_PER_PROXY = 4;   // Parallel TCP streams per proxy (VBR default)
 const MBPS_PER_VCPU     = 100; // Veeam recommended: 1 vCPU per 100 Mbps
@@ -992,7 +1136,7 @@ function readInputs() {
     offloadWindow:  document.getElementById('offloadWindow').value,
     healthCheck:    document.getElementById('healthCheck').value,
     windowHours:    Math.max(1, getInt('bwWindow')),
-    bwMode:         document.getElementById('bwMode').value,
+    bwBasis:        document.querySelector('input[name="bwBasis"]:checked').value,
     availMbps:      Math.max(1, getInt('bwAvail')),
     proxies:        Math.max(1, getInt('bwProxies')),
     streamsPerProxy: Math.max(1, getInt('bwStreams')),
@@ -1027,7 +1171,7 @@ function calcStorageTier({ sourceTB, changeRate, compression, blockGenDays,
 
 // ─── Pure bandwidth calculation ──────────────────────────────────────────────
 function calcBandwidthMetrics({ sourceTB, changeRate, compression, windowHours, proxies,
-                               bwMode, availMbps }, rtt, streams) {
+                               bwBasis, availMbps }, rtt, streams) {
   const fullTB   = sourceTB * (1 - compression);
   const incTB    = sourceTB * changeRate * (1 - compression);
   const peakTB   = incTB + fullTB;
@@ -1036,21 +1180,21 @@ function calcBandwidthMetrics({ sourceTB, changeRate, compression, windowHours, 
   const toMbps  = (tb, hours) => (tb * 1024 * 1024 * 8) / (hours * 3600);
   const toHours = (tb, mbps)  => (tb * 1024 * 1024 * 8) / (mbps * 3600);
 
-  // Two directions of the same model:
-  //  'bandwidth' — the window is fixed, bandwidth is what we solve for
-  //  'window'    — the link is fixed and saturated, duration is what we solve for
-  const windowMode = bwMode === 'window';
-  const linkMbps   = windowMode ? Math.min(availMbps, tcpLimitMbps) : null;
-  const incMbps    = windowMode ? linkMbps : toMbps(incTB,  windowHours);
-  const peakMbps   = windowMode ? linkMbps : toMbps(peakTB, windowHours);
-  const incHours   = windowMode ? toHours(incTB,  linkMbps) : windowHours;
-  const peakHours  = windowMode ? toHours(peakTB, linkMbps) : windowHours;
+  // Two directions of the same model, named after what the user supplies:
+  //  'time'      — the window is given, so bandwidth is what we solve for
+  //  'bandwidth' — the link is given and saturated, so duration is what we solve for
+  const solveDuration = bwBasis === 'bandwidth';
+  const linkMbps   = solveDuration ? Math.min(availMbps, tcpLimitMbps) : null;
+  const incMbps    = solveDuration ? linkMbps : toMbps(incTB,  windowHours);
+  const peakMbps   = solveDuration ? linkMbps : toMbps(peakTB, windowHours);
+  const incHours   = solveDuration ? toHours(incTB,  linkMbps) : windowHours;
+  const peakHours  = solveDuration ? toHours(peakTB, linkMbps) : windowHours;
   // The very first upload seeds the whole compressed source — a one-time transfer,
   // unlike the synthetic full day which also carries that day's incremental.
-  const fullHours  = windowMode ? toHours(fullTB, linkMbps) : null;
+  const fullHours  = solveDuration ? toHours(fullTB, linkMbps) : null;
 
   // What the link is measured against: the rate we'd need ('bandwidth') or the rate we bought ('window')
-  const nominalMbps   = windowMode ? availMbps : peakMbps;
+  const nominalMbps   = solveDuration ? availMbps : peakMbps;
   const effectiveMbps = Math.min(nominalMbps, tcpLimitMbps);
   const linkUtilPct   = Math.min(100, Math.round(effectiveMbps / nominalMbps * 100));
   const perProxyEffMbps = effectiveMbps / proxies;
@@ -1058,8 +1202,8 @@ function calcBandwidthMetrics({ sourceTB, changeRate, compression, windowHours, 
   const ramPerProxy     = Math.max(MIN_RAM_GB, vcpuPerProxy * 2 + 2);
   return {
     incTB, peakTB, fullTB, incMbps, peakMbps, nominalMbps, effectiveMbps, tcpLimitMbps, linkUtilPct,
-    windowMode, incHours, peakHours, fullHours,
-    tcpCapped: windowMode && availMbps > tcpLimitMbps,
+    solveDuration, incHours, peakHours, fullHours,
+    tcpCapped: solveDuration && availMbps > tcpLimitMbps,
     fitsWindow: peakHours <= windowHours,
     perProxyDailyMbps: incMbps  / proxies,
     perProxyPeakMbps:  peakMbps / proxies,
@@ -1115,8 +1259,8 @@ function renderBW(inp, bw, rtt) {
 
   document.getElementById('bw-result').innerHTML = `
     <div class="bw-card">
-      <div class="bw-card-title"><i class="fa-solid fa-network-wired" style="font-size:12px"></i>${bw.windowMode ? t('durTitle') : t('bwTitle')}</div>
-      ${bw.windowMode ? (() => {
+      <div class="bw-card-title"><i class="fa-solid fa-network-wired" style="font-size:12px"></i>${bw.solveDuration ? t('durTitle') : t('bwTitle')}</div>
+      ${bw.solveDuration ? (() => {
         const fits    = bw.fitsWindow;
         const fitCol  = fits ? 'var(--green-dark)' : 'var(--red)';
         const fitBg   = fits ? 'var(--green-light)' : '#fdecea';
@@ -1188,7 +1332,7 @@ function renderBW(inp, bw, rtt) {
           <div class="m-unit" style="color:#8b5cf6">${ramTotal} GB total</div>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--gray-500);margin-top:8px">${bw.windowMode ? T[lang].durNote(fmtBW(effectiveMbps), proxies) : T[lang].bwNote(windowHours, proxies)} ${t('cpuNote')}</div>
+      <div style="font-size:10px;color:var(--gray-500);margin-top:8px">${bw.solveDuration ? T[lang].durNote(fmtBW(effectiveMbps), proxies) : T[lang].bwNote(windowHours, proxies)} ${t('cpuNote')}</div>
       ${(() => {
         const fmtObj  = n => n >= 1e6 ? (n/1e6).toFixed(1)+' M' : n >= 1e3 ? Math.round(n/1e3)+' K' : String(n);
         // 1 TB = 1024^3 KB, so objects = TB * 1024^3 / blockSizeKB
@@ -1387,8 +1531,8 @@ function calc() {
     inp.immCapDays, inp.blockGenDays));
   renderLockSummary(inp.immCapDays, inp.offloadDays);
 
+  const bw = capEnabled ? calcBandwidthMetrics(inp, rtt, streams) : null;
   if (capEnabled) {
-    const bw = calcBandwidthMetrics(inp, rtt, streams);
     renderBW(inp, bw, rtt);
     renderNetwork(inp, bw, rtt, baseRtt, streams);
   } else {
@@ -1406,6 +1550,101 @@ function calc() {
   renderBanner(inp, capResult, capEnabled);
   renderBreakdown(inp, capResult, capEnabled);
   renderSimulations(inp, capEnabled, moveOnly);
+  renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, moveOnly);
+}
+
+// ─── Render: summary / printable report ──────────────────────────────────────
+function renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, moveOnly) {
+  const row = (k, v, cls='') => `<div class="sum-row"><span class="k">${k}</span><span class="v ${cls}">${v}</span></div>`;
+  const grp = k => `<div class="sum-group">${k}</div>`;
+  const yn  = b => b ? t('sumYes') : t('sumNo');
+  const vaultSel = document.getElementById('netVault');
+  const origSel  = document.getElementById('netOrigin');
+  const region   = vaultSel.options[vaultSel.selectedIndex].textContent;
+  const origin   = origSel.options[origSel.selectedIndex].textContent;
+  const policy   = !capEnabled ? t('disabled')
+                 : moveOnly ? t('sumMoveOnly')
+                 : inp.copyEnabled && inp.moveEnabled ? t('sumCopyMove') : t('sumCopyOnly');
+  const bs = inp.blockSizeKB >= 1024 ? inp.blockSizeKB/1024+' MB' : inp.blockSizeKB+' KB';
+
+  // Left column — the configuration that produced these numbers
+  let cfg = grp(t('sumCapTier'))
+    + row(t('sumObjStorage'), capEnabled ? `VDC Vault — ${region}` : t('disabled'))
+    + row(t('sumPolicy'), policy)
+    + (inp.moveEnabled ? row(t('sumOffload'), `${inp.offloadDays} ${t('days')}`) : '')
+    + row(t('encryptLabel'), yn(inp.encryptUpload))
+    + row(t('offloadWindowLabel').replace(':',''), t(inp.offloadWindow === 'window' ? 'owWin' : 'owAny'))
+    + row(t('healthLabel').replace(':',''), t(inp.healthCheck === 'off' ? 'hcOff' : inp.healthCheck === 'weekly' ? 'hcWeekly' : 'hcMonthly'))
+    + grp(t('sourceSec'))
+    + row(t('src'), inp.sourceTB.toFixed(2)+' TB')
+    + row(t('cr'), (inp.changeRate*100).toFixed(1)+' %')
+    + row(t('comp'), (inp.compression*100).toFixed(0)+' %')
+    + row(t('bg'), inp.blockGenDays+' '+t('days'))
+    + grp(t('gfsSec'))
+    + row(t('daily'), inp.retDays) + row(t('weekly'), inp.retWeeks)
+    + row(t('monthly'), inp.retMonths) + row(t('yearly'), inp.retYears)
+    + grp(t('immSec'))
+    + row(t('sumImmMode'), t(inp.immMode === 'retention' ? 'immModeRet' : 'immModeMin'))
+    + row(t('immMinLabel').replace(':',''), inp.immMinDays+' '+t('days'))
+    + row(t('sumEffLock'), inp.immCapDays+' '+t('days'), 'hi')
+    + grp(t('netSec'))
+    + row(t('netOrigin'), origin)
+    + row(t('netVault'), region)
+    + row('ExpressRoute', yn(inp.expressRoute))
+    + row(t('netRtt'), `~${rtt} ms`+(inp.expressRoute ? ` (${t('erPublic')} ~${baseRtt} ms)` : ''))
+    + grp(t('bwSec'))
+    + row(t('basisTitle').replace(':',''), t(inp.bwBasis === 'bandwidth' ? 'basisBw' : 'basisTime'))
+    + (inp.bwBasis === 'bandwidth' ? row(t('bwAvail'), fmtBW(inp.availMbps)) : '')
+    + row(t(inp.bwBasis === 'bandwidth' ? 'bwWinTarget' : 'bwWin'), inp.windowHours+' h')
+    + row(t('proxies'), inp.proxies)
+    + row(t('parallelTasks'), `${inp.streamsPerProxy} (${streams} ${t('netStreams')})`)
+    + row(t('blockSizeLabel'), bs);
+
+  // Right column — what the model returns
+  let res;
+  if (!capEnabled) {
+    res = grp(t('sumResults')) + `<p style="font-size:11.5px;color:var(--gray-500);padding:6px 0">${t('capDisabledMsg')}</p>`;
+  } else {
+    const objInc  = Math.round(bw.incTB  * 1024*1024*1024 / inp.blockSizeKB);
+    const objPeak = Math.round(bw.peakTB * 1024*1024*1024 / inp.blockSizeKB);
+    const fmtObj  = n => n >= 1e6 ? (n/1e6).toFixed(1)+' M' : n >= 1e3 ? Math.round(n/1e3)+' K' : String(n);
+    res = grp(t('sumVaultStorage'))
+      + row(t('fullComp'), fmt(capResult.fullTB))
+      + row(t('sumDataStored'), fmt(capResult.dataTB))
+      + row(t('ovhImm'), fmt(capResult.overheadTB), 'warn')
+      + row(t('totalEst'), fmt(capResult.totalTB), 'hi')
+      + grp(t('sumUpload'))
+      + row(t('sumDailyInc'), fmt(bw.incTB))
+      + row(t('durPeak'), `${fmt(bw.peakTB)} · ${t('bwPeakEvery')} ${inp.blockGenDays}d`);
+    if (bw.solveDuration) {
+      res += row(t('durFirstFull'), fmtDur(bw.fullHours), 'hi')
+        + row(t('sumSeedNights'), `${Math.ceil(bw.fullHours / inp.windowHours)} × ${inp.windowHours}h`)
+        + row(t('durDaily'), fmtDur(bw.incHours))
+        + row(t('sumPeakDur'), fmtDur(bw.peakHours), bw.fitsWindow ? 'hi' : 'warn')
+        + row(t('sumFits'), bw.fitsWindow ? t('sumFitsYes') : t('sumFitsNo'), bw.fitsWindow ? 'hi' : 'warn');
+    } else {
+      res += row(t('bwDaily'), fmtBW(bw.incMbps))
+        + row(t('bwRequired'), fmtBW(bw.peakMbps), 'hi');
+    }
+    res += grp(t('sumThroughput'))
+      + row(t('netNominal'), fmtBW(bw.nominalMbps))
+      + row('TCP limit', fmtBW(bw.tcpLimitMbps))
+      + row(t('netEffective'), fmtBW(bw.effectiveMbps), bw.linkUtilPct >= 80 ? 'hi' : 'warn')
+      + row(t('netUtil'), bw.linkUtilPct+' %', bw.linkUtilPct >= 80 ? 'hi' : 'warn')
+      + grp(t('sumProxySizing'))
+      + row(t('cpuPerProxy'), `${bw.vcpuPerProxy} vCPU (${bw.vcpuPerProxy*inp.proxies} ${t('bwTotal').toLowerCase()})`)
+      + row(t('ramPerProxy'), `${bw.ramPerProxy} GB (${bw.ramPerProxy*inp.proxies} GB)`)
+      + row(t('diskRequired'), `${(bw.diskReadMBs+bw.diskWriteMBs).toFixed(0)} MB/s`)
+      + grp(t('sumApi'))
+      + row(t('s3Objects'), fmtObj(objInc))
+      + row(t('s3ObjectsPeak'), fmtObj(objPeak))
+      + row(t('blockSizeLabel'), bs, inp.blockSizeKB >= 1024 ? 'hi' : 'warn');
+  }
+
+  document.getElementById('summary-content').innerHTML = `<div>${cfg}</div><div>${res}</div>`;
+  document.getElementById('print-meta').innerHTML =
+    `<p style="font-size:11px;color:var(--gray-500);margin-bottom:12px">${T[lang].printMeta(new Date().toLocaleString())}</p>`;
+  document.getElementById('lbl-summary-disclaimer').textContent = t('sumDisclaimer');
 }
 
 // Explains what the selected immutability mode does to the lock period
@@ -1496,7 +1735,7 @@ function updateMoveRow() {
 // ─── Event listeners ─────────────────────────────────────────────────────────
 const refresh = () => { updateMoveRow(); calc(); };
 document.getElementById('blockSizeKB').addEventListener('change', calc);
-document.getElementById('bwMode').addEventListener('change', () => { updateBwMode(); calc(); });
+document.querySelectorAll('input[name="bwBasis"]').forEach(el => el.addEventListener('change', () => { updateBwMode(); calc(); }));
 document.getElementById('netOrigin').addEventListener('change', calc);
 document.getElementById('netVault').addEventListener('change', calc);
 document.getElementById('offloadWindow').addEventListener('change', calc);
