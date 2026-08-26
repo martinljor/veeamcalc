@@ -13,6 +13,7 @@ The input panel mirrors the **Capacity Tier** page of the VBR *Scale-out Backup 
 - **VDC Vault capacity** — full GFS retention (daily, weekly, monthly, yearly)
 - **Immutability overhead** — with a step-by-step explanation of why it exists
 - **Both VBR immutability modes** — for the entire retention duration, or for the minimum period only
+- **Upload profile** — the one-time seed of the whole compressed source, then the daily change. Object storage offload is block-based, so unchanged blocks are never re-sent and there is no day that re-uploads a full.
 - **Upload requirements**, in either direction:
   - **Required bandwidth** — give it a backup window, get the Mbps you need
   - **Backup duration** — give it the available Mbps, get how long the upload takes and whether it fits the window
@@ -53,7 +54,7 @@ overhead ≈ daily_incremental × stranded_days
          + compressed_full × ⌈stranded_days ÷ block_generation⌉
 ```
 
-Note that *Synthetic full every N days* is a separate, genuinely configurable setting (backup job → Storage → Advanced) and drives the restore-point chain, not the lock.
+There is no synthetic-full cadence to configure here: because the offload is block-based, a synthetic full on the performance tier does not re-transfer blocks the Vault already holds.
 
 ---
 
