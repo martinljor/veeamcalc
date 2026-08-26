@@ -572,6 +572,8 @@ const T = {
     bwModeLabel:'Calculate', bwModeBw:'Required bandwidth', bwModeWin:'Backup duration',
     bwAvail:'Available bandwidth (Mbps)', bwWinTarget:'Target window (hours)',
     durTitle:'Backup duration', durDaily:'Daily incremental', durPeak:'Peak — synthetic full day',
+    durFirstFull:'First full (initial seed)', durOneTime:'one-time', perDay:'day', blocksUnit:'blocks',
+    durSeedNote:(dur,nights,win)=>`Seeding the first full takes <strong>${dur}</strong> of transfer — a one-time upload of the whole compressed source. Spread over a ${win}h nightly window that is about <strong>${nights} ${nights===1?'night':'nights'}</strong>. The window check below applies to the recurring cycle, once seeding is done.`,
     durLinkRate:'Sustained rate', durPerProxy:'per proxy',
     durVerdict:(dur,win,fits)=>fits
       ? `The peak day completes in <strong>${dur}</strong>, within the <strong>${win}h</strong> window.`
@@ -679,6 +681,8 @@ const T = {
     bwModeLabel:'Calcular', bwModeBw:'Ancho de banda requerido', bwModeWin:'Duración del backup',
     bwAvail:'Ancho de banda disponible (Mbps)', bwWinTarget:'Ventana objetivo (horas)',
     durTitle:'Duración del backup', durDaily:'Incremental diario', durPeak:'Pico — día de full sintético',
+    durFirstFull:'Primer full (carga inicial)', durOneTime:'una sola vez', perDay:'día', blocksUnit:'bloques',
+    durSeedNote:(dur,nights,win)=>`El primer full requiere <strong>${dur}</strong> de transferencia — una subida única de todo el origen comprimido. Repartido en una ventana nocturna de ${win}h son unas <strong>${nights} ${nights===1?'noche':'noches'}</strong>. La verificación de ventana de abajo aplica al ciclo recurrente, una vez terminada la carga inicial.`,
     durLinkRate:'Tasa sostenida', durPerProxy:'por proxy',
     durVerdict:(dur,win,fits)=>fits
       ? `El día de pico termina en <strong>${dur}</strong>, dentro de la ventana de <strong>${win}h</strong>.`
@@ -786,6 +790,8 @@ const T = {
     bwModeLabel:'Calcular', bwModeBw:'Largura de banda necessária', bwModeWin:'Duração do backup',
     bwAvail:'Largura de banda disponível (Mbps)', bwWinTarget:'Janela alvo (horas)',
     durTitle:'Duração do backup', durDaily:'Incremental diário', durPeak:'Pico — dia do full sintético',
+    durFirstFull:'Primeiro full (carga inicial)', durOneTime:'uma única vez', perDay:'dia', blocksUnit:'blocos',
+    durSeedNote:(dur,nights,win)=>`O primeiro full exige <strong>${dur}</strong> de transferência — um upload único de toda a origem comprimida. Distribuído em uma janela noturna de ${win}h são cerca de <strong>${nights} ${nights===1?'noite':'noites'}</strong>. A verificação de janela abaixo se aplica ao ciclo recorrente, depois de concluída a carga inicial.`,
     durLinkRate:'Taxa sustentada', durPerProxy:'por proxy',
     durVerdict:(dur,win,fits)=>fits
       ? `O dia de pico termina em <strong>${dur}</strong>, dentro da janela de <strong>${win}h</strong>.`
@@ -925,7 +931,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '2.0.0'; // Bump on each release — shown in the header
+const APP_VERSION       = '2.1.0'; // Bump on each release — shown in the header
 const TCP_WINDOW_KB     = 256; // TCP window size for throughput model (KB)
 const STREAMS_PER_PROXY = 4;   // Parallel TCP streams per proxy (VBR default)
 const MBPS_PER_VCPU     = 100; // Veeam recommended: 1 vCPU per 100 Mbps
@@ -1006,6 +1012,9 @@ function calcBandwidthMetrics({ sourceTB, changeRate, compression, windowHours, 
   const peakMbps   = windowMode ? linkMbps : toMbps(peakTB, windowHours);
   const incHours   = windowMode ? toHours(incTB,  linkMbps) : windowHours;
   const peakHours  = windowMode ? toHours(peakTB, linkMbps) : windowHours;
+  // The very first upload seeds the whole compressed source — a one-time transfer,
+  // unlike the synthetic full day which also carries that day's incremental.
+  const fullHours  = windowMode ? toHours(fullTB, linkMbps) : null;
 
   // What the link is measured against: the rate we'd need ('bandwidth') or the rate we bought ('window')
   const nominalMbps   = windowMode ? availMbps : peakMbps;
@@ -1015,8 +1024,8 @@ function calcBandwidthMetrics({ sourceTB, changeRate, compression, windowHours, 
   const vcpuPerProxy    = Math.max(MIN_VCPU, Math.ceil(perProxyEffMbps / MBPS_PER_VCPU));
   const ramPerProxy     = Math.max(MIN_RAM_GB, vcpuPerProxy * 2 + 2);
   return {
-    incTB, peakTB, incMbps, peakMbps, nominalMbps, effectiveMbps, tcpLimitMbps, linkUtilPct,
-    windowMode, incHours, peakHours,
+    incTB, peakTB, fullTB, incMbps, peakMbps, nominalMbps, effectiveMbps, tcpLimitMbps, linkUtilPct,
+    windowMode, incHours, peakHours, fullHours,
     tcpCapped: windowMode && availMbps > tcpLimitMbps,
     fitsWindow: peakHours <= windowHours,
     perProxyDailyMbps: incMbps  / proxies,
@@ -1080,11 +1089,16 @@ function renderBW(inp, bw, rtt) {
         const fitBg   = fits ? 'var(--green-light)' : '#fdecea';
         const fitIcon = fits ? 'fa-circle-check' : 'fa-circle-xmark';
         return `
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="bw-metric" style="border-color:#c4b5fd;background:#f5f3ff">
+          <div class="m-label" style="color:#6d28d9">${t('durFirstFull')}</div>
+          <div class="m-val" style="color:#4c1d95">${fmtDur(bw.fullHours)}</div>
+          <div class="m-unit" style="color:#7c3aed">${bw.fullTB.toFixed(2)} TB · ${t('durOneTime')}</div>
+        </div>
         <div class="bw-metric">
           <div class="m-label">${t('durDaily')}</div>
           <div class="m-val">${fmtDur(bw.incHours)}</div>
-          <div class="m-unit">${incTB.toFixed(3)} TB/day</div>
+          <div class="m-unit">${incTB.toFixed(3)} TB/${t('perDay')}</div>
         </div>
         <div class="bw-metric" style="border-color:${fitCol}44;background:${fitBg}">
           <div class="m-label" style="color:${fitCol}">${t('durPeak')}</div>
@@ -1097,6 +1111,9 @@ function renderBW(inp, bw, rtt) {
           <div class="m-unit">${fmtBW(perProxyEffMbps)} ${t('durPerProxy')}</div>
         </div>
       </div>
+      <div style="background:#f5f3ff;border-left:3px solid #7c3aed;border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .75rem;font-size:11px;color:#5b21b6;line-height:1.5;margin-bottom:8px">
+        <i class="fa-solid fa-seedling" style="margin-right:5px"></i>${T[lang].durSeedNote(fmtDur(bw.fullHours), Math.ceil(bw.fullHours / windowHours), windowHours)}
+      </div>
       <div style="background:${fitBg};border-left:3px solid ${fitCol};border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .75rem;font-size:11px;color:${fitCol};line-height:1.5;margin-bottom:10px">
         <i class="fa-solid ${fitIcon}" style="margin-right:5px"></i>${T[lang].durVerdict(fmtDur(bw.peakHours), windowHours, fits)}
       </div>
@@ -1108,7 +1125,7 @@ function renderBW(inp, bw, rtt) {
         <div class="bw-metric">
           <div class="m-label">${t('bwDaily')}</div>
           <div class="m-val">${fmtBW(perProxyDailyMbps)}</div>
-          <div class="m-unit">${incTB.toFixed(3)} TB/day · ${fmtBW(incMbps)} total</div>
+          <div class="m-unit">${incTB.toFixed(3)} TB/${t('perDay')} · ${fmtBW(incMbps)} total</div>
         </div>
         <div class="bw-metric" style="border-color:#fbbf24;background:#fffbeb">
           <div class="m-label" style="color:#92400e">${t('bwPeak')} (${t('bwRequired').toLowerCase()})</div>
@@ -1154,7 +1171,7 @@ function renderBW(inp, bw, rtt) {
             <div class="bw-metric">
               <div class="m-label">${t('s3Objects')}</div>
               <div class="m-val" style="font-size:14px">${fmtObj(objInc)}</div>
-              <div class="m-unit">${blockSizeKB >= 1024 ? blockSizeKB/1024+' MB' : blockSizeKB+' KB'} blocks</div>
+              <div class="m-unit">${blockSizeKB >= 1024 ? blockSizeKB/1024+' MB' : blockSizeKB+' KB'} ${t('blocksUnit')}</div>
             </div>
             <div class="bw-metric">
               <div class="m-label">${t('s3ObjectsPeak')}</div>
