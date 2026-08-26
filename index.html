@@ -183,6 +183,10 @@
     .warn-title{font-size:11px;font-weight:600;color:var(--red);margin-bottom:3px}
     .warn-msg{font-size:11px;color:#7f1d1d;line-height:1.6}
     .warn-tip{font-size:11px;color:#991b1b;margin-top:4px;font-style:italic}
+    .warn-box.info{background:var(--blue-light);border-left-color:var(--blue)}
+    .warn-box.info .warn-title{color:#1e40af}
+    .warn-box.info .warn-msg{color:#1e3a8a}
+    .warn-box.info .warn-tip{color:#1e40af}
 
     footer{text-align:center;padding:1.5rem;font-size:11px;color:var(--gray-500)}
     footer a{color:var(--green-dark);text-decoration:none}
@@ -776,8 +780,9 @@ const T = {
     warnImmGtRetTip:(rd)=>`Recommendation: set immutability ≤ retention (${rd} days) to allow normal cleanup.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: immutability (${ip} days) exceeds the longest GFS retention (${max} days). Restore points will remain locked <strong>beyond their own retention window</strong>, preventing deletion and generating unnecessary storage overhead.`,
     warnImmGtGfsTip:'Adjust immutability to not exceed the longest configured retention period.',
-    warnImmNoSense:(tier,ip,bg)=>`${tier}: immutability period (${ip} days) is less than the block generation period (${bg} days). This means synthetic fulls rotate faster than the lock expires — Object Lock provides <strong>no real protection</strong> in this scenario since blocks may already be overwritten.`,
-    warnImmNoSenseTip:(bg)=>`Recommendation: set immutability ≥ block generation period (${bg} days).`,
+    infoConfig:'How this is applied',
+    infoGenDominates:(ip,bg,eff)=>`You asked for <strong>${ip} days</strong> of immutability, but Block Generation adds a fixed <strong>${bg} days</strong>, so blocks are really locked for <strong>${eff} days</strong> — ${(eff/ip).toFixed(1)}× what you configured. Protection is not weakened; the shorter you set the period, the more the fixed window dominates it.`,
+    infoGenDominatesTip:(bg)=>`Below ${bg} days the generation window, not your setting, is what determines the lock. Overhead comes from the effective lock outlasting retention — not from this ratio.`,
     badge:'Community Tool',
     moveOnlyNote:'With Move policy only, synthetic fulls are the only objects transferred to VDC Vault — daily change rate and incremental retention are not applicable.',
     netSec:'Network & latency', netOrigin:'Client location (origin)', netVault:'VDC Vault region (destination)',
@@ -906,8 +911,9 @@ const T = {
     warnImmGtRetTip:(rd)=>`Recomendación: igualá la inmutabilidad a la retención (${rd} días) o menor, para permitir la limpieza normal.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: la inmutabilidad (${ip} días) excede la retención GFS más larga (${max} días). Los restore points quedarán bloqueados <strong>más allá de su propia ventana de retención</strong>, impidiendo su eliminación y generando overhead innecesario.`,
     warnImmGtGfsTip:'Ajustá la inmutabilidad para que no supere el período de retención más largo configurado.',
-    warnImmNoSense:(tier,ip,bg)=>`${tier}: el período de inmutabilidad (${ip} días) es menor que el block generation period (${bg} días). Los fulls sintéticos rotan más rápido de lo que expira el lock — Object Lock <strong>no brinda protección real</strong> en este escenario ya que los bloques pueden sobrescribirse.`,
-    warnImmNoSenseTip:(bg)=>`Recomendación: configurá la inmutabilidad ≥ al block generation period (${bg} días).`,
+    infoConfig:'Cómo se aplica esto',
+    infoGenDominates:(ip,bg,eff)=>`Pediste <strong>${ip} días</strong> de inmutabilidad, pero Block Generation suma <strong>${bg} días</strong> fijos, así que los bloques quedan bloqueados <strong>${eff} días</strong> — ${(eff/ip).toFixed(1)}× lo que configuraste. La protección no se debilita; cuanto más corto lo pongas, más domina la ventana fija.`,
+    infoGenDominatesTip:(bg)=>`Por debajo de ${bg} días, lo que determina el lock es la ventana de generación y no tu configuración. El overhead sale de que el lock efectivo dure más que la retención — no de esta relación.`,
     badge:'Community Tool',
     moveOnlyNote:'Con solo Move policy, únicamente los fulls sintéticos se transfieren al VDC Vault — la tasa de cambio diario y la retención de incrementales no aplican.',
     netSec:'Red y latencia', netOrigin:'Ubicación del cliente (origen)', netVault:'Región VDC Vault (destino)',
@@ -1036,8 +1042,9 @@ const T = {
     warnImmGtRetTip:(rd)=>`Recomendação: defina a imutabilidade ≤ retenção (${rd} dias) para permitir a limpeza normal.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: a imutabilidade (${ip} dias) excede a retenção GFS mais longa (${max} dias). Os restore points ficarão bloqueados <strong>além de sua própria janela de retenção</strong>, impedindo a exclusão e gerando overhead desnecessário.`,
     warnImmGtGfsTip:'Ajuste a imutabilidade para que não supere o período de retenção mais longo configurado.',
-    warnImmNoSense:(tier,ip,bg)=>`${tier}: o período de imutabilidade (${ip} dias) é menor que o block generation period (${bg} dias). Os fulls sintéticos rotam mais rápido do que o lock expira — Object Lock <strong>não fornece proteção real</strong> neste cenário, pois os blocos podem ser sobrescritos.`,
-    warnImmNoSenseTip:(bg)=>`Recomendação: configure a imutabilidade ≥ ao block generation period (${bg} dias).`,
+    infoConfig:'Como isso é aplicado',
+    infoGenDominates:(ip,bg,eff)=>`Você pediu <strong>${ip} dias</strong> de imutabilidade, mas o Block Generation soma <strong>${bg} dias</strong> fixos, então os blocos ficam bloqueados <strong>${eff} dias</strong> — ${(eff/ip).toFixed(1)}× o que você configurou. A proteção não é enfraquecida; quanto menor o período, mais a janela fixa domina.`,
+    infoGenDominatesTip:(bg)=>`Abaixo de ${bg} dias, quem determina o lock é a janela de geração e não a sua configuração. O overhead vem do lock efetivo durar mais que a retenção — não desta relação.`,
     badge:'Community Tool',
     moveOnlyNote:'Com apenas Move policy, somente os fulls sintéticos são transferidos para o VDC Vault — a taxa de mudança diária e a retenção de incrementais não se aplicam.',
     netSec:'Rede e latência', netOrigin:'Localização do cliente (origem)', netVault:'Região VDC Vault (destino)',
@@ -1151,7 +1158,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.1.0'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.1.1'; // Bump on each release — shown in the header
 const TCP_WINDOW_KB     = 256; // TCP window size for throughput model (KB)
 const STREAMS_PER_PROXY = 4;   // Parallel TCP streams per proxy (VBR default)
 const MBPS_PER_VCPU     = 100; // Veeam recommended: 1 vCPU per 100 Mbps
@@ -1276,22 +1283,27 @@ function validateImm(rd, rw, rm, ry, ic, bg) {
     warns.push({ msg: T[lang].warnImmGtRet(T[lang].warnCapTier, ic, rd), tip: T[lang].warnImmGtRetTip(rd) });
   if (maxRet > rd && ic > maxRet)
     warns.push({ msg: T[lang].warnImmGtGfs(T[lang].warnCapTier, ic, maxRet), tip: T[lang].warnImmGtGfsTip });
+  // Not a misconfiguration: the generation window is added regardless, it just means
+  // the fixed window dominates the period the user actually asked for.
   if (ic > 0 && ic < bg)
-    warns.push({ msg: T[lang].warnImmNoSense(T[lang].warnCapTier, ic, bg), tip: T[lang].warnImmNoSenseTip(bg) });
+    warns.push({ level:'info', msg: T[lang].infoGenDominates(ic, bg, ic + bg),
+                 tip: T[lang].infoGenDominatesTip(bg) });
 
-  document.getElementById('immCap').classList.toggle('has-error', warns.length > 0);
+  document.getElementById('immCap').classList.toggle('has-error', warns.some(w => w.level !== 'info'));
   return warns;
 }
 
 function renderWarnings(warns) {
   const el = document.getElementById('imm-warnings');
   if (!warns.length) { el.innerHTML=''; return; }
-  el.innerHTML = warns.map(w=>`
-    <div class="warn-box">
-      <div class="warn-title"><i class="fa-solid fa-triangle-exclamation" style="margin-right:4px"></i>${T[lang].warnConfig}</div>
+  el.innerHTML = warns.map(w=>{
+    const info = w.level === 'info';
+    return `
+    <div class="warn-box${info ? ' info' : ''}">
+      <div class="warn-title"><i class="fa-solid ${info ? 'fa-circle-info' : 'fa-triangle-exclamation'}" style="margin-right:4px"></i>${info ? T[lang].infoConfig : T[lang].warnConfig}</div>
       <div class="warn-msg">${w.msg}</div>
       ${w.tip?`<div class="warn-tip">${w.tip}</div>`:''}
-    </div>`).join('');
+    </div>`;}).join('');
 }
 
 // ─── Render: bandwidth card ──────────────────────────────────────────────────
