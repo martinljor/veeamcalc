@@ -171,7 +171,7 @@
     .step-body h4{font-size:13px;font-weight:600;color:var(--gray-900);margin-bottom:3px}
     .step-body p{font-size:12px;color:var(--gray-500);line-height:1.6}
     .formula-box{background:var(--gray-100);border-left:3px solid var(--green);padding:.75rem 1rem;border-radius:0 var(--radius) var(--radius) 0;margin-top:.5rem}
-    .formula-box code{font-family:var(--mono);font-size:12px;color:var(--green-dark)}
+    .formula-box code{font-family:var(--mono);font-size:12px;color:var(--green-dark);white-space:pre-line;display:block;line-height:1.6}
     .formula-box p{font-size:11px;color:var(--gray-500);margin-top:4px;line-height:1.5}
 
     .breakdown-cols{max-width:100%}
@@ -346,9 +346,14 @@
           <input type="number" id="changeRate" value="3" min="1" max="50" step="0.5"></div>
         <div class="field"><label id="lbl-comp">Compression (%)</label>
           <input type="number" id="compress" value="50" min="0" max="80" step="5"></div>
-        <div class="field"><label id="lbl-bg">Block generation (days)</label>
-          <input type="number" id="blockGen" value="7" min="1" max="30" step="1"></div>
+        <div class="field"><label id="lbl-synthfull" style="display:flex;align-items:center;gap:4px">
+            <span id="lbl-synthfull-text">Synthetic full every (days)</span>
+            <a href="https://helpcenter.veeam.com/docs/vbr/userguide/backup_job_advanced_vsphere.html?ver=13" target="_blank" id="lbl-synthfull-tip" style="color:var(--green-dark);line-height:1">
+              <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
+            </a></label>
+          <input type="number" id="synthFullDays" value="7" min="1" max="90" step="1"></div>
       </div>
+      <div id="blockgen-note" style="margin-top:10px"></div>
 
       <div class="section-label" id="lbl-gfs-sec">GFS Retention</div>
       <div class="field-grid-4">
@@ -519,33 +524,57 @@
       <div class="field">
         <label id="lbl-net-vault">VDC Vault region (destination)</label>
         <select id="netVault" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
-          <optgroup label="AMER — Azure">
-            <option value="eastus">East US (Virginia)</option>
-            <option value="eastus2">East US 2 (Virginia)</option>
-            <option value="centralus">Central US (Iowa)</option>
-            <option value="westus">West US (California)</option>
-            <option value="southcentralus">South Central US (Texas)</option>
-            <option value="canadacentral">Canada Central (Toronto)</option>
-            <option value="brazilsouth">Brazil South (São Paulo)</option>
-          </optgroup>
-          <optgroup label="EMEA — Azure">
-            <option value="westeurope">West Europe (Netherlands)</option>
-            <option value="northeurope">North Europe (Ireland)</option>
-            <option value="uksouth">UK South (London)</option>
-            <option value="germanywestcentral">Germany West Central (Frankfurt)</option>
-            <option value="francecentral">France Central (Paris)</option>
-            <option value="swedencentral">Sweden Central</option>
-            <option value="uaenorth">UAE North (Dubai)</option>
-            <option value="southafricanorth">South Africa North (Johannesburg)</option>
-          </optgroup>
-          <optgroup label="APJ — Azure">
-            <option value="australiaeast">Australia East (Sydney)</option>
-            <option value="japaneast">Japan East (Tokyo)</option>
-            <option value="southeastasia">Southeast Asia (Singapore)</option>
-            <option value="centralindia">Central India (Pune)</option>
-            <option value="koreacentral">Korea Central (Seoul)</option>
-          </optgroup>
-        </select>
+              <optgroup label="Azure — AMER">
+                <option value="eastus">East US (Virginia)</option>
+                <option value="eastus2">East US 2 (Virginia)</option>
+                <option value="centralus">Central US (Iowa)</option>
+                <option value="westus">West US (California)</option>
+                <option value="southcentralus">South Central US (Texas)</option>
+                <option value="canadacentral">Canada Central (Toronto)</option>
+                <option value="brazilsouth">Brazil South (São Paulo)</option>
+              </optgroup>
+              <optgroup label="Azure — EMEA">
+                <option value="westeurope">West Europe (Netherlands)</option>
+                <option value="northeurope">North Europe (Ireland)</option>
+                <option value="uksouth">UK South (London)</option>
+                <option value="germanywestcentral">Germany West Central (Frankfurt)</option>
+                <option value="francecentral">France Central (Paris)</option>
+                <option value="swedencentral">Sweden Central</option>
+                <option value="uaenorth">UAE North (Dubai)</option>
+                <option value="southafricanorth">South Africa North (Johannesburg)</option>
+              </optgroup>
+              <optgroup label="Azure — APJ">
+                <option value="australiaeast">Australia East (Sydney)</option>
+                <option value="japaneast">Japan East (Tokyo)</option>
+                <option value="southeastasia">Southeast Asia (Singapore)</option>
+                <option value="centralindia">Central India (Pune)</option>
+                <option value="koreacentral">Korea Central (Seoul)</option>
+              </optgroup>
+              <optgroup label="AWS — AMER">
+                <option value="us-east-1">us-east-1 (N. Virginia)</option>
+                <option value="us-east-2">us-east-2 (Ohio)</option>
+                <option value="us-west-1">us-west-1 (N. California)</option>
+                <option value="us-west-2">us-west-2 (Oregon)</option>
+                <option value="ca-central-1">ca-central-1 (Canada)</option>
+                <option value="sa-east-1">sa-east-1 (São Paulo)</option>
+              </optgroup>
+              <optgroup label="AWS — EMEA">
+                <option value="eu-west-1">eu-west-1 (Ireland)</option>
+                <option value="eu-west-2">eu-west-2 (London)</option>
+                <option value="eu-west-3">eu-west-3 (Paris)</option>
+                <option value="eu-central-1">eu-central-1 (Frankfurt)</option>
+                <option value="eu-north-1">eu-north-1 (Stockholm)</option>
+                <option value="me-central-1">me-central-1 (UAE)</option>
+                <option value="af-south-1">af-south-1 (Cape Town)</option>
+              </optgroup>
+              <optgroup label="AWS — APJ">
+                <option value="ap-southeast-2">ap-southeast-2 (Sydney)</option>
+                <option value="ap-northeast-1">ap-northeast-1 (Tokyo)</option>
+                <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
+                <option value="ap-south-1">ap-south-1 (Mumbai)</option>
+                <option value="ap-northeast-2">ap-northeast-2 (Seoul)</option>
+              </optgroup>
+            </select>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
@@ -699,6 +728,13 @@ const T = {
     bwRequired:'Required per proxy', bwTotal:'Total (all proxies)',
     bwNote:(win,prx)=>`Based on a <strong>${win}h</strong> backup window across <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     basisTitle:'Measure by:',
+    synthFullLabel:'Synthetic full every (days)',
+    synthFullTip:'Set on the backup job — Storage → Advanced → Synthetic full backup.',
+    blockGenLabel:'Block Generation', blockGenFixed:'fixed by provider',
+    effLockSub:'immutability + generation', strandedLabel:'Stranded past retention',
+    strandedSub:'billable after retention releases it', strandedNone:'retention outlives the lock',
+    sumBlockGen:'Block Generation',
+    blockGenNote:(d,cloud)=>`Block Generation adds <strong>${d} days</strong> on top of the immutability period for ${cloud}-backed Vault regions — Veeam sets it per provider and it is <strong>not configurable in the console</strong> (30 days for Amazon S3, IBM Cloud and Google Cloud; 10 for every other object storage type). Blocks written inside one generation share a single expiration date, which is what saves API calls — and what keeps them billable past your retention.`,
     summaryTitle:'Summary', printBtn:'Save as PDF',
     sumYes:'Yes', sumNo:'No',
     sumCapTier:'Capacity Tier', sumObjStorage:'Object storage', sumPolicy:'Policy', sumOffload:'Move older than',
@@ -760,7 +796,7 @@ const T = {
     why:[
       {h:'What is an immutable backup?',p:'An immutable restore point cannot be modified or deleted during the configured period. VDC Vault implements this via <strong>Object Lock</strong> (WORM — Write Once Read Many) on its S3-compatible storage, protecting you against ransomware and human error.'},
       {h:'Why does it generate additional space?',p:'Normally, when Veeam performs a merge (combining incrementals into a new synthetic full), it can overwrite or delete the previous blocks. With immutability enabled, <strong>that is not possible</strong>: the original blocks have an active lock. Veeam must write the new blocks in parallel and wait for the lock to expire before freeing the space.'},
-      {h:'What determines the overhead size?',p:'Every <em>block generation period</em> (every N days), Veeam generates a new synthetic full. The previous full continues to occupy space until its immutability period expires. The more cycles that fit within the lock period, the greater the overlap.',formula:'Overhead ≈ compressed_full × (immutability_period ÷ block_gen_period)',example:'Example: full = 0.5 TB, immutability = 30 days, block gen = 10 days → 0.5 × (30/10) = 1.5 TB max overhead'},
+      {h:'What determines the overhead size?',p:'Veeam locks a block for the immutability period you set <strong>plus a Block Generation window</strong> it fixes per provider — 30 days for Amazon S3, IBM Cloud and Google Cloud, 10 days for everything else, and not configurable in the console. Blocks written inside one generation share a single expiration date. Whatever is still locked once retention has released it stays billable, and that gap is the overhead.',formula:'stranded_days = (immutability + block_generation) − retention\nOverhead ≈ daily_incremental × stranded_days + compressed_full × ⌈stranded_days ÷ block_generation⌉',example:'Example: full = 0.5 TB, daily inc = 0.015 TB, immutability = 7 days, retention = 7 days, Azure generation = 10 days → stranded = 10 days → 0.015 × 10 + 0.5 × 1 = 0.65 TB'},
       {h:'How to reduce the overhead?',p:'Increase the <strong>block generation period</strong> (fewer fulls = less overlap) or reduce the <strong>immutability period</strong>. However, shorter periods reduce the ransomware protection window — it is a balance between security and storage cost.'}
     ]
   },
@@ -823,6 +859,13 @@ const T = {
     bwRequired:'Requerido por proxy', bwTotal:'Total (todos los proxies)',
     bwNote:(win,prx)=>`Basado en una ventana de backup de <strong>${win}h</strong> con <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     basisTitle:'Medición por:',
+    synthFullLabel:'Full sintético cada (días)',
+    synthFullTip:'Se configura en el job de backup — Storage → Advanced → Synthetic full backup.',
+    blockGenLabel:'Block Generation', blockGenFixed:'fijo por proveedor',
+    effLockSub:'inmutabilidad + generación', strandedLabel:'Retenido pasada la retención',
+    strandedSub:'sigue facturando después de que la retención lo libera', strandedNone:'la retención dura más que el lock',
+    sumBlockGen:'Block Generation',
+    blockGenNote:(d,cloud)=>`Block Generation suma <strong>${d} días</strong> por encima del período de inmutabilidad para regiones de Vault sobre ${cloud} — Veeam lo fija por proveedor y <strong>no es configurable en la consola</strong> (30 días para Amazon S3, IBM Cloud y Google Cloud; 10 para el resto de los object storage). Los bloques escritos dentro de una misma generación comparten una única fecha de expiración, que es lo que ahorra llamadas a la API — y lo que los mantiene facturando pasada tu retención.`,
     summaryTitle:'Resumen', printBtn:'Guardar como PDF',
     sumYes:'Sí', sumNo:'No',
     sumCapTier:'Capacity Tier', sumObjStorage:'Object storage', sumPolicy:'Política', sumOffload:'Mover más antiguos que',
@@ -884,7 +927,7 @@ const T = {
     why:[
       {h:'¿Qué es un backup inmutable?',p:'Un restore point inmutable no puede ser modificado ni eliminado durante el período configurado. VDC Vault implementa esto mediante <strong>Object Lock</strong> (WORM — Write Once Read Many) en su almacenamiento S3-compatible, protegiéndote contra ransomware y errores humanos.'},
       {h:'¿Por qué genera espacio adicional?',p:'Normalmente, cuando Veeam hace un merge (combina incrementales en un nuevo full sintético), puede sobrescribir o eliminar los bloques anteriores. Con inmutabilidad activada, <strong>eso no es posible</strong>: los bloques originales tienen un lock activo. Veeam debe escribir los nuevos bloques en paralelo y esperar a que el lock expire para liberar el espacio.'},
-      {h:'¿Qué determina el tamaño del overhead?',p:'Cada <em>block generation period</em> (cada N días), Veeam genera un nuevo full sintético. El full anterior sigue ocupando espacio hasta que vence su período de inmutabilidad. Cuantos más ciclos quepan dentro del período de lock, mayor será el solapamiento.',formula:'Overhead ≈ full_comprimido × (immutability_period ÷ block_gen_period)',example:'Ejemplo: full = 0.5 TB, inmutabilidad = 30 días, block gen = 10 días → 0.5 × (30/10) = 1.5 TB de overhead máximo'},
+      {h:'¿Qué determina el tamaño del overhead?',p:'Veeam bloquea un bloque durante el período de inmutabilidad que configuraste <strong>más una ventana de Block Generation</strong> que fija según el proveedor — 30 días para Amazon S3, IBM Cloud y Google Cloud, 10 días para el resto, y no es configurable desde la consola. Los bloques escritos dentro de una misma generación comparten una única fecha de expiración. Todo lo que siga bloqueado después de que la retención lo liberó sigue facturando, y ese hueco es el overhead.',formula:'días_retenidos = (inmutabilidad + block_generation) − retención\nOverhead ≈ incremental_diario × días_retenidos + full_comprimido × ⌈días_retenidos ÷ block_generation⌉',example:'Ejemplo: full = 0.5 TB, inc. diario = 0.015 TB, inmutabilidad = 7 días, retención = 7 días, generación Azure = 10 días → retenidos = 10 días → 0.015 × 10 + 0.5 × 1 = 0.65 TB'},
       {h:'¿Cómo reducir el overhead?',p:'Aumentá el <strong>block generation period</strong> (menos fulls = menos solapamiento) o reducí el <strong>período de inmutabilidad</strong>. Períodos más cortos reducen la ventana de protección contra ataques — es un balance entre seguridad y costo de almacenamiento.'}
     ]
   },
@@ -947,6 +990,13 @@ const T = {
     bwRequired:'Necessário por proxy', bwTotal:'Total (todos os proxies)',
     bwNote:(win,prx)=>`Com base em uma janela de backup de <strong>${win}h</strong> e <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     basisTitle:'Medição por:',
+    synthFullLabel:'Full sintético a cada (dias)',
+    synthFullTip:'Configurado no job de backup — Storage → Advanced → Synthetic full backup.',
+    blockGenLabel:'Block Generation', blockGenFixed:'fixo por provedor',
+    effLockSub:'imutabilidade + geração', strandedLabel:'Retido além da retenção',
+    strandedSub:'continua faturando depois que a retenção o libera', strandedNone:'a retenção dura mais que o lock',
+    sumBlockGen:'Block Generation',
+    blockGenNote:(d,cloud)=>`O Block Generation soma <strong>${d} dias</strong> ao período de imutabilidade para regiões de Vault sobre ${cloud} — o Veeam o fixa por provedor e <strong>não é configurável no console</strong> (30 dias para Amazon S3, IBM Cloud e Google Cloud; 10 para os demais object storage). Blocos escritos dentro de uma mesma geração compartilham uma única data de expiração, o que economiza chamadas de API — e os mantém faturando além da sua retenção.`,
     summaryTitle:'Resumo', printBtn:'Salvar como PDF',
     sumYes:'Sim', sumNo:'Não',
     sumCapTier:'Capacity Tier', sumObjStorage:'Object storage', sumPolicy:'Política', sumOffload:'Mover mais antigos que',
@@ -1008,7 +1058,7 @@ const T = {
     why:[
       {h:'O que é um backup imutável?',p:'Um restore point imutável não pode ser modificado nem excluído durante o período configurado. O VDC Vault implementa isso via <strong>Object Lock</strong> (WORM — Write Once Read Many) em seu armazenamento compatível com S3, protegendo contra ransomware e erros humanos.'},
       {h:'Por que gera espaço adicional?',p:'Normalmente, quando o Veeam faz um merge (combina incrementais em um novo full sintético), pode sobrescrever ou excluir os blocos anteriores. Com a imutabilidade ativa, <strong>isso não é possível</strong>: os blocos originais têm um lock ativo. O Veeam precisa escrever os novos blocos em paralelo e aguardar o lock expirar para liberar o espaço.'},
-      {h:'O que determina o tamanho do overhead?',p:'A cada <em>block generation period</em> (a cada N dias), o Veeam gera um novo full sintético. O full anterior continua ocupando espaço até que seu período de imutabilidade expire. Quanto mais ciclos couberem dentro do período de lock, maior será a sobreposição.',formula:'Overhead ≈ full_comprimido × (immutability_period ÷ block_gen_period)',example:'Exemplo: full = 0,5 TB, imutabilidade = 30 dias, block gen = 10 dias → 0,5 × (30/10) = 1,5 TB de overhead máximo'},
+      {h:'O que determina o tamanho do overhead?',p:'O Veeam bloqueia um bloco pelo período de imutabilidade que você configurou <strong>mais uma janela de Block Generation</strong> que ele fixa por provedor — 30 dias para Amazon S3, IBM Cloud e Google Cloud, 10 dias para os demais, e não é configurável no console. Blocos escritos dentro de uma mesma geração compartilham uma única data de expiração. Tudo o que continuar bloqueado depois que a retenção o liberou segue faturando, e essa lacuna é o overhead.',formula:'dias_retidos = (imutabilidade + block_generation) − retenção\nOverhead ≈ incremental_diário × dias_retidos + full_comprimido × ⌈dias_retidos ÷ block_generation⌉',example:'Exemplo: full = 0,5 TB, inc. diário = 0,015 TB, imutabilidade = 7 dias, retenção = 7 dias, geração Azure = 10 dias → retidos = 10 dias → 0,015 × 10 + 0,5 × 1 = 0,65 TB'},
       {h:'Como reduzir o overhead?',p:'Aumente o <strong>block generation period</strong> (menos fulls = menos sobreposição) ou reduza o <strong>período de imutabilidade</strong>. Períodos mais curtos reduzem a janela de proteção contra ataques — é um equilíbrio entre segurança e custo de armazenamento.'}
     ]
   }
@@ -1029,7 +1079,7 @@ function t(k) { return T[lang][k] !== undefined ? T[lang][k] : (T.en[k] || k); }
 function applyT() {
   const map = {
     'lbl-params':'params','lbl-source-sec':'sourceSec','lbl-src':'src','lbl-cr':'cr',
-    'lbl-comp':'comp','lbl-bg':'bg','lbl-gfs-sec':'gfsSec','lbl-daily':'daily',
+    'lbl-comp':'comp','lbl-gfs-sec':'gfsSec','lbl-daily':'daily',
     'lbl-weekly':'weekly','lbl-monthly':'monthly','lbl-yearly':'yearly',
     'lbl-imm-sec':'immSec',
     'lbl-imm-min':'immMinLabel','lbl-imm-min-unit':'days','lbl-imm-min-desc':'immMinDesc',
@@ -1043,7 +1093,7 @@ function applyT() {
     'lbl-health':'healthLabel','lbl-hc-off':'hcOff','lbl-hc-monthly':'hcMonthly','lbl-hc-weekly':'hcWeekly',
     'lbl-sim-vault':'vaultTotal',
     'lbl-bw-sec':'bwSec','lbl-bwwin':'bwWin','lbl-proxies-text':'proxies',
-    'lbl-basis-title':'basisTitle','lbl-summary-title':'summaryTitle','lbl-print':'printBtn',
+    'lbl-basis-title':'basisTitle','lbl-synthfull-text':'synthFullLabel','lbl-summary-title':'summaryTitle','lbl-print':'printBtn',
     'lbl-basis-time':'basisTime','lbl-basis-time-sub':'basisTimeSub',
     'lbl-basis-bw':'basisBw','lbl-basis-bw-sub':'basisBwSub',
     'lbl-latency-source':'latencySource',
@@ -1063,6 +1113,8 @@ function applyT() {
   if (streamsLink) streamsLink.title = t('parallelTasksTip');
   const bsLink = document.getElementById('lbl-blocksize-tip');
   if (bsLink) bsLink.title = t('blockSizeTip');
+  const sfLink = document.getElementById('lbl-synthfull-tip');
+  if (sfLink) sfLink.title = t('synthFullTip');
 
   document.getElementById('why-body').innerHTML = T[lang].why.map((s,i)=>`
     <div class="explainer-step">
@@ -1108,7 +1160,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '2.3.0'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.0.0'; // Bump on each release — shown in the header
 const TCP_WINDOW_KB     = 256; // TCP window size for throughput model (KB)
 const STREAMS_PER_PROXY = 4;   // Parallel TCP streams per proxy (VBR default)
 const MBPS_PER_VCPU     = 100; // Veeam recommended: 1 vCPU per 100 Mbps
@@ -1124,6 +1176,7 @@ function readInputs() {
   // as its retention policy holds it, so the lock can never expire early — which is
   // what drives the worst-case overhead. 'minimum' caps the lock at the configured days.
   const immMode = document.querySelector('input[name="immMode"]:checked').value;
+  const vaultRegion = document.getElementById('netVault').value;
   return {
     immMode,
     immMinDays:  minImmDays,
@@ -1147,7 +1200,11 @@ function readInputs() {
     sourceTB:     getVal('srcTB'),
     changeRate:   getVal('changeRate') / 100,
     compression:  getVal('compress') / 100,
-    blockGenDays: Math.max(1, getInt('blockGen')),
+    // How often a new synthetic full is written — this one IS a job setting in VBR
+    synthFullDays: Math.max(1, getInt('synthFullDays')),
+    // Block Generation is fixed by the provider and not exposed in the console
+    blockGenDays:  blockGenFor(vaultRegion),
+    vaultCloud:    vaultCloud(vaultRegion),
     retDays,
     retWeeks:     getInt('retWeeks'),
     retMonths:    getInt('retMonths'),
@@ -1156,17 +1213,27 @@ function readInputs() {
 }
 
 // ─── Pure storage calculation ────────────────────────────────────────────────
-function calcStorageTier({ sourceTB, changeRate, compression, blockGenDays,
+// Veeam locks a block for the configured immutability period PLUS the Block Generation
+// window, so the effective lock outlives retention by (immDays + blockGenDays - retDays).
+// Whatever falls inside that gap is still billable even though retention has released it.
+function calcStorageTier({ sourceTB, changeRate, compression, synthFullDays, blockGenDays,
     retDays, retWeeks, retMonths, retYears, immDays, moveOnly }) {
   const fullTB   = sourceTB * (1 - compression);
   const incTB    = sourceTB * changeRate * (1 - compression);
-  const numFulls = Math.ceil(Math.max(1, retDays) / blockGenDays);
+  const numFulls = Math.ceil(Math.max(1, retDays) / synthFullDays);
   const dataTB   = moveOnly
     ? fullTB * numFulls + fullTB * retWeeks + fullTB * retMonths + fullTB * retYears
     : fullTB + incTB * (Math.max(1, retDays) - 1) + fullTB * retWeeks + fullTB * retMonths + fullTB * retYears;
-  // Each block generation leaves the previous full in place until its lock expires
-  const overheadTB = fullTB * (immDays / blockGenDays);
-  return { fullTB, incTB, dataTB, overheadTB, totalTB: dataTB + overheadTB, numFulls };
+
+  const effectiveLockDays = immDays + blockGenDays;
+  const strandedDays      = Math.max(0, effectiveLockDays - Math.max(1, retDays));
+  // Blocks stranded past retention: the daily incrementals, plus one full per generation
+  // still holding a lock (all blocks in a generation share a single expiration date).
+  const strandedFulls = moveOnly ? Math.ceil(strandedDays / synthFullDays)
+                                 : Math.ceil(strandedDays / blockGenDays);
+  const overheadTB = incTB * strandedDays + fullTB * strandedFulls;
+  return { fullTB, incTB, dataTB, overheadTB, totalTB: dataTB + overheadTB,
+           numFulls, effectiveLockDays, strandedDays };
 }
 
 // ─── Pure bandwidth calculation ──────────────────────────────────────────────
@@ -1243,7 +1310,7 @@ function renderWarnings(warns) {
 
 // ─── Render: bandwidth card ──────────────────────────────────────────────────
 function renderBW(inp, bw, rtt) {
-  const { proxies, blockGenDays, windowHours, blockSizeKB } = inp;
+  const { proxies, synthFullDays, windowHours, blockSizeKB } = inp;
   const { incTB, incMbps, peakMbps, effectiveMbps, linkUtilPct,
           perProxyDailyMbps, perProxyPeakMbps, perProxyEffMbps,
           diskReadMBs, diskWriteMBs, vcpuPerProxy, ramPerProxy } = bw;
@@ -1280,7 +1347,7 @@ function renderBW(inp, bw, rtt) {
         <div class="bw-metric" style="border-color:${fitCol}44;background:${fitBg}">
           <div class="m-label" style="color:${fitCol}">${t('durPeak')}</div>
           <div class="m-val" style="color:${fitCol}">${fmtDur(bw.peakHours)}</div>
-          <div class="m-unit" style="color:${fitCol}">${t('bwPeakEvery')} ${blockGenDays}d · ${bw.peakTB.toFixed(2)} TB</div>
+          <div class="m-unit" style="color:${fitCol}">${t('bwPeakEvery')} ${synthFullDays}d · ${bw.peakTB.toFixed(2)} TB</div>
         </div>
         <div class="bw-metric" style="border-color:#bfdbfe">
           <div class="m-label" style="display:flex;align-items:center">${t('durLinkRate')}${erTag}</div>
@@ -1307,7 +1374,7 @@ function renderBW(inp, bw, rtt) {
         <div class="bw-metric" style="border-color:#fbbf24;background:#fffbeb">
           <div class="m-label" style="color:#92400e">${t('bwPeak')} (${t('bwRequired').toLowerCase()})</div>
           <div class="m-val" style="color:#78350f">${fmtBW(perProxyPeakMbps)}</div>
-          <div class="m-unit" style="color:#b45309">${t('bwPeakEvery')} ${blockGenDays}d · ${fmtBW(peakMbps)} total</div>
+          <div class="m-unit" style="color:#b45309">${t('bwPeakEvery')} ${synthFullDays}d · ${fmtBW(peakMbps)} total</div>
         </div>
         <div class="bw-metric" style="border-color:${linkColor}44;background:${linkBg}">
           <div class="m-label" style="color:${linkColor};display:flex;align-items:center">${t('bwEffective')}${erTag}</div>
@@ -1353,7 +1420,7 @@ function renderBW(inp, bw, rtt) {
             <div class="bw-metric">
               <div class="m-label">${t('s3ObjectsPeak')}</div>
               <div class="m-val" style="font-size:14px">${fmtObj(objPeak)}</div>
-              <div class="m-unit">${t('bwPeakEvery')} ${blockGenDays}d</div>
+              <div class="m-unit">${t('bwPeakEvery')} ${synthFullDays}d</div>
             </div>
           </div>
           <div style="background:${effBg};border-left:3px solid ${effColor};border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .75rem;font-size:10px;color:${effColor};line-height:1.5">
@@ -1366,6 +1433,28 @@ function renderBW(inp, bw, rtt) {
 
 // ─── Latency matrix (RTT in ms, typical values based on Azure network measurements) ──
 // Format: LATENCY[origin][vault_region] = { rtt, note }
+// Which cloud backs each Vault region. This drives the Block Generation period, which
+// Veeam fixes per provider and does not expose in the console: Amazon S3, IBM Cloud and
+// Google Cloud get 30 days, every other object storage type gets 10.
+// AWS regions read their RTT from the co-located Azure region — the latency figures are
+// planning estimates either way, so a second hand-made matrix would add no real precision.
+const BLOCK_GEN_DAYS = { azure: 10, aws: 30 };
+const VAULT_CLOUD = {
+  'us-east-1':{cloud:'aws',via:'eastus'},           'us-east-2':{cloud:'aws',via:'eastus2'},
+  'us-west-1':{cloud:'aws',via:'westus'},           'us-west-2':{cloud:'aws',via:'westus'},
+  'ca-central-1':{cloud:'aws',via:'canadacentral'}, 'sa-east-1':{cloud:'aws',via:'brazilsouth'},
+  'eu-west-1':{cloud:'aws',via:'northeurope'},      'eu-west-2':{cloud:'aws',via:'uksouth'},
+  'eu-west-3':{cloud:'aws',via:'francecentral'},    'eu-central-1':{cloud:'aws',via:'germanywestcentral'},
+  'eu-north-1':{cloud:'aws',via:'swedencentral'},   'me-central-1':{cloud:'aws',via:'uaenorth'},
+  'af-south-1':{cloud:'aws',via:'southafricanorth'},'ap-southeast-2':{cloud:'aws',via:'australiaeast'},
+  'ap-northeast-1':{cloud:'aws',via:'japaneast'},   'ap-southeast-1':{cloud:'aws',via:'southeastasia'},
+  'ap-south-1':{cloud:'aws',via:'centralindia'},    'ap-northeast-2':{cloud:'aws',via:'koreacentral'},
+};
+// Anything not listed above is an Azure region served directly by the matrix below
+function vaultCloud(region)   { return (VAULT_CLOUD[region] || {}).cloud || 'azure'; }
+function latencyRegion(region){ return (VAULT_CLOUD[region] || {}).via   || region; }
+function blockGenFor(region)  { return BLOCK_GEN_DAYS[vaultCloud(region)]; }
+
 const LATENCY = {
   us_east:        { eastus:2,    eastus2:3,    centralus:20,  westus:70,   southcentralus:25, canadacentral:15,  brazilsouth:120, westeurope:80,  northeurope:90,  uksouth:75,  germanywestcentral:90,  francecentral:85,  swedencentral:100, uaenorth:160, southafricanorth:200, australiaeast:220, japaneast:180, southeastasia:200, centralindia:200, koreacentral:190 },
   us_west:        { eastus:70,   eastus2:70,   centralus:45,  westus:5,    southcentralus:40, canadacentral:55,  brazilsouth:170, westeurope:140, northeurope:150, uksouth:135, germanywestcentral:150, francecentral:140, swedencentral:160, uaenorth:220, southafricanorth:260, australiaeast:160, japaneast:120, southeastasia:150, centralindia:220, koreacentral:130 },
@@ -1387,33 +1476,45 @@ const LATENCY = {
   korea:          { eastus:190,  eastus2:190,  centralus:180, westus:135,  southcentralus:175,canadacentral:185, brazilsouth:295, westeurope:240, northeurope:250, uksouth:245, germanywestcentral:235, francecentral:243, swedencentral:256, uaenorth:165, southafricanorth:305, australiaeast:115, japaneast:35,  southeastasia:65,  centralindia:100, koreacentral:5   },
 };
 
-function renderLockSummary(ic, offload) {
+function renderLockSummary(inp) {
   const el = document.getElementById('imm-lock-summary');
   if (!el) return;
-  // An object can only be moved once it passes the offload trigger, so by the time it
-  // lands in the Vault it has already burned `offload` days of its lock.
-  const effectiveLock = Math.max(0, ic - offload);
-
-  const color = effectiveLock === 0 ? 'var(--green-dark)' : effectiveLock <= 7 ? '#b45309' : 'var(--red)';
-  const bg2   = effectiveLock === 0 ? 'var(--green-light)' : effectiveLock <= 7 ? '#fffbeb' : '#fdecea';
+  const ic = inp.immCapDays, gen = inp.blockGenDays;
+  const effLock = ic + gen;                       // what the object is really locked for
+  const strand  = Math.max(0, effLock - inp.retDays);  // days it outlives its retention
+  const color = strand === 0 ? 'var(--green-dark)' : strand <= gen ? '#b45309' : 'var(--red)';
+  const bg2   = strand === 0 ? 'var(--green-light)' : strand <= gen ? '#fffbeb' : '#fdecea';
 
   el.innerHTML = `
-    <div style="background:${bg2};border-radius:var(--radius);padding:.6rem .9rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+    <div style="background:${bg2};border-radius:var(--radius);padding:.6rem .9rem;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
       <div>
         <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('lockPeriod')}</div>
         <div style="font-family:var(--mono);font-size:15px;font-weight:500;color:var(--gray-900)">${ic}d</div>
         <div style="font-size:10px;color:var(--gray-500)">${t('lockPeriodSub')}</div>
       </div>
       <div>
-        <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('offloadTrigger')}</div>
-        <div style="font-family:var(--mono);font-size:15px;font-weight:500;color:var(--gray-900)">${offload}d</div>
-        <div style="font-size:10px;color:var(--gray-500)">${t('offloadTriggerSub')}</div>
+        <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('blockGenLabel')}</div>
+        <div style="font-family:var(--mono);font-size:15px;font-weight:500;color:var(--gray-900)">+${gen}d</div>
+        <div style="font-size:10px;color:var(--gray-500)">${inp.vaultCloud.toUpperCase()} · ${t('blockGenFixed')}</div>
       </div>
       <div>
-        <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('remainingLock')}</div>
-        <div style="font-family:var(--mono);font-size:15px;font-weight:500;color:${color}">${effectiveLock}d</div>
-        <div style="font-size:10px;color:${color}">${effectiveLock === 0 ? t('lockExpiredOnArrival') : t('lockRemainingOnArrival')}</div>
+        <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('sumEffLock')}</div>
+        <div style="font-family:var(--mono);font-size:15px;font-weight:500;color:var(--green-dark)">${effLock}d</div>
+        <div style="font-size:10px;color:var(--gray-500)">${t('effLockSub')}</div>
       </div>
+      <div>
+        <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('strandedLabel')}</div>
+        <div style="font-family:var(--mono);font-size:15px;font-weight:500;color:${color}">${strand}d</div>
+        <div style="font-size:10px;color:${color}">${strand === 0 ? t('strandedNone') : t('strandedSub')}</div>
+      </div>
+    </div>`;
+}
+
+// Block Generation is provider-fixed, so it is stated rather than offered as an input
+function renderBlockGenNote(inp) {
+  document.getElementById('blockgen-note').innerHTML = `
+    <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:.55rem .8rem;font-size:10px;color:var(--gray-500);line-height:1.55">
+      <i class="fa-solid fa-circle-info" style="margin-right:5px"></i>${T[lang].blockGenNote(inp.blockGenDays, inp.vaultCloud.toUpperCase())}
     </div>`;
 }
 
@@ -1471,7 +1572,7 @@ function renderBanner(inp, capResult, capEnabled) {
        <div class="tier-box" style="background:var(--white)">
         <div class="tier-label" style="color:var(--gray-500)">${t('uploadedDaily')}</div>
         <div class="tier-val" style="color:var(--gray-900)">${fmt(capResult.incTB)}</div>
-        <div class="tier-sub" style="color:var(--gray-500)">${t('uploadedPeak')}: ${fmt(capResult.incTB + capResult.fullTB)}<br>${t('uploadedPeakEvery')} ${inp.blockGenDays}d</div>
+        <div class="tier-sub" style="color:var(--gray-500)">${t('uploadedPeak')}: ${fmt(capResult.incTB + capResult.fullTB)}<br>${t('uploadedPeakEvery')} ${inp.synthFullDays}d</div>
        </div>`
     : `<div class="tier-box disabled">
         <div class="tier-label">${t('vaultTotal')}</div>
@@ -1510,9 +1611,9 @@ function renderSimulations(inp, capEnabled, moveOnly) {
     document.getElementById('sim-cap').innerHTML = `<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
     return;
   }
-  const { sourceTB, changeRate, compression, blockGenDays,
+  const { sourceTB, changeRate, compression, synthFullDays,
           retDays, retWeeks, retMonths, retYears, immCapDays } = inp;
-  renderSim('sim-cap', sourceTB, changeRate, compression, blockGenDays,
+  renderSim('sim-cap', sourceTB, changeRate, compression, synthFullDays,
     retDays, retWeeks, retMonths, retYears, immCapDays, true, moveOnly, false);
 }
 
@@ -1521,7 +1622,7 @@ function calc() {
   const inp        = readInputs();
   const capEnabled = inp.extendSobr && (inp.copyEnabled || inp.moveEnabled);
   const moveOnly   = inp.moveEnabled && !inp.copyEnabled;
-  const baseRtt    = LATENCY[inp.origin]?.[inp.vault] ?? 100;
+  const baseRtt    = LATENCY[inp.origin]?.[latencyRegion(inp.vault)] ?? 100;
   const rtt        = inp.expressRoute ? Math.min(baseRtt, MIN_RTT_ER_MS) : baseRtt;
   const streams    = inp.proxies * inp.streamsPerProxy;
 
@@ -1529,7 +1630,8 @@ function calc() {
   renderCapNotes(inp, capEnabled, moveOnly);
   renderWarnings(validateImm(inp.retDays, inp.retWeeks, inp.retMonths, inp.retYears,
     inp.immCapDays, inp.blockGenDays));
-  renderLockSummary(inp.immCapDays, inp.offloadDays);
+  renderLockSummary(inp);
+  renderBlockGenNote(inp);
 
   const bw = capEnabled ? calcBandwidthMetrics(inp, rtt, streams) : null;
   if (capEnabled) {
@@ -1542,7 +1644,7 @@ function calc() {
 
   const capResult = capEnabled ? calcStorageTier({
     sourceTB:inp.sourceTB, changeRate:inp.changeRate, compression:inp.compression,
-    blockGenDays:inp.blockGenDays, retDays:inp.retDays,
+    synthFullDays:inp.synthFullDays, blockGenDays:inp.blockGenDays, retDays:inp.retDays,
     retWeeks:inp.retWeeks, retMonths:inp.retMonths, retYears:inp.retYears,
     immDays:inp.immCapDays, moveOnly,
   }) : null;
@@ -1579,14 +1681,15 @@ function renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, mo
     + row(t('src'), inp.sourceTB.toFixed(2)+' TB')
     + row(t('cr'), (inp.changeRate*100).toFixed(1)+' %')
     + row(t('comp'), (inp.compression*100).toFixed(0)+' %')
-    + row(t('bg'), inp.blockGenDays+' '+t('days'))
+    + row(t('synthFullLabel'), inp.synthFullDays+' '+t('days'))
     + grp(t('gfsSec'))
     + row(t('daily'), inp.retDays) + row(t('weekly'), inp.retWeeks)
     + row(t('monthly'), inp.retMonths) + row(t('yearly'), inp.retYears)
     + grp(t('immSec'))
     + row(t('sumImmMode'), t(inp.immMode === 'retention' ? 'immModeRet' : 'immModeMin'))
     + row(t('immMinLabel').replace(':',''), inp.immMinDays+' '+t('days'))
-    + row(t('sumEffLock'), inp.immCapDays+' '+t('days'), 'hi')
+    + row(t('sumBlockGen'), `${inp.blockGenDays} ${t('days')} (${inp.vaultCloud.toUpperCase()})`)
+    + row(t('sumEffLock'), (inp.immCapDays + inp.blockGenDays)+' '+t('days'), 'hi')
     + grp(t('netSec'))
     + row(t('netOrigin'), origin)
     + row(t('netVault'), region)
@@ -1615,7 +1718,7 @@ function renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, mo
       + row(t('totalEst'), fmt(capResult.totalTB), 'hi')
       + grp(t('sumUpload'))
       + row(t('sumDailyInc'), fmt(bw.incTB))
-      + row(t('durPeak'), `${fmt(bw.peakTB)} · ${t('bwPeakEvery')} ${inp.blockGenDays}d`);
+      + row(t('durPeak'), `${fmt(bw.peakTB)} · ${t('bwPeakEvery')} ${inp.synthFullDays}d`);
     if (bw.solveDuration) {
       res += row(t('durFirstFull'), fmtDur(bw.fullHours), 'hi')
         + row(t('sumSeedNights'), `${Math.ceil(bw.fullHours / inp.windowHours)} × ${inp.windowHours}h`)

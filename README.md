@@ -17,6 +17,7 @@ The input panel mirrors the **Capacity Tier** page of the VBR *Scale-out Backup 
   - **Required bandwidth** — give it a backup window, get the Mbps you need
   - **Backup duration** — give it the available Mbps, get how long the upload takes and whether it fits the window
 - **Latency ceiling** — TCP throughput modelled from RTT, parallel tasks and proxies, so you can see when latency (not the link) is the bottleneck
+- **Azure- and AWS-backed Vault regions**, with the provider-specific Block Generation period applied automatically
 - **Proxy sizing** — vCPU, RAM and repository disk throughput
 - **S3 API overhead** — object counts derived from the configured storage optimization block size
 - **Visual simulation** of restore points with active lock indicators
@@ -28,12 +29,31 @@ Scope note: this tool sizes the **Capacity Tier only**. The on-premises Performa
 
 ## Immutability modes
 
-VDC Vault always enforces immutability through S3 Object Lock. VBR offers two ways to apply it, and the choice changes the overhead substantially:
+VDC Vault always enforces immutability through Object Lock. VBR offers two ways to apply it, and the choice changes the overhead substantially:
 
 | Mode | Effective lock | Overhead |
 |---|---|---|
 | For the entire duration of their retention policy *(recommended)* | `max(minimum, retention)` | Highest — nothing can be deleted early |
 | For the minimum immutability period only | the configured minimum | Lower — space is reclaimed as soon as retention allows |
+
+## Block Generation
+
+On top of the immutability period, Veeam adds a **Block Generation** window that it fixes per provider and does **not** expose in the console. Blocks written inside one generation share a single expiration date, which saves API calls — and keeps them billable past your retention.
+
+| Backing cloud | Generation |
+|---|---|
+| Amazon S3, IBM Cloud, Google Cloud | 30 days |
+| Azure Blob and other object storage | 10 days |
+
+The calculator derives this from the Vault region you pick, so an AWS-backed region carries 20 more days of lock than an Azure one for the same settings. The overhead is modelled as the data still locked once retention has released it:
+
+```
+stranded_days = (immutability + block_generation) − retention
+overhead ≈ daily_incremental × stranded_days
+         + compressed_full × ⌈stranded_days ÷ block_generation⌉
+```
+
+Note that *Synthetic full every N days* is a separate, genuinely configurable setting (backup job → Storage → Advanced) and drives the restore-point chain, not the lock.
 
 ---
 
