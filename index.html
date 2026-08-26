@@ -44,6 +44,23 @@
     .card-header h3{font-size:13px;font-weight:600;color:var(--gray-700)}
     .card-body{padding:1.25rem}
 
+    /* VBR wizard pane: header, checkbox rows, indented descriptions, console buttons */
+    .wiz-head{display:flex;gap:12px;padding:1rem 1.25rem;border-bottom:1px solid var(--gray-200);background:var(--white);border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+    .wiz-icon{width:40px;height:40px;flex-shrink:0;border-radius:var(--radius);background:var(--green-light);color:var(--green-dark);display:flex;align-items:center;justify-content:center;font-size:18px}
+    .wiz-head h3{font-size:14px;font-weight:600;color:var(--gray-900);margin-bottom:3px}
+    .wiz-head p{font-size:11px;color:var(--gray-500);line-height:1.5}
+    .wiz-row{display:flex;align-items:flex-start;gap:8px}
+    .wiz-cb{width:14px;height:14px;margin-top:2px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
+    .wiz-lbl{font-size:12px;color:var(--gray-900);cursor:pointer;line-height:1.45}
+    .wiz-desc{margin-left:22px;font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:2px}
+    .wiz-indent{margin-left:22px}
+    .wiz-field{flex:1;min-width:0;font-size:11px;color:var(--gray-500);border:1px solid var(--gray-300);border-radius:var(--radius);padding:5px 8px;background:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .wiz-btn{font-family:var(--font);font-size:11px;padding:5px 12px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--gray-50);color:var(--gray-700);cursor:pointer;flex-shrink:0;transition:background .15s}
+    .wiz-btn:hover{background:var(--gray-100)}
+    .wiz-num{width:56px;padding:3px 6px;font-size:12px;font-family:var(--mono);border:1px solid var(--gray-300);border-radius:var(--radius);text-align:center;color:var(--gray-900);background:var(--white)}
+    .wiz-link-select{font-family:var(--font);font-size:11px;color:var(--green-dark);background:transparent;border:none;cursor:pointer;padding:1px 2px;text-decoration:underline}
+    .wiz-link-select:focus{outline:1px solid var(--green);border-radius:2px}
+
     /* VBR-style section dividers */
     .section-label{font-size:12px;font-weight:600;color:var(--gray-700);background:var(--gray-100);border:1px solid var(--gray-200);border-radius:var(--radius);padding:5px 10px;margin:18px 0 12px 0;display:block}
     .section-label:first-child{margin-top:0}
@@ -213,71 +230,82 @@
       </div>
     </div><!-- /card 1: source + GFS + immutability -->
 
+    <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+    <!-- Mirrors the VBR wizard's Capacity Tier pane -->
     <div class="card">
+      <div class="wiz-head">
+        <div class="wiz-icon"><i class="fa-solid fa-database"></i></div>
+        <div>
+          <h3 id="lbl-cap-sec">Capacity Tier</h3>
+          <p id="lbl-cap-intro">Specify object storage to copy backups to for redundancy and DR purposes. Older backups can be moved to object storage completely to reduce long-term retention costs while preserving the ability to restore directly from offloaded backups.</p>
+        </div>
+      </div>
       <div class="card-body">
 
-        <div class="section-label" id="lbl-cap-sec">Capacity Tier</div>
-        <div id="lbl-cap-intro" style="font-size:11px;color:var(--gray-500);line-height:1.5;margin-bottom:10px">Specify object storage to copy backups to for redundancy and DR purposes. Older backups can be moved to object storage completely to reduce long-term retention costs while preserving the ability to restore directly from offloaded backups.</div>
+        <div class="wiz-row">
+          <input type="checkbox" id="extendSobr" checked class="wiz-cb">
+          <label for="extendSobr" id="lbl-extend" class="wiz-lbl">Extend scale-out backup repository capacity with object storage:</label>
+        </div>
+        <div class="wiz-indent" style="display:flex;gap:6px;margin-top:5px">
+          <div id="objStorageName" class="wiz-field">Veeam Data Cloud Vault</div>
+          <button type="button" id="lbl-choose" class="wiz-btn" onclick="document.getElementById('netVault').focus()">Choose…</button>
+        </div>
 
-        <div style="display:flex;flex-direction:column;gap:10px">
+        <div id="cap-policies" class="wiz-indent" style="display:flex;flex-direction:column;gap:11px;margin-top:12px">
           <div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <input type="checkbox" id="extendSobr" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
-              <label for="extendSobr" id="lbl-extend" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500">Extend scale-out backup repository capacity with object storage</label>
+            <div class="wiz-row">
+              <input type="checkbox" id="copyPolicy" checked class="wiz-cb">
+              <label for="copyPolicy" id="lbl-copy" class="wiz-lbl">Copy backups to object storage as soon as they are created</label>
             </div>
-            <div style="margin-left:23px;margin-top:5px;font-family:var(--mono);font-size:11px;color:var(--gray-500);border:1px solid var(--gray-200);border-radius:var(--radius);padding:4px 8px;background:var(--gray-50)">Veeam Data Cloud Vault</div>
+            <p id="lbl-copy-desc" class="wiz-desc">Create additional copy of your backups for added redundancy by having all backups copied to the capacity tier as soon as they are created on the performance tier.</p>
           </div>
 
-          <div id="cap-policies" style="display:flex;flex-direction:column;gap:10px">
-            <div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <input type="checkbox" id="copyPolicy" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
-                <label for="copyPolicy" id="lbl-copy" style="font-size:12px;color:var(--gray-700);cursor:pointer">Copy backups to object storage as soon as they are created</label>
-              </div>
-              <div id="lbl-copy-desc" style="margin-left:23px;font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:2px">Create additional copy of your backups for added redundancy by having all backups copied to the capacity tier as soon as they are created on the performance tier.</div>
+          <div>
+            <div class="wiz-row">
+              <input type="checkbox" id="movePolicy" checked class="wiz-cb">
+              <label for="movePolicy" id="lbl-move" class="wiz-lbl">Move backups to object storage as they age out of the operational restore window</label>
             </div>
-
-            <div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <input type="checkbox" id="movePolicy" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
-                <label for="movePolicy" id="lbl-move" style="font-size:12px;color:var(--gray-700);cursor:pointer">Move backups to object storage as they age out of the operational restore window</label>
-              </div>
-              <div id="lbl-move-desc" style="margin-left:23px;font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:2px">Reduce your long-term retention costs by moving older backups to object storage completely while preserving the ability to restore directly from offloaded backups.</div>
-              <div id="move-days-row" style="display:flex;align-items:center;gap:6px;margin-left:23px;margin-top:6px;flex-wrap:wrap">
-                <span id="lbl-move-older" style="font-size:12px;color:var(--gray-700)">Move backup files older than</span>
-                <input type="number" id="offloadDays" value="14" min="1" max="365" style="width:60px;padding:3px 6px;font-size:12px;font-family:var(--mono);border:1px solid var(--gray-300);border-radius:var(--radius);text-align:center">
-                <span style="font-size:12px;color:var(--gray-500)" id="lbl-move-days-unit">days (your operational restore window)</span>
-              </div>
-            </div>
-
-            <div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <input type="checkbox" id="encryptUpload" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
-                <label for="encryptUpload" id="lbl-encrypt" style="font-size:12px;color:var(--gray-700);cursor:pointer">Encrypt data uploaded to object storage</label>
-              </div>
-              <div id="lbl-encrypt-desc" style="margin-left:23px;font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:2px"></div>
+            <p id="lbl-move-desc" class="wiz-desc">Reduce your long-term retention costs by moving older backups to object storage completely while preserving the ability to restore directly from offloaded backups.</p>
+            <div id="move-days-row" style="display:flex;align-items:center;gap:6px;margin-left:22px;margin-top:7px;flex-wrap:wrap">
+              <span id="lbl-move-older" class="wiz-lbl">Move backup files older than</span>
+              <input type="number" id="offloadDays" value="14" min="1" max="365" class="wiz-num">
+              <span id="lbl-move-days-unit" class="wiz-lbl">days (your operational restore window)</span>
             </div>
           </div>
 
-          <div style="display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--gray-200);padding-top:8px;flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:6px">
-              <span id="lbl-offload-window" style="font-size:11px;color:var(--gray-500)">Offload window:</span>
-              <select id="offloadWindow" style="font-family:var(--font);font-size:11px;padding:2px 6px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900)">
-                <option value="anytime" selected id="lbl-ow-any">Any time</option>
-                <option value="window" id="lbl-ow-win">Backup window only</option>
-              </select>
+          <div>
+            <div class="wiz-row">
+              <input type="checkbox" id="encryptUpload" checked class="wiz-cb">
+              <label for="encryptUpload" id="lbl-encrypt" class="wiz-lbl">Encrypt data uploaded to object storage</label>
             </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <span id="lbl-health" style="font-size:11px;color:var(--gray-500)">Health check:</span>
-              <select id="healthCheck" style="font-family:var(--font);font-size:11px;padding:2px 6px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900)">
-                <option value="off" id="lbl-hc-off">Disabled</option>
-                <option value="monthly" selected id="lbl-hc-monthly">Monthly</option>
-                <option value="weekly" id="lbl-hc-weekly">Weekly</option>
-              </select>
-            </div>
+            <p id="lbl-encrypt-desc" class="wiz-desc"></p>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;gap:10px;margin-top:14px;padding-top:10px;border-top:1px solid var(--gray-200);flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="lbl-offload-window" class="wiz-lbl">Offload window:</span>
+            <select id="offloadWindow" class="wiz-link-select">
+              <option value="anytime" selected id="lbl-ow-any">Any time</option>
+              <option value="window" id="lbl-ow-win">Backup window only</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="lbl-health" class="wiz-lbl">Health check:</span>
+            <select id="healthCheck" class="wiz-link-select">
+              <option value="off" id="lbl-hc-off">Disabled</option>
+              <option value="monthly" selected id="lbl-hc-monthly">Monthly</option>
+              <option value="weekly" id="lbl-hc-weekly">Weekly</option>
+            </select>
           </div>
         </div>
         <div id="cap-notes"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
 
         <div class="section-label" id="lbl-net-sec">Network &amp; latency</div>
         <div class="field-grid">
@@ -419,6 +447,8 @@
 
       </div>
     </div>
+
+    </div><!-- /right column -->
   </div><!-- /inputs 2-col grid -->
 
   <!-- BOTTOM: Results (full width) -->
@@ -487,6 +517,7 @@ const T = {
     cr:'Daily change rate (%)', comp:'Compression (%)', bg:'Block generation (days)',
     gfsSec:'GFS Retention', daily:'Daily', weekly:'Weekly', monthly:'Monthly', yearly:'Yearly',
     immSec:'Immutability Settings', warnCapTier:'VDC Vault', days:'days',
+    chooseBtn:'Choose\u2026', pickStorage:'<Click Choose to pick object storage>',
     immMinLabel:'Minimum immutability duration:',
     immMinDesc:'Defines guaranteed immutability duration for every backup on this repository. Provides additional layer of protection against accidental or malicious retention policy changes.',
     immModeTitle:'Make backups immutable:',
@@ -593,6 +624,7 @@ const T = {
     cr:'Cambio diario (%)', comp:'Compresión (%)', bg:'Block generation (días)',
     gfsSec:'Retención GFS', daily:'Diarias', weekly:'Semanales', monthly:'Mensuales', yearly:'Anuales',
     immSec:'Configuración de inmutabilidad', warnCapTier:'VDC Vault', days:'días',
+    chooseBtn:'Elegir\u2026', pickStorage:'<Elegí el object storage>',
     immMinLabel:'Duración mínima de inmutabilidad:',
     immMinDesc:'Define la duración de inmutabilidad garantizada para cada backup de este repositorio. Aporta una capa adicional de protección contra cambios accidentales o maliciosos en la política de retención.',
     immModeTitle:'Hacer los backups inmutables:',
@@ -699,6 +731,7 @@ const T = {
     cr:'Taxa de mudança diária (%)', comp:'Compressão (%)', bg:'Block generation (dias)',
     gfsSec:'Retenção GFS', daily:'Diárias', weekly:'Semanais', monthly:'Mensais', yearly:'Anuais',
     immSec:'Configurações de imutabilidade', warnCapTier:'VDC Vault', days:'dias',
+    chooseBtn:'Escolher\u2026', pickStorage:'<Escolha o object storage>',
     immMinLabel:'Duração mínima de imutabilidade:',
     immMinDesc:'Define a duração de imutabilidade garantida para cada backup deste repositório. Fornece uma camada adicional de proteção contra alterações acidentais ou maliciosas na política de retenção.',
     immModeTitle:'Tornar os backups imutáveis:',
@@ -822,7 +855,7 @@ function applyT() {
     'lbl-imm-sec':'immSec',
     'lbl-imm-min':'immMinLabel','lbl-imm-min-unit':'days','lbl-imm-min-desc':'immMinDesc',
     'lbl-imm-mode-title':'immModeTitle','lbl-imm-mode-ret':'immModeRet','lbl-imm-mode-min':'immModeMin',
-    'lbl-cap-sec':'capSec','lbl-cap-intro':'capIntro','lbl-extend':'extendLabel',
+    'lbl-cap-sec':'capSec','lbl-cap-intro':'capIntro','lbl-extend':'extendLabel','lbl-choose':'chooseBtn',
     'lbl-copy':'copyLabel','lbl-copy-desc':'copyDesc',
     'lbl-move':'moveLabel','lbl-move-desc':'moveDesc',
     'lbl-move-older':'moveOlderLabel','lbl-move-days-unit':'moveDaysUnit',
@@ -1352,6 +1385,12 @@ function renderCapNotes(inp, capEnabled, moveOnly) {
   document.getElementById('lbl-encrypt-desc').textContent = inp.encryptUpload ? t('encryptOnDesc') : t('encryptOffDesc');
   document.getElementById('cap-policies').style.opacity = inp.extendSobr ? '1' : '.4';
   document.getElementById('cap-policies').style.pointerEvents = inp.extendSobr ? '' : 'none';
+  // The repository name reflects the region actually selected below, so "Choose…" is real
+  const vaultSel = document.getElementById('netVault');
+  const region   = vaultSel.options[vaultSel.selectedIndex].textContent;
+  const nameEl   = document.getElementById('objStorageName');
+  nameEl.textContent = inp.extendSobr ? `Veeam Data Cloud Vault — ${region}` : t('pickStorage');
+  nameEl.style.color = inp.extendSobr ? 'var(--gray-900)' : 'var(--gray-500)';
 }
 
 function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveOnly, isPerfWithMove) {
