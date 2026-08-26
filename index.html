@@ -116,7 +116,7 @@
     .formula-box code{font-family:var(--mono);font-size:12px;color:var(--green-dark)}
     .formula-box p{font-size:11px;color:var(--gray-500);margin-top:4px;line-height:1.5}
 
-    .breakdown-cols{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;max-width:100%}
+    .breakdown-cols{max-width:100%}
     .breakdown-col-title{font-size:11px;font-weight:600;color:var(--gray-700);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--green)}
 
     .warn-box{background:#fdecea;border-left:3px solid var(--red);border-radius:0 var(--radius) var(--radius) 0;padding:.65rem 1rem;margin-top:8px}
@@ -159,21 +159,6 @@
     <div class="card">
       <div class="card-body">
 
-        <div class="section-label" id="lbl-mode-sec">Simulation mode</div>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px">
-          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--gray-300);background:var(--white);transition:border-color .15s" id="mode-sobr-box">
-            <input type="radio" name="simMode" id="modeSobr" value="sobr" checked style="margin-top:2px;accent-color:var(--green);flex-shrink:0">
-            <div><div id="lbl-mode-sobr" style="font-size:12px;font-weight:500;color:var(--gray-900)">Full SOBR (Performance + Capacity Tier)</div>
-            <div id="lbl-mode-sobr-sub" style="font-size:11px;color:var(--gray-500);margin-top:1px">New deployment — calculate both tiers from scratch</div></div>
-          </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--gray-300);background:var(--white);transition:border-color .15s" id="mode-cap-box">
-            <input type="radio" name="simMode" id="modeCap" value="cap" style="margin-top:2px;accent-color:var(--green);flex-shrink:0">
-            <div><div id="lbl-mode-cap" style="font-size:12px;font-weight:500;color:var(--gray-900)">Capacity Tier only (VDC Vault extension)</div>
-            <div id="lbl-mode-cap-sub" style="font-size:11px;color:var(--gray-500);margin-top:1px">Existing on-prem SOBR — only calculate VDC Vault storage &amp; bandwidth</div></div>
-          </label>
-        </div>
-        <div id="perf-tier-fields">
-
         <div class="section-label" id="lbl-source-sec">Source data</div>
         <div class="field-grid">
           <div class="field"><label id="lbl-src">Source data (TB)</label>
@@ -198,97 +183,101 @@
             <input type="number" id="retYears" value="0" min="0" max="10"></div>
         </div>
 
-        </div><!-- /perf-tier-fields -->
+        <div class="section-label" id="lbl-imm-sec">Immutability Settings</div>
 
-        <div class="section-label" id="lbl-imm-sec">Immutability</div>
+        <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 14px;background:var(--gray-50)">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span id="lbl-imm-min" style="font-size:12px;color:var(--gray-700)">Minimum immutability duration:</span>
+            <input type="number" id="immCap" value="7" min="1" max="3650" style="width:64px;padding:3px 6px;font-size:12px;font-family:var(--mono);border:1px solid var(--gray-300);border-radius:var(--radius);text-align:center">
+            <span id="lbl-imm-min-unit" style="font-size:12px;color:var(--gray-500)">days</span>
+          </div>
+          <div id="lbl-imm-min-desc" style="font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:6px">Defines guaranteed immutability duration for every backup on this repository. Provides additional layer of protection against accidental or malicious retention policy changes.</div>
 
-        <div style="border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 14px;background:var(--gray-50);display:flex;flex-direction:column;gap:12px">
-
-          <!-- Performance Tier: optional (on-prem). Only shown in Full SOBR mode -->
-          <div id="imm-perf-field">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-              <input type="checkbox" id="immPerfEnabled" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
-              <label for="immPerfEnabled" id="lbl-imm-perf-toggle" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500">Enable immutability on Performance Tier (on-prem)</label>
-            </div>
-            <div id="imm-perf-days" style="opacity:.4;pointer-events:none;max-width:200px">
-              <div class="field">
-                <label id="lbl-imm-perf">Performance tier lock period (days)</label>
-                <input type="number" id="immPerf" value="7" min="1" max="365">
-              </div>
-            </div>
+          <div id="lbl-imm-mode-title" style="font-size:12px;color:var(--gray-700);margin-top:12px;margin-bottom:6px">Make backups immutable:</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
+              <input type="radio" name="immMode" id="immModeRetention" value="retention" checked style="margin-top:2px;accent-color:var(--green);flex-shrink:0">
+              <span id="lbl-imm-mode-ret" style="font-size:12px;color:var(--gray-700)">For the entire duration of their retention policy (recommended)</span>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
+              <input type="radio" name="immMode" id="immModeMinimum" value="minimum" style="margin-top:2px;accent-color:var(--green);flex-shrink:0">
+              <span id="lbl-imm-mode-min" style="font-size:12px;color:var(--gray-700)">For the minimum immutability period only</span>
+            </label>
           </div>
 
-          <!-- Capacity Tier: toggleable, mirrors Performance Tier pattern -->
-          <div id="imm-fields">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-              <input type="checkbox" id="immCapEnabled" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
-              <label for="immCapEnabled" id="lbl-imm-cap-toggle" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500">Enable immutability on Capacity Tier (VDC Vault / Object Lock)</label>
-            </div>
-            <div id="imm-cap-days" style="max-width:200px">
-              <div class="field">
-                <label id="lbl-imm-cap">VDC Vault lock period (days)</label>
-                <input type="number" id="immCap" value="7" min="1" max="365">
-              </div>
-            </div>
-            <div id="imm-lock-summary" style="margin-top:8px"></div>
-          </div>
-
+          <div id="imm-mode-note" style="margin-top:10px"></div>
+          <div id="imm-lock-summary" style="margin-top:8px"></div>
         </div>
         <div id="imm-warnings"></div>
 
-        <!-- Capacity-only mode: simplified inputs -->
-        <div id="cap-only-fields" style="display:none">
-          <div class="section-label" id="lbl-existing-sec">Existing on-prem repository</div>
-          <div class="field-grid">
-            <div class="field"><label id="lbl-existing-size">Current backup size (TB)</label>
-              <input type="number" id="existingSize" value="10" min="0.1" max="5000" step="0.1"></div>
-            <div class="field" id="cap-cr-field"><label id="lbl-existing-cr">Daily change rate (%)</label>
-              <input type="number" id="existingCR" value="3" min="1" max="50" step="0.5"></div>
-          </div>
-          <div class="field-grid" style="margin-top:10px">
-            <div class="field"><label id="lbl-existing-comp">Compression (%)</label>
-              <input type="number" id="existingComp" value="50" min="0" max="80" step="5"></div>
-            <div class="field" id="cap-bg-field"><label id="lbl-existing-bg">Block generation (days)</label>
-              <input type="number" id="existingBG" value="7" min="1" max="30" step="1"></div>
-          </div>
-          <div class="section-label" id="lbl-existing-ret-sec">Retention to offload to VDC Vault</div>
-          <div class="field-grid-4">
-            <div class="field" id="cap-daily-field"><label id="lbl-existing-daily">Daily</label>
-              <input type="number" id="existingDays" value="7" min="0" max="365"></div>
-            <div class="field"><label id="lbl-existing-weekly">Weekly</label>
-              <input type="number" id="existingWeeks" value="0" min="0" max="52"></div>
-            <div class="field"><label id="lbl-existing-monthly">Monthly</label>
-              <input type="number" id="existingMonths" value="0" min="0" max="60"></div>
-            <div class="field"><label id="lbl-existing-yearly">Yearly</label>
-              <input type="number" id="existingYears" value="0" min="0" max="10"></div>
-          </div>
-        </div>
-        <div id="cap-move-note" style="display:none;background:#eff6ff;border-left:3px solid #3b82f6;border-radius:0 var(--radius) var(--radius) 0;padding:.65rem 1rem;margin-top:8px;font-size:11px;color:#1e40af;line-height:1.5">
-          <i class="fa-solid fa-circle-info" style="margin-right:5px"></i><span id="lbl-move-note"></span>
-        </div>
-
       </div>
-    </div><!-- /card 1: simulation + source + GFS + immutability -->
+    </div><!-- /card 1: source + GFS + immutability -->
 
     <div class="card">
       <div class="card-body">
 
         <div class="section-label" id="lbl-cap-sec">Capacity Tier</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <input type="checkbox" id="copyPolicy" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
-            <label for="copyPolicy" id="lbl-copy" style="font-size:12px;color:var(--gray-700);cursor:pointer">Copy policy — copy backups to Capacity Tier</label>
+        <div id="lbl-cap-intro" style="font-size:11px;color:var(--gray-500);line-height:1.5;margin-bottom:10px">Specify object storage to copy backups to for redundancy and DR purposes. Older backups can be moved to object storage completely to reduce long-term retention costs while preserving the ability to restore directly from offloaded backups.</div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="extendSobr" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+              <label for="extendSobr" id="lbl-extend" style="font-size:12px;color:var(--gray-700);cursor:pointer;font-weight:500">Extend scale-out backup repository capacity with object storage</label>
+            </div>
+            <div style="margin-left:23px;margin-top:5px;font-family:var(--mono);font-size:11px;color:var(--gray-500);border:1px solid var(--gray-200);border-radius:var(--radius);padding:4px 8px;background:var(--gray-50)">Veeam Data Cloud Vault</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <input type="checkbox" id="movePolicy" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
-            <label for="movePolicy" id="lbl-move" style="font-size:12px;color:var(--gray-700);cursor:pointer">Move policy — move backups to Capacity Tier</label>
-            <span id="move-days-row" style="display:flex;align-items:center;gap:6px;margin-left:4px">
-              <span id="lbl-move-older" style="font-size:12px;color:var(--gray-500)">older than</span>
-              <input type="number" id="offloadDays" value="14" min="1" max="365" style="width:60px;padding:3px 6px;font-size:12px;border:1px solid var(--gray-300);border-radius:var(--radius);text-align:center">
-              <span style="font-size:12px;color:var(--gray-500)" id="lbl-move-days-unit">days</span>
-            </span>
+
+          <div id="cap-policies" style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="copyPolicy" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+                <label for="copyPolicy" id="lbl-copy" style="font-size:12px;color:var(--gray-700);cursor:pointer">Copy backups to object storage as soon as they are created</label>
+              </div>
+              <div id="lbl-copy-desc" style="margin-left:23px;font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:2px">Create additional copy of your backups for added redundancy by having all backups copied to the capacity tier as soon as they are created on the performance tier.</div>
+            </div>
+
+            <div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="movePolicy" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+                <label for="movePolicy" id="lbl-move" style="font-size:12px;color:var(--gray-700);cursor:pointer">Move backups to object storage as they age out of the operational restore window</label>
+              </div>
+              <div id="lbl-move-desc" style="margin-left:23px;font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:2px">Reduce your long-term retention costs by moving older backups to object storage completely while preserving the ability to restore directly from offloaded backups.</div>
+              <div id="move-days-row" style="display:flex;align-items:center;gap:6px;margin-left:23px;margin-top:6px;flex-wrap:wrap">
+                <span id="lbl-move-older" style="font-size:12px;color:var(--gray-700)">Move backup files older than</span>
+                <input type="number" id="offloadDays" value="14" min="1" max="365" style="width:60px;padding:3px 6px;font-size:12px;font-family:var(--mono);border:1px solid var(--gray-300);border-radius:var(--radius);text-align:center">
+                <span style="font-size:12px;color:var(--gray-500)" id="lbl-move-days-unit">days (your operational restore window)</span>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="encryptUpload" checked style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+                <label for="encryptUpload" id="lbl-encrypt" style="font-size:12px;color:var(--gray-700);cursor:pointer">Encrypt data uploaded to object storage</label>
+              </div>
+              <div id="lbl-encrypt-desc" style="margin-left:23px;font-size:11px;color:var(--gray-500);line-height:1.5;margin-top:2px"></div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--gray-200);padding-top:8px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span id="lbl-offload-window" style="font-size:11px;color:var(--gray-500)">Offload window:</span>
+              <select id="offloadWindow" style="font-family:var(--font);font-size:11px;padding:2px 6px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900)">
+                <option value="anytime" selected id="lbl-ow-any">Any time</option>
+                <option value="window" id="lbl-ow-win">Backup window only</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span id="lbl-health" style="font-size:11px;color:var(--gray-500)">Health check:</span>
+              <select id="healthCheck" style="font-family:var(--font);font-size:11px;padding:2px 6px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900)">
+                <option value="off" id="lbl-hc-off">Disabled</option>
+                <option value="monthly" selected id="lbl-hc-monthly">Monthly</option>
+                <option value="weekly" id="lbl-hc-weekly">Weekly</option>
+              </select>
+            </div>
           </div>
         </div>
+        <div id="cap-notes"></div>
 
         <div class="section-label" id="lbl-net-sec">Network &amp; latency</div>
         <div class="field-grid">
@@ -468,15 +457,9 @@
             <span class="legend-item"><span class="legend-dot" style="background:#3b82f680"></span><span id="leg-gfs">GFS</span></span>
             <span class="legend-item"><span class="legend-dot" style="background:#e8a0a8"></span><span id="leg-ovh">Immutability overhead</span></span>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
-            <div>
-              <div class="sim-section-title"><span class="dot" style="background:var(--green)"></span>Performance Tier</div>
-              <div id="sim-perf"></div>
-            </div>
-            <div>
-              <div class="sim-section-title"><span class="dot" style="background:#005a1a"></span>Capacity Tier</div>
-              <div id="sim-cap"></div>
-            </div>
+          <div>
+            <div class="sim-section-title"><span class="dot" style="background:#005a1a"></span><span id="lbl-sim-vault">VDC Vault (Capacity Tier)</span></div>
+            <div id="sim-cap"></div>
           </div>
         </div>
       </div>
@@ -503,11 +486,38 @@ const T = {
     params:'Input parameters', sourceSec:'Source data', src:'Source data (TB)',
     cr:'Daily change rate (%)', comp:'Compression (%)', bg:'Block generation (days)',
     gfsSec:'GFS Retention', daily:'Daily', weekly:'Weekly', monthly:'Monthly', yearly:'Yearly',
-    immSec:'Immutability', immEnable:'Enable immutability (VDC Vault)',
-    immPerf:'Performance tier (days)', immCap:'Capacity tier (days)',
+    immSec:'Immutability Settings', warnCapTier:'VDC Vault', days:'days',
+    immMinLabel:'Minimum immutability duration:',
+    immMinDesc:'Defines guaranteed immutability duration for every backup on this repository. Provides additional layer of protection against accidental or malicious retention policy changes.',
+    immModeTitle:'Make backups immutable:',
+    immModeRet:'For the entire duration of their retention policy (recommended)',
+    immModeMin:'For the minimum immutability period only',
+    immModeRetNote:(eff,bumped,ret)=>bumped
+      ? `Backups stay locked for their whole retention, so the effective lock is <strong>${eff} days</strong> — raised from the minimum by the ${ret}-day retention. Nothing can be deleted early, which is the safest setting and also the one with the most overhead.`
+      : `Backups stay locked for their whole retention. With the current retention the effective lock is <strong>${eff} days</strong>. Nothing can be deleted early.`,
+    immModeMinNote:(min)=>`Locks last exactly <strong>${min} days</strong>. After that Veeam can reclaim space as soon as retention allows, so the overhead is lower — but a retention policy change could remove restore points sooner.`,
+    capIntro:'Specify object storage to copy backups to for redundancy and DR purposes. Older backups can be moved to object storage completely to reduce long-term retention costs while preserving the ability to restore directly from offloaded backups.',
+    extendLabel:'Extend scale-out backup repository capacity with object storage',
+    copyLabel:'Copy backups to object storage as soon as they are created',
+    copyDesc:'Create additional copy of your backups for added redundancy by having all backups copied to the capacity tier as soon as they are created on the performance tier.',
+    moveLabel:'Move backups to object storage as they age out of the operational restore window',
+    moveDesc:'Reduce your long-term retention costs by moving older backups to object storage completely while preserving the ability to restore directly from offloaded backups.',
+    moveOlderLabel:'Move backup files older than',
+    moveDaysUnit:'days (your operational restore window)',
+    encryptLabel:'Encrypt data uploaded to object storage',
+    encryptOnDesc:'Blocks are encrypted before upload. Size is unchanged, but encrypted blocks cannot be deduplicated or recompressed by the object storage side.',
+    encryptOffDesc:'Data is uploaded unencrypted. Veeam strongly recommends enabling encryption for offsite object storage.',
+    offloadWindowLabel:'Offload window:',
+    owAny:'Any time', owWin:'Backup window only',
+    healthLabel:'Health check:',
+    hcOff:'Disabled', hcMonthly:'Monthly', hcWeekly:'Weekly',
+    offloadWindowNote:(h)=>`Offload restricted to the backup window, so the upload has only <strong>${h}h/day</strong> to move data. Outside that window transfers are paused and resume the next day.`,
+    healthCheckNote:(f)=>`${f} health check reads back the offloaded blocks to verify integrity. This generates additional GET requests against the Vault, separate from the upload traffic estimated here.`,
+    capNoExtend:'Object storage extension is disabled — nothing is uploaded to the Vault and there is nothing to size.',
+    capNoPolicy:'Neither Copy nor Move policy is enabled — no backups reach the Vault.',
+    vaultTotal:'VDC Vault total', uploadedDaily:'Uploaded per day',
+    uploadedPeak:'Synthetic full day', uploadedPeakEvery:'occurs every',
     capSec:'Capacity Tier',
-    copy:'Copy policy — copy backups to Capacity Tier',
-    move:'Move policy — move backups to Capacity Tier',
     bwSec:'Backup window & bandwidth', bwWin:'Backup window (hours)', proxies:'Number of proxies',
     tabBreakdown:'Breakdown', tabSim:'Restore points', tabWhy:'Why the overhead?',
     breakdownTitle:'Storage breakdown', simTitle:'Simulated restore points',
@@ -521,7 +531,6 @@ const T = {
     capDisabledMsg:'Disabled. Enable Copy policy to see estimate.',
     copyDisabledMsg:'Copy policy disabled.',
     warnConfig:'inconsistent configuration',
-    warnPerfTier:'Performance Tier', warnCapTier:'Capacity Tier',
     immutable:'Immutable', noLock:'No lock', overhead:'Overhead',
     bwTitle:'Required bandwidth per proxy',
     bwDaily:'Daily incremental (per proxy)', bwPeak:'Peak — synthetic full day (per proxy)',
@@ -555,13 +564,7 @@ const T = {
     diskRead:'read', diskWrite:'write',
     lockPeriod:'VDC Vault lock period', lockPeriodSub:'Object Lock duration',
     offloadTrigger:'Offload trigger', offloadTriggerSub:'Days before move/copy to Vault',
-    moveOlderThan:'older than', moveDays:'days',
     remainingLock:'Remaining lock on arrival', lockExpiredOnArrival:'Lock already expired — object can be deleted when retention ends', lockRemainingOnArrival:'Object still locked after arriving at Vault',
-    lbl_vaultAlwaysImm:'VDC Vault always enforces immutability (Object Lock). Configure the lock period below.',
-    lbl_offloadDays:'Offload trigger — days before move/copy',
-    lbl_immPerfToggle:'Enable immutability on Performance Tier (on-prem)',
-    lbl_immCapToggle:'Enable immutability on Capacity Tier (VDC Vault / Object Lock)',
-    lbl_immPerf:'Performance tier lock period (days)',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: immutability period (${ip} days) exceeds daily retention (${rd} days). All restore points will remain <strong>locked until they naturally expire</strong> — Veeam cannot remove them earlier even when the retention policy says so. This maximizes overhead.`,
     warnImmGtRetTip:(rd)=>`Recommendation: set immutability ≤ retention (${rd} days) to allow normal cleanup.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: immutability (${ip} days) exceeds the longest GFS retention (${max} days). Restore points will remain locked <strong>beyond their own retention window</strong>, preventing deletion and generating unnecessary storage overhead.`,
@@ -569,12 +572,6 @@ const T = {
     warnImmNoSense:(tier,ip,bg)=>`${tier}: immutability period (${ip} days) is less than the block generation period (${bg} days). This means synthetic fulls rotate faster than the lock expires — Object Lock provides <strong>no real protection</strong> in this scenario since blocks may already be overwritten.`,
     warnImmNoSenseTip:(bg)=>`Recommendation: set immutability ≥ block generation period (${bg} days).`,
     badge:'Community Tool',
-    modeSec:'Simulation mode',
-    modeSobrLbl:'Full SOBR (Performance + Capacity Tier)', modeSobrSub:'New deployment — calculate both tiers from scratch',
-    modeCapLbl:'Capacity Tier only (VDC Vault extension)', modeCapSub:'Existing on-prem SOBR — only calculate VDC Vault storage & bandwidth',
-    perfOnPrem:'On-premises (existing)', perfOnPremSub:'Not calculated in this mode',
-    existingSec:'Existing on-prem repository', existingSize:'Current backup size (TB)',
-    existingRetSec:'Retention to offload to VDC Vault',
     moveOnlyNote:'With Move policy only, synthetic fulls are the only objects transferred to VDC Vault — daily change rate and incremental retention are not applicable.',
     netSec:'Network & latency', netOrigin:'Client location (origin)', netVault:'VDC Vault region (destination)',
     netRtt:'Estimated RTT', netEffective:'Effective throughput', netUtil:'Link utilization', netNominal:'Nominal', netStreams:'streams',
@@ -595,11 +592,38 @@ const T = {
     params:'Parámetros de entrada', sourceSec:'Datos de origen', src:'Datos fuente (TB)',
     cr:'Cambio diario (%)', comp:'Compresión (%)', bg:'Block generation (días)',
     gfsSec:'Retención GFS', daily:'Diarias', weekly:'Semanales', monthly:'Mensuales', yearly:'Anuales',
-    immSec:'Inmutabilidad', immEnable:'Activar inmutabilidad (VDC Vault)',
-    immPerf:'Performance tier (días)', immCap:'Capacity tier (días)',
+    immSec:'Configuración de inmutabilidad', warnCapTier:'VDC Vault', days:'días',
+    immMinLabel:'Duración mínima de inmutabilidad:',
+    immMinDesc:'Define la duración de inmutabilidad garantizada para cada backup de este repositorio. Aporta una capa adicional de protección contra cambios accidentales o maliciosos en la política de retención.',
+    immModeTitle:'Hacer los backups inmutables:',
+    immModeRet:'Durante toda la duración de su política de retención (recomendado)',
+    immModeMin:'Solo durante el período mínimo de inmutabilidad',
+    immModeRetNote:(eff,bumped,ret)=>bumped
+      ? `Los backups quedan bloqueados durante toda su retención, así que el lock efectivo es de <strong>${eff} días</strong> — elevado desde el mínimo por la retención de ${ret} días. Nada se puede borrar antes, que es la opción más segura y también la de mayor overhead.`
+      : `Los backups quedan bloqueados durante toda su retención. Con la retención actual el lock efectivo es de <strong>${eff} días</strong>. Nada se puede borrar antes.`,
+    immModeMinNote:(min)=>`Los locks duran exactamente <strong>${min} días</strong>. Después Veeam puede liberar espacio en cuanto la retención lo permita, así que el overhead es menor — pero un cambio en la política de retención podría eliminar restore points antes.`,
+    capIntro:'Especificá el object storage al que copiar los backups para redundancia y DR. Los backups más antiguos pueden moverse por completo al object storage para reducir el costo de retención a largo plazo, conservando la posibilidad de restaurar directamente desde los backups movidos.',
+    extendLabel:'Extender la capacidad del scale-out backup repository con object storage',
+    copyLabel:'Copiar los backups al object storage en cuanto se crean',
+    copyDesc:'Crea una copia adicional de los backups para mayor redundancia, copiando todos los backups al capacity tier en cuanto se crean en el performance tier.',
+    moveLabel:'Mover los backups al object storage cuando salen de la ventana de restore operativa',
+    moveDesc:'Reduce el costo de retención a largo plazo moviendo por completo los backups antiguos al object storage, conservando la posibilidad de restaurar directamente desde ellos.',
+    moveOlderLabel:'Mover archivos de backup más antiguos que',
+    moveDaysUnit:'días (tu ventana de restore operativa)',
+    encryptLabel:'Cifrar los datos subidos al object storage',
+    encryptOnDesc:'Los bloques se cifran antes de subirse. El tamaño no cambia, pero los bloques cifrados no pueden deduplicarse ni recomprimirse del lado del object storage.',
+    encryptOffDesc:'Los datos se suben sin cifrar. Veeam recomienda fuertemente activar el cifrado para object storage externo.',
+    offloadWindowLabel:'Ventana de offload:',
+    owAny:'Cualquier momento', owWin:'Solo la ventana de backup',
+    healthLabel:'Health check:',
+    hcOff:'Desactivado', hcMonthly:'Mensual', hcWeekly:'Semanal',
+    offloadWindowNote:(h)=>`El offload está restringido a la ventana de backup, así que la subida tiene solo <strong>${h}h/día</strong> para mover datos. Fuera de esa ventana las transferencias se pausan y siguen al día siguiente.`,
+    healthCheckNote:(f)=>`El health check ${f.toLowerCase()} vuelve a leer los bloques movidos para verificar su integridad. Eso genera requests GET adicionales contra el Vault, aparte del tráfico de subida estimado acá.`,
+    capNoExtend:'La extensión con object storage está desactivada — no se sube nada al Vault y no hay nada que dimensionar.',
+    capNoPolicy:'No hay política Copy ni Move activada — ningún backup llega al Vault.',
+    vaultTotal:'Total en VDC Vault', uploadedDaily:'Subido por día',
+    uploadedPeak:'Día de full sintético', uploadedPeakEvery:'ocurre cada',
     capSec:'Capacity Tier',
-    copy:'Copy policy — copiar backups al Capacity Tier',
-    move:'Move policy — mover backups al Capacity Tier',
     bwSec:'Ventana de backup y ancho de banda', bwWin:'Ventana de backup (horas)', proxies:'Cantidad de proxies',
     tabBreakdown:'Desglose', tabSim:'Restore points', tabWhy:'¿Por qué el overhead?',
     breakdownTitle:'Desglose del almacenamiento', simTitle:'Restore points simulados',
@@ -613,7 +637,6 @@ const T = {
     capDisabledMsg:'Desactivado. Activar Copy policy para ver estimación.',
     copyDisabledMsg:'Copy policy desactivada.',
     warnConfig:'configuración inconsistente',
-    warnPerfTier:'Performance Tier', warnCapTier:'Capacity Tier',
     immutable:'Inmutable', noLock:'Sin lock', overhead:'Overhead',
     bwTitle:'Ancho de banda requerido por proxy',
     bwDaily:'Incremental diario (por proxy)', bwPeak:'Pico — día de full sintético (por proxy)',
@@ -647,13 +670,7 @@ const T = {
     diskRead:'lectura', diskWrite:'escritura',
     lockPeriod:'Período de lock VDC Vault', lockPeriodSub:'Duración del Object Lock',
     offloadTrigger:'Trigger de offload', offloadTriggerSub:'Días antes de mover/copiar al Vault',
-    moveOlderThan:'más antiguo que', moveDays:'días',
     remainingLock:'Lock restante al llegar', lockExpiredOnArrival:'Lock ya expirado — el objeto puede eliminarse cuando venza la retención', lockRemainingOnArrival:'El objeto sigue bloqueado al llegar al Vault',
-    lbl_vaultAlwaysImm:'VDC Vault siempre aplica inmutabilidad (Object Lock). Configurá el período de lock abajo.',
-    lbl_offloadDays:'Trigger de offload — días antes de mover/copiar',
-    lbl_immPerfToggle:'Activar inmutabilidad en Performance Tier (on-prem)',
-    lbl_immCapToggle:'Activar inmutabilidad en Capacity Tier (VDC Vault / Object Lock)',
-    lbl_immPerf:'Período de lock Performance Tier (días)',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: el período de inmutabilidad (${ip} días) supera la retención diaria (${rd} días). Todos los restore points quedarán <strong>bloqueados hasta que expiren naturalmente</strong> — Veeam no puede eliminarlos antes aunque la política de retención ya los haya vencido. El overhead será máximo.`,
     warnImmGtRetTip:(rd)=>`Recomendación: igualá la inmutabilidad a la retención (${rd} días) o menor, para permitir la limpieza normal.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: la inmutabilidad (${ip} días) excede la retención GFS más larga (${max} días). Los restore points quedarán bloqueados <strong>más allá de su propia ventana de retención</strong>, impidiendo su eliminación y generando overhead innecesario.`,
@@ -661,12 +678,6 @@ const T = {
     warnImmNoSense:(tier,ip,bg)=>`${tier}: el período de inmutabilidad (${ip} días) es menor que el block generation period (${bg} días). Los fulls sintéticos rotan más rápido de lo que expira el lock — Object Lock <strong>no brinda protección real</strong> en este escenario ya que los bloques pueden sobrescribirse.`,
     warnImmNoSenseTip:(bg)=>`Recomendación: configurá la inmutabilidad ≥ al block generation period (${bg} días).`,
     badge:'Community Tool',
-    modeSec:'Modo de simulación',
-    modeSobrLbl:'SOBR completo (Performance + Capacity Tier)', modeSobrSub:'Nuevo despliegue — calcular ambos tiers desde cero',
-    modeCapLbl:'Solo Capacity Tier (extensión VDC Vault)', modeCapSub:'SOBR on-prem existente — calcular solo storage y ancho de banda del VDC Vault',
-    perfOnPrem:'On-premises (existente)', perfOnPremSub:'No calculado en este modo',
-    existingSec:'Repositorio on-prem existente', existingSize:'Tamaño actual del backup (TB)',
-    existingRetSec:'Retención a enviar al VDC Vault',
     moveOnlyNote:'Con solo Move policy, únicamente los fulls sintéticos se transfieren al VDC Vault — la tasa de cambio diario y la retención de incrementales no aplican.',
     netSec:'Red y latencia', netOrigin:'Ubicación del cliente (origen)', netVault:'Región VDC Vault (destino)',
     netRtt:'RTT estimado', netEffective:'Throughput efectivo', netUtil:'Utilización del enlace', netNominal:'Nominal', netStreams:'streams',
@@ -687,11 +698,38 @@ const T = {
     params:'Parâmetros de entrada', sourceSec:'Dados de origem', src:'Dados fonte (TB)',
     cr:'Taxa de mudança diária (%)', comp:'Compressão (%)', bg:'Block generation (dias)',
     gfsSec:'Retenção GFS', daily:'Diárias', weekly:'Semanais', monthly:'Mensais', yearly:'Anuais',
-    immSec:'Imutabilidade', immEnable:'Ativar imutabilidade (VDC Vault)',
-    immPerf:'Performance tier (dias)', immCap:'Capacity tier (dias)',
+    immSec:'Configurações de imutabilidade', warnCapTier:'VDC Vault', days:'dias',
+    immMinLabel:'Duração mínima de imutabilidade:',
+    immMinDesc:'Define a duração de imutabilidade garantida para cada backup deste repositório. Fornece uma camada adicional de proteção contra alterações acidentais ou maliciosas na política de retenção.',
+    immModeTitle:'Tornar os backups imutáveis:',
+    immModeRet:'Por toda a duração da sua política de retenção (recomendado)',
+    immModeMin:'Apenas pelo período mínimo de imutabilidade',
+    immModeRetNote:(eff,bumped,ret)=>bumped
+      ? `Os backups permanecem bloqueados por toda a retenção, então o lock efetivo é de <strong>${eff} dias</strong> — elevado a partir do mínimo pela retenção de ${ret} dias. Nada pode ser excluído antes, o que é a opção mais segura e também a de maior overhead.`
+      : `Os backups permanecem bloqueados por toda a retenção. Com a retenção atual o lock efetivo é de <strong>${eff} dias</strong>. Nada pode ser excluído antes.`,
+    immModeMinNote:(min)=>`Os locks duram exatamente <strong>${min} dias</strong>. Depois disso o Veeam pode liberar espaço assim que a retenção permitir, então o overhead é menor — mas uma mudança na política de retenção poderia remover restore points mais cedo.`,
+    capIntro:'Especifique o object storage para onde copiar os backups para fins de redundância e DR. Backups mais antigos podem ser movidos completamente para o object storage para reduzir custos de retenção de longo prazo, preservando a capacidade de restaurar diretamente deles.',
+    extendLabel:'Estender a capacidade do scale-out backup repository com object storage',
+    copyLabel:'Copiar os backups para o object storage assim que forem criados',
+    copyDesc:'Cria uma cópia adicional dos backups para maior redundância, copiando todos os backups para o capacity tier assim que são criados no performance tier.',
+    moveLabel:'Mover os backups para o object storage quando saem da janela de restore operacional',
+    moveDesc:'Reduz os custos de retenção de longo prazo movendo completamente os backups antigos para o object storage, preservando a capacidade de restaurar diretamente deles.',
+    moveOlderLabel:'Mover arquivos de backup mais antigos que',
+    moveDaysUnit:'dias (sua janela de restore operacional)',
+    encryptLabel:'Criptografar os dados enviados ao object storage',
+    encryptOnDesc:'Os blocos são criptografados antes do upload. O tamanho não muda, mas blocos criptografados não podem ser deduplicados nem recomprimidos do lado do object storage.',
+    encryptOffDesc:'Os dados são enviados sem criptografia. O Veeam recomenda fortemente ativar a criptografia para object storage externo.',
+    offloadWindowLabel:'Janela de offload:',
+    owAny:'Qualquer momento', owWin:'Apenas a janela de backup',
+    healthLabel:'Health check:',
+    hcOff:'Desativado', hcMonthly:'Mensal', hcWeekly:'Semanal',
+    offloadWindowNote:(h)=>`O offload está restrito à janela de backup, então o upload tem apenas <strong>${h}h/dia</strong> para mover dados. Fora dessa janela as transferências são pausadas e retomam no dia seguinte.`,
+    healthCheckNote:(f)=>`O health check ${f.toLowerCase()} relê os blocos movidos para verificar a integridade. Isso gera requests GET adicionais contra o Vault, além do tráfego de upload estimado aqui.`,
+    capNoExtend:'A extensão com object storage está desativada — nada é enviado ao Vault e não há o que dimensionar.',
+    capNoPolicy:'Nenhuma política Copy ou Move está ativada — nenhum backup chega ao Vault.',
+    vaultTotal:'Total no VDC Vault', uploadedDaily:'Enviado por dia',
+    uploadedPeak:'Dia de full sintético', uploadedPeakEvery:'ocorre a cada',
     capSec:'Capacity Tier',
-    copy:'Copy policy — copiar backups para o Capacity Tier',
-    move:'Move policy — mover backups para o Capacity Tier',
     bwSec:'Janela de backup e largura de banda', bwWin:'Janela de backup (horas)', proxies:'Número de proxies',
     tabBreakdown:'Detalhamento', tabSim:'Restore points', tabWhy:'Por que o overhead?',
     breakdownTitle:'Detalhamento do armazenamento', simTitle:'Restore points simulados',
@@ -705,7 +743,6 @@ const T = {
     capDisabledMsg:'Desativado. Ative a Copy policy para ver a estimativa.',
     copyDisabledMsg:'Copy policy desativada.',
     warnConfig:'configuração inconsistente',
-    warnPerfTier:'Performance Tier', warnCapTier:'Capacity Tier',
     immutable:'Imutável', noLock:'Sem lock', overhead:'Overhead',
     bwTitle:'Largura de banda necessária por proxy',
     bwDaily:'Incremental diário (por proxy)', bwPeak:'Pico — dia do full sintético (por proxy)',
@@ -739,13 +776,7 @@ const T = {
     diskRead:'leitura', diskWrite:'escrita',
     lockPeriod:'Período de lock VDC Vault', lockPeriodSub:'Duração do Object Lock',
     offloadTrigger:'Trigger de offload', offloadTriggerSub:'Dias antes de mover/copiar para o Vault',
-    moveOlderThan:'mais antigo que', moveDays:'dias',
     remainingLock:'Lock restante na chegada', lockExpiredOnArrival:'Lock já expirado — objeto pode ser excluído quando a retenção terminar', lockRemainingOnArrival:'Objeto ainda bloqueado ao chegar no Vault',
-    lbl_vaultAlwaysImm:'O VDC Vault sempre aplica imutabilidade (Object Lock). Configure o período de lock abaixo.',
-    lbl_offloadDays:'Trigger de offload — dias antes de mover/copiar',
-    lbl_immPerfToggle:'Ativar imutabilidade no Performance Tier (on-prem)',
-    lbl_immCapToggle:'Ativar imutabilidade no Capacity Tier (VDC Vault / Object Lock)',
-    lbl_immPerf:'Período de lock Performance Tier (dias)',
     warnImmGtRet:(tier,ip,rd)=>`${tier}: o período de imutabilidade (${ip} dias) supera a retenção diária (${rd} dias). Todos os restore points ficarão <strong>bloqueados até expirar naturalmente</strong> — o Veeam não pode removê-los antes, mesmo que a política de retenção já os tenha expirado. O overhead será máximo.`,
     warnImmGtRetTip:(rd)=>`Recomendação: defina a imutabilidade ≤ retenção (${rd} dias) para permitir a limpeza normal.`,
     warnImmGtGfs:(tier,ip,max)=>`${tier}: a imutabilidade (${ip} dias) excede a retenção GFS mais longa (${max} dias). Os restore points ficarão bloqueados <strong>além de sua própria janela de retenção</strong>, impedindo a exclusão e gerando overhead desnecessário.`,
@@ -753,12 +784,6 @@ const T = {
     warnImmNoSense:(tier,ip,bg)=>`${tier}: o período de imutabilidade (${ip} dias) é menor que o block generation period (${bg} dias). Os fulls sintéticos rotam mais rápido do que o lock expira — Object Lock <strong>não fornece proteção real</strong> neste cenário, pois os blocos podem ser sobrescritos.`,
     warnImmNoSenseTip:(bg)=>`Recomendação: configure a imutabilidade ≥ ao block generation period (${bg} dias).`,
     badge:'Community Tool',
-    modeSec:'Modo de simulação',
-    modeSobrLbl:'SOBR completo (Performance + Capacity Tier)', modeSobrSub:'Novo deployment — calcular ambas as camadas do zero',
-    modeCapLbl:'Apenas Capacity Tier (extensão VDC Vault)', modeCapSub:'SOBR on-prem existente — calcular apenas o storage e largura de banda do VDC Vault',
-    perfOnPrem:'On-premises (existente)', perfOnPremSub:'Não calculado neste modo',
-    existingSec:'Repositório on-prem existente', existingSize:'Tamanho atual do backup (TB)',
-    existingRetSec:'Retenção a enviar para o VDC Vault',
     moveOnlyNote:'Com apenas Move policy, somente os fulls sintéticos são transferidos para o VDC Vault — a taxa de mudança diária e a retenção de incrementais não se aplicam.',
     netSec:'Rede e latência', netOrigin:'Localização do cliente (origem)', netVault:'Região VDC Vault (destino)',
     netRtt:'RTT estimado', netEffective:'Throughput efetivo', netUtil:'Utilização do link', netNominal:'Nominal', netStreams:'streams',
@@ -795,14 +820,16 @@ function applyT() {
     'lbl-comp':'comp','lbl-bg':'bg','lbl-gfs-sec':'gfsSec','lbl-daily':'daily',
     'lbl-weekly':'weekly','lbl-monthly':'monthly','lbl-yearly':'yearly',
     'lbl-imm-sec':'immSec',
-    'lbl-imm-perf-toggle':'lbl_immPerfToggle',
-    'lbl-imm-cap-toggle':'lbl_immCapToggle',
-    'lbl-imm-perf':'lbl_immPerf',
-    'lbl-imm-cap':'lbl-imm-cap',
-    'lbl-vault-always-imm':'lbl_vaultAlwaysImm',
-    'lbl-move-older':'moveOlderThan','lbl-move-days-unit':'moveDays',
-    'lbl-offload-days':'lbl_offloadDays','lbl-imm-enable':'immEnable','lbl-imm-perf':'immPerf',
-    'lbl-imm-cap':'immCap','lbl-cap-sec':'capSec','lbl-copy':'copy','lbl-move':'move',
+    'lbl-imm-min':'immMinLabel','lbl-imm-min-unit':'days','lbl-imm-min-desc':'immMinDesc',
+    'lbl-imm-mode-title':'immModeTitle','lbl-imm-mode-ret':'immModeRet','lbl-imm-mode-min':'immModeMin',
+    'lbl-cap-sec':'capSec','lbl-cap-intro':'capIntro','lbl-extend':'extendLabel',
+    'lbl-copy':'copyLabel','lbl-copy-desc':'copyDesc',
+    'lbl-move':'moveLabel','lbl-move-desc':'moveDesc',
+    'lbl-move-older':'moveOlderLabel','lbl-move-days-unit':'moveDaysUnit',
+    'lbl-encrypt':'encryptLabel',
+    'lbl-offload-window':'offloadWindowLabel','lbl-ow-any':'owAny','lbl-ow-win':'owWin',
+    'lbl-health':'healthLabel','lbl-hc-off':'hcOff','lbl-hc-monthly':'hcMonthly','lbl-hc-weekly':'hcWeekly',
+    'lbl-sim-vault':'vaultTotal',
     'lbl-bw-sec':'bwSec','lbl-bwwin':'bwWin','lbl-proxies-text':'proxies',
     'lbl-bwmode':'bwModeLabel','lbl-bwmode-bw':'bwModeBw','lbl-bwmode-win':'bwModeWin',
     'lbl-bwavail':'bwAvail',
@@ -815,14 +842,6 @@ function applyT() {
     'lbl-breakdown-title':'breakdownTitle','lbl-sim-title':'simTitle','lbl-why-title':'whyTitle',
     'leg-inc':'legInc','leg-full':'legFull','leg-gfs':'legGfs','leg-ovh':'legOvh',
     'badge-text':'badge',
-    'lbl-mode-sec':'modeSec',
-    'lbl-mode-sobr':'modeSobrLbl','lbl-mode-sobr-sub':'modeSobrSub',
-    'lbl-mode-cap':'modeCapLbl','lbl-mode-cap-sub':'modeCapSub',
-    'lbl-existing-sec':'existingSec','lbl-existing-size':'existingSize',
-    'lbl-existing-cr':'cr','lbl-existing-comp':'comp','lbl-existing-bg':'bg',
-    'lbl-existing-ret-sec':'existingRetSec',
-    'lbl-existing-daily':'daily','lbl-existing-weekly':'weekly',
-    'lbl-existing-monthly':'monthly','lbl-existing-yearly':'yearly',
   };
   Object.entries(map).forEach(([id,k]) => { const el=document.getElementById(id); if(el) el.textContent=t(k); });
   const streamsLink = document.getElementById('lbl-streams-tip');
@@ -873,7 +892,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '1.1.0'; // Bump on each release — shown in the header
+const APP_VERSION       = '2.0.0'; // Bump on each release — shown in the header
 const TCP_WINDOW_KB     = 256; // TCP window size for throughput model (KB)
 const STREAMS_PER_PROXY = 4;   // Parallel TCP streams per proxy (VBR default)
 const MBPS_PER_VCPU     = 100; // Veeam recommended: 1 vCPU per 100 Mbps
@@ -883,15 +902,23 @@ const MIN_RTT_ER_MS     = 5;   // ExpressRoute minimum assumed RTT (ms)
 
 // ─── Input reader ───────────────────────────────────────────────────────────
 function readInputs() {
-  const isCapOnly = document.getElementById('modeCap').checked;
-  const immPerfOn = !isCapOnly && document.getElementById('immPerfEnabled').checked;
-  const immCapOn  = document.getElementById('immCapEnabled').checked;
-  const common = {
-    immCapEnabled: immCapOn,
-    immCapDays:   immCapOn ? getInt('immCap') : 0,
-    offloadDays:  getInt('offloadDays'),
-    copyEnabled:  document.getElementById('copyPolicy').checked,
-    moveEnabled:  document.getElementById('movePolicy').checked,
+  const retDays = Math.max(1, getInt('retDays'));
+  const minImmDays = getInt('immCap');
+  // VBR's two immutability modes. 'retention' keeps every backup locked for as long
+  // as its retention policy holds it, so the lock can never expire early — which is
+  // what drives the worst-case overhead. 'minimum' caps the lock at the configured days.
+  const immMode = document.querySelector('input[name="immMode"]:checked').value;
+  return {
+    immMode,
+    immMinDays:  minImmDays,
+    immCapDays:  immMode === 'retention' ? Math.max(minImmDays, retDays) : minImmDays,
+    offloadDays: getInt('offloadDays'),
+    extendSobr:  document.getElementById('extendSobr').checked,
+    copyEnabled: document.getElementById('copyPolicy').checked,
+    moveEnabled: document.getElementById('movePolicy').checked,
+    encryptUpload:  document.getElementById('encryptUpload').checked,
+    offloadWindow:  document.getElementById('offloadWindow').value,
+    healthCheck:    document.getElementById('healthCheck').value,
     windowHours:    Math.max(1, getInt('bwWindow')),
     bwMode:         document.getElementById('bwMode').value,
     availMbps:      Math.max(1, getInt('bwAvail')),
@@ -901,47 +928,28 @@ function readInputs() {
     origin:       document.getElementById('netOrigin').value,
     vault:        document.getElementById('netVault').value,
     expressRoute: document.getElementById('expressRoute').checked,
-  };
-  if (isCapOnly) {
-    return {
-      ...common, mode: 'capOnly',
-      sourceTB:       getVal('existingSize'),
-      changeRate:     getVal('existingCR') / 100,
-      compression:    getVal('existingComp') / 100,
-      blockGenDays:   Math.max(1, getInt('existingBG')),
-      retDays:        Math.max(0, getInt('existingDays')),
-      retWeeks:       getInt('existingWeeks'),
-      retMonths:      getInt('existingMonths'),
-      retYears:       getInt('existingYears'),
-      immPerfEnabled: false,
-      immPerfDays:    0,
-    };
-  }
-  return {
-    ...common, mode: 'sobr',
-    sourceTB:       getVal('srcTB'),
-    changeRate:     getVal('changeRate') / 100,
-    compression:    getVal('compress') / 100,
-    blockGenDays:   Math.max(1, getInt('blockGen')),
-    retDays:        Math.max(1, getInt('retDays')),
-    retWeeks:       getInt('retWeeks'),
-    retMonths:      getInt('retMonths'),
-    retYears:       getInt('retYears'),
-    immPerfEnabled: immPerfOn,
-    immPerfDays:    immPerfOn ? getInt('immPerf') : 0,
+    sourceTB:     getVal('srcTB'),
+    changeRate:   getVal('changeRate') / 100,
+    compression:  getVal('compress') / 100,
+    blockGenDays: Math.max(1, getInt('blockGen')),
+    retDays,
+    retWeeks:     getInt('retWeeks'),
+    retMonths:    getInt('retMonths'),
+    retYears:     getInt('retYears'),
   };
 }
 
 // ─── Pure storage calculation ────────────────────────────────────────────────
 function calcStorageTier({ sourceTB, changeRate, compression, blockGenDays,
-    retDays, retWeeks, retMonths, retYears, immDays, immEnabled, moveOnly }) {
+    retDays, retWeeks, retMonths, retYears, immDays, moveOnly }) {
   const fullTB   = sourceTB * (1 - compression);
   const incTB    = sourceTB * changeRate * (1 - compression);
   const numFulls = Math.ceil(Math.max(1, retDays) / blockGenDays);
   const dataTB   = moveOnly
     ? fullTB * numFulls + fullTB * retWeeks + fullTB * retMonths + fullTB * retYears
     : fullTB + incTB * (Math.max(1, retDays) - 1) + fullTB * retWeeks + fullTB * retMonths + fullTB * retYears;
-  const overheadTB = immEnabled ? fullTB * (immDays / blockGenDays) : 0;
+  // Each block generation leaves the previous full in place until its lock expires
+  const overheadTB = fullTB * (immDays / blockGenDays);
   return { fullTB, incTB, dataTB, overheadTB, totalTB: dataTB + overheadTB, numFulls };
 }
 
@@ -988,30 +996,18 @@ function calcBandwidthMetrics({ sourceTB, changeRate, compression, windowHours, 
 }
 
 // ─── Immutability validation ─────────────────────────────────────────────────
-function validateImm(rd, rw, rm, ry, ip, ic, immOn, bg) {
+function validateImm(rd, rw, rm, ry, ic, bg) {
   const warns = [];
-  if (!immOn) return warns;
   const maxRet = Math.max(rd, rw*7, rm*30, ry*365);
 
-  if (ip > rd && rw===0 && rm===0 && ry===0)
-    warns.push({ msg: T[lang].warnImmGtRet(T[lang].warnPerfTier, ip, rd), tip: T[lang].warnImmGtRetTip(rd) });
   if (ic > rd && rw===0 && rm===0 && ry===0)
     warns.push({ msg: T[lang].warnImmGtRet(T[lang].warnCapTier, ic, rd), tip: T[lang].warnImmGtRetTip(rd) });
-
-  if (maxRet > rd) {
-    if (ip > maxRet)
-      warns.push({ msg: T[lang].warnImmGtGfs(T[lang].warnPerfTier, ip, maxRet), tip: T[lang].warnImmGtGfsTip });
-    if (ic > maxRet)
-      warns.push({ msg: T[lang].warnImmGtGfs(T[lang].warnCapTier, ic, maxRet), tip: T[lang].warnImmGtGfsTip });
-  }
-
-  if (ip > 0 && ip < bg)
-    warns.push({ msg: T[lang].warnImmNoSense(T[lang].warnPerfTier, ip, bg), tip: T[lang].warnImmNoSenseTip(bg) });
+  if (maxRet > rd && ic > maxRet)
+    warns.push({ msg: T[lang].warnImmGtGfs(T[lang].warnCapTier, ic, maxRet), tip: T[lang].warnImmGtGfsTip });
   if (ic > 0 && ic < bg)
     warns.push({ msg: T[lang].warnImmNoSense(T[lang].warnCapTier, ic, bg), tip: T[lang].warnImmNoSenseTip(bg) });
 
-  document.getElementById('immPerf').classList.toggle('has-error', warns.some(w=>w.msg.includes(T[lang].warnPerfTier)));
-  document.getElementById('immCap').classList.toggle('has-error',  warns.some(w=>w.msg.includes(T[lang].warnCapTier)));
+  document.getElementById('immCap').classList.toggle('has-error', warns.length > 0);
   return warns;
 }
 
@@ -1164,17 +1160,12 @@ const LATENCY = {
   korea:          { eastus:190,  eastus2:190,  centralus:180, westus:135,  southcentralus:175,canadacentral:185, brazilsouth:295, westeurope:240, northeurope:250, uksouth:245, germanywestcentral:235, francecentral:243, swedencentral:256, uaenorth:165, southafricanorth:305, australiaeast:115, japaneast:35,  southeastasia:65,  centralindia:100, koreacentral:5   },
 };
 
-function renderLockSummary(ic, offload, bg, immCapEnabled) {
+function renderLockSummary(ic, offload) {
   const el = document.getElementById('imm-lock-summary');
   if (!el) return;
-  if (!immCapEnabled) { el.innerHTML = ''; return; }
-  // Max time an object can stay locked:
-  // Object written on day 0, lock = ic days
-  // Object can only be moved/copied after offload trigger days
-  // Worst case: object written just before next block generation
-  const maxLockDays = ic;
-  const minTimeInPerf = offload; // days before offload kicks in
-  const effectiveLock = Math.max(0, ic - offload); // remaining lock after reaching capacity tier
+  // An object can only be moved once it passes the offload trigger, so by the time it
+  // lands in the Vault it has already burned `offload` days of its lock.
+  const effectiveLock = Math.max(0, ic - offload);
 
   const color = effectiveLock === 0 ? 'var(--green-dark)' : effectiveLock <= 7 ? '#b45309' : 'var(--red)';
   const bg2   = effectiveLock === 0 ? 'var(--green-light)' : effectiveLock <= 7 ? '#fffbeb' : '#fdecea';
@@ -1243,32 +1234,23 @@ function renderNetwork(inp, bw, rtt, baseRtt, streams) {
 }
 
 // ─── Render: result banner ───────────────────────────────────────────────────
-function renderBanner(inp, perfResult, capResult, capEnabled) {
-  const isCapOnly = inp.mode === 'capOnly';
-  const perfBox = isCapOnly
-    ? `<div class="tier-box disabled" style="opacity:.5">
-        <div class="tier-label">Performance Tier</div>
-        <div class="tier-val" style="font-size:13px;margin-top:6px">${t('perfOnPrem')}</div>
-        <div class="tier-sub">${t('perfOnPremSub')}</div>
-       </div>`
-    : `<div class="tier-box perf">
-        <div class="tier-label">Performance Tier</div>
-        <div class="tier-val">${fmt(perfResult.totalTB)}</div>
-        <div class="tier-sub">${fmt(perfResult.dataTB)} ${t('data')}<br>${inp.immPerfEnabled ? fmt(perfResult.overheadTB)+' '+t('immOvh') : t('noImm')}</div>
-       </div>`;
-  const capLabel = isCapOnly ? 'Capacity Tier — VDC Vault' : 'Capacity Tier';
-  const capBox = capEnabled
+function renderBanner(inp, capResult, capEnabled) {
+  document.getElementById('result-banner').innerHTML = capEnabled
     ? `<div class="tier-box cap">
-        <div class="tier-label">${capLabel}</div>
+        <div class="tier-label">${t('vaultTotal')}</div>
         <div class="tier-val">${fmt(capResult.totalTB)}</div>
         <div class="tier-sub">${fmt(capResult.dataTB)} ${t('data')}<br>${fmt(capResult.overheadTB)} ${t('immOvh')}</div>
+       </div>
+       <div class="tier-box" style="background:var(--white)">
+        <div class="tier-label" style="color:var(--gray-500)">${t('uploadedDaily')}</div>
+        <div class="tier-val" style="color:var(--gray-900)">${fmt(capResult.incTB)}</div>
+        <div class="tier-sub" style="color:var(--gray-500)">${t('uploadedPeak')}: ${fmt(capResult.incTB + capResult.fullTB)}<br>${t('uploadedPeakEvery')} ${inp.blockGenDays}d</div>
        </div>`
     : `<div class="tier-box disabled">
-        <div class="tier-label">Capacity Tier</div>
+        <div class="tier-label">${t('vaultTotal')}</div>
         <div class="tier-val" style="font-size:16px;margin-top:8px">${t('disabled')}</div>
         <div class="tier-sub">${t('enableCopy')}</div>
        </div>`;
-  document.getElementById('result-banner').innerHTML = perfBox + capBox;
 }
 
 // ─── Render: storage breakdown (unified for both modes) ──────────────────────
@@ -1286,60 +1268,41 @@ function mkBreakdown({ label, fullTB, incTB, retDays, retWeeks, retMonths, retYe
     </div>`;
 }
 
-function renderBreakdown(inp, perfResult, capResult, capEnabled) {
-  const isCapOnly = inp.mode === 'capOnly';
+function renderBreakdown(inp, capResult, capEnabled) {
   const { retDays, retWeeks, retMonths, retYears } = inp;
-  const capLabel = isCapOnly ? 'Capacity Tier — VDC Vault' : 'Capacity Tier';
-
-  const perfCol = isCapOnly
-    ? `<div><div class="breakdown-col-title">Performance Tier</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('perfOnPrem')}</p></div>`
-    : mkBreakdown({ label:'Performance Tier', fullTB:perfResult.fullTB, incTB:perfResult.incTB,
-        retDays, retWeeks, retMonths, retYears,
-        overheadTB:perfResult.overheadTB, totalTB:perfResult.totalTB,
-        showImm:inp.immPerfEnabled, showInc:true });
-
-  const capCol = capEnabled
-    ? mkBreakdown({ label:capLabel, fullTB:capResult.fullTB, incTB:capResult.incTB,
+  document.getElementById('breakdown-content').innerHTML = capEnabled
+    ? mkBreakdown({ label:t('vaultTotal'), fullTB:capResult.fullTB, incTB:capResult.incTB,
         retDays, retWeeks, retMonths, retYears,
         overheadTB:capResult.overheadTB, totalTB:capResult.totalTB,
-        showImm:true, showInc:!isCapOnly || retDays > 0 })
-    : `<div><div class="breakdown-col-title">${capLabel}</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`;
-
-  document.getElementById('breakdown-content').innerHTML = perfCol + capCol;
+        showImm:true, showInc:!(inp.moveEnabled && !inp.copyEnabled) })
+    : `<div><div class="breakdown-col-title">${t('vaultTotal')}</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`;
 }
 
-function renderSimulations(inp, capResult, capEnabled, moveOnly) {
-  const isCapOnly = inp.mode === 'capOnly';
-  const { sourceTB, changeRate, compression, blockGenDays,
-          retDays, retWeeks, retMonths, retYears, immPerfDays, immPerfEnabled, immCapDays } = inp;
-
-  if (isCapOnly) {
-    document.getElementById('sim-perf').innerHTML = `<p style="font-size:12px;color:var(--gray-500);padding:8px 0">${t('perfOnPrem')}</p>`;
-  } else {
-    renderSim('sim-perf', sourceTB, changeRate, compression, blockGenDays,
-      retDays, retWeeks, retMonths, retYears, immPerfDays, immPerfEnabled, false, moveOnly);
-  }
-
-  if (capEnabled) {
-    renderSim('sim-cap', sourceTB, changeRate, compression, blockGenDays,
-      retDays, retWeeks, retMonths, retYears, immCapDays, inp.immCapEnabled, moveOnly, false);
-  } else {
+function renderSimulations(inp, capEnabled, moveOnly) {
+  if (!capEnabled) {
     document.getElementById('sim-cap').innerHTML = `<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
+    return;
   }
+  const { sourceTB, changeRate, compression, blockGenDays,
+          retDays, retWeeks, retMonths, retYears, immCapDays } = inp;
+  renderSim('sim-cap', sourceTB, changeRate, compression, blockGenDays,
+    retDays, retWeeks, retMonths, retYears, immCapDays, true, moveOnly, false);
 }
 
 // ─── Unified calculation entry point ────────────────────────────────────────
 function calc() {
   const inp        = readInputs();
-  const capEnabled = inp.copyEnabled || inp.moveEnabled;
+  const capEnabled = inp.extendSobr && (inp.copyEnabled || inp.moveEnabled);
   const moveOnly   = inp.moveEnabled && !inp.copyEnabled;
   const baseRtt    = LATENCY[inp.origin]?.[inp.vault] ?? 100;
   const rtt        = inp.expressRoute ? Math.min(baseRtt, MIN_RTT_ER_MS) : baseRtt;
   const streams    = inp.proxies * inp.streamsPerProxy;
 
+  renderImmModeNote(inp);
+  renderCapNotes(inp, capEnabled, moveOnly);
   renderWarnings(validateImm(inp.retDays, inp.retWeeks, inp.retMonths, inp.retYears,
-    inp.immPerfDays, inp.immCapDays, inp.immCapEnabled, inp.blockGenDays));
-  renderLockSummary(inp.immCapDays, inp.offloadDays, inp.blockGenDays, inp.immCapEnabled);
+    inp.immCapDays, inp.blockGenDays));
+  renderLockSummary(inp.immCapDays, inp.offloadDays);
 
   if (capEnabled) {
     const bw = calcBandwidthMetrics(inp, rtt, streams);
@@ -1350,23 +1313,45 @@ function calc() {
     document.getElementById('net-result').innerHTML = '';
   }
 
-  const perfResult = inp.mode === 'sobr' ? calcStorageTier({
-    sourceTB:inp.sourceTB, changeRate:inp.changeRate, compression:inp.compression,
-    blockGenDays:inp.blockGenDays, retDays:inp.retDays,
-    retWeeks:inp.retWeeks, retMonths:inp.retMonths, retYears:inp.retYears,
-    immDays:inp.immPerfDays, immEnabled:inp.immPerfEnabled, moveOnly:false,
-  }) : null;
-
   const capResult = capEnabled ? calcStorageTier({
     sourceTB:inp.sourceTB, changeRate:inp.changeRate, compression:inp.compression,
     blockGenDays:inp.blockGenDays, retDays:inp.retDays,
     retWeeks:inp.retWeeks, retMonths:inp.retMonths, retYears:inp.retYears,
-    immDays:inp.immCapDays, immEnabled:inp.immCapEnabled, moveOnly,
+    immDays:inp.immCapDays, moveOnly,
   }) : null;
 
-  renderBanner(inp, perfResult, capResult, capEnabled);
-  renderBreakdown(inp, perfResult, capResult, capEnabled);
-  renderSimulations(inp, capResult, capEnabled, moveOnly);
+  renderBanner(inp, capResult, capEnabled);
+  renderBreakdown(inp, capResult, capEnabled);
+  renderSimulations(inp, capEnabled, moveOnly);
+}
+
+// Explains what the selected immutability mode does to the lock period
+function renderImmModeNote(inp) {
+  const retMode = inp.immMode === 'retention';
+  const bumped  = retMode && inp.retDays > inp.immMinDays;
+  document.getElementById('imm-mode-note').innerHTML = `
+    <div style="background:${retMode ? '#fffbeb' : 'var(--blue-light)'};border-left:3px solid ${retMode ? '#f59e0b' : 'var(--blue)'};border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .75rem;font-size:11px;color:${retMode ? '#92400e' : '#1e40af'};line-height:1.5">
+      <i class="fa-solid fa-circle-info" style="margin-right:5px"></i>${
+        retMode ? T[lang].immModeRetNote(inp.immCapDays, bumped, inp.retDays)
+                : T[lang].immModeMinNote(inp.immMinDays)}
+    </div>`;
+}
+
+// Notes for the Capacity Tier panel: move-only caveat, encryption, offload window, health check
+function renderCapNotes(inp, capEnabled, moveOnly) {
+  const notes = [];
+  if (!inp.extendSobr)   notes.push([t('capNoExtend'), 'var(--red)',  '#fdecea']);
+  else if (!capEnabled)  notes.push([t('capNoPolicy'), 'var(--red)',  '#fdecea']);
+  else if (moveOnly)     notes.push([t('moveOnlyNote'), 'var(--blue)', 'var(--blue-light)']);
+  if (capEnabled && inp.offloadWindow === 'window') notes.push([T[lang].offloadWindowNote(inp.windowHours), '#f59e0b', '#fffbeb']);
+  if (capEnabled && inp.healthCheck !== 'off')      notes.push([T[lang].healthCheckNote(t(inp.healthCheck === 'weekly' ? 'hcWeekly' : 'hcMonthly')), 'var(--blue)', 'var(--blue-light)']);
+  document.getElementById('cap-notes').innerHTML = notes.map(([msg, color, bg]) => `
+    <div style="background:${bg};border-left:3px solid ${color};border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .75rem;margin-top:8px;font-size:11px;color:${color};line-height:1.5">
+      <i class="fa-solid fa-circle-info" style="margin-right:5px"></i>${msg}
+    </div>`).join('');
+  document.getElementById('lbl-encrypt-desc').textContent = inp.encryptUpload ? t('encryptOnDesc') : t('encryptOffDesc');
+  document.getElementById('cap-policies').style.opacity = inp.extendSobr ? '1' : '.4';
+  document.getElementById('cap-policies').style.pointerEvents = inp.extendSobr ? '' : 'none';
 }
 
 function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveOnly, isPerfWithMove) {
@@ -1413,98 +1398,26 @@ function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveO
   document.getElementById(cid).innerHTML=html;
 }
 
-// ─── Mode toggle ────────────────────────────────────────────────────────────
-let _lastMode = null;
-function updateMode() {
-  const isCapOnly = document.getElementById('modeCap').checked;
-  const modeChanged = _lastMode !== null && _lastMode !== isCapOnly;
-  _lastMode = isCapOnly;
-
-  // 1. Show/hide input sections
-  document.getElementById('perf-tier-fields').style.display = isCapOnly ? 'none' : '';
-  document.getElementById('cap-only-fields').style.display  = isCapOnly ? '' : 'none';
-
-  // 2. Immutability — perf field only in Full SOBR mode; VDC Vault always on
-  const immPerfFld = document.getElementById('imm-perf-field');
-  immPerfFld.style.cssText = isCapOnly
-    ? 'display:none !important'
-    : (immPerfFld.style.cssText.replace('display:none !important',''));
-  // VDC Vault fields always visible
-  document.getElementById('imm-fields').style.opacity = '1';
-  document.getElementById('imm-fields').style.pointerEvents = '';
-
-  // 3. Radio highlight — always based on actual checked state
-  const sobrChecked = !isCapOnly;
-  document.getElementById('mode-sobr-box').style.borderColor = sobrChecked ? 'var(--green)'       : 'var(--gray-300)';
-  document.getElementById('mode-sobr-box').style.background  = sobrChecked ? 'var(--green-light)' : 'var(--white)';
-  document.getElementById('mode-cap-box').style.borderColor  = isCapOnly   ? 'var(--green)'       : 'var(--gray-300)';
-  document.getElementById('mode-cap-box').style.background   = isCapOnly   ? 'var(--green-light)' : 'var(--white)';
-
-  // 4. Only clear stale results when user actually switches mode
-  if (modeChanged) {
-    document.getElementById('result-banner').innerHTML = '';
-    document.getElementById('breakdown-content').innerHTML = '';
-    document.getElementById('bw-result').innerHTML = '';
-    document.getElementById('net-result').innerHTML = '';
-  }
-
-  updateCapOnlyFields();
-  calc();
-}
-
-function updateCapOnlyFields() {
-  const isCapOnly = document.getElementById('modeCap').checked;
-  const moveOn = document.getElementById('movePolicy').checked;
-  // Show/hide the inline "older than X days" row based on Move Policy state
-  document.getElementById('move-days-row').style.display = moveOn ? '' : 'none';
-  // Sync imm-cap-days enabled/disabled state
-  const immCapOn = document.getElementById('immCapEnabled').checked;
-  const capDaysEl = document.getElementById('imm-cap-days');
-  capDaysEl.style.opacity = immCapOn ? '1' : '0.4';
-  capDaysEl.style.pointerEvents = immCapOn ? '' : 'none';
-
-  if (!isCapOnly) {
-    document.getElementById('cap-move-note').style.display = 'none';
-    return;
-  }
-  const copyOn = document.getElementById('copyPolicy').checked;
-  const moveOnly = moveOn && !copyOn;
-
-  // Block generation never needed in cap-only (full already consolidated on-prem)
-  document.getElementById('cap-bg-field').style.display = 'none';
-  // Daily change rate only needed if Copy is active (incrementals are copied)
-  document.getElementById('cap-cr-field').style.display = moveOnly ? 'none' : '';
-  // Daily retention only if Copy is active
-  document.getElementById('cap-daily-field').style.display = moveOnly ? 'none' : '';
-  // Info note when move-only
-  const note = document.getElementById('cap-move-note');
-  note.style.display = moveOnly ? '' : 'none';
-  document.getElementById('lbl-move-note').textContent = t('moveOnlyNote');
+// Shows the "older than N days" row only while the Move policy is active
+function updateMoveRow() {
+  document.getElementById('move-days-row').style.display =
+    document.getElementById('movePolicy').checked ? '' : 'none';
 }
 
 // ─── Event listeners ─────────────────────────────────────────────────────────
-document.getElementById('immPerfEnabled').addEventListener('change', function() {
-  const days = document.getElementById('imm-perf-days');
-  days.style.opacity = this.checked ? '1' : '0.4';
-  days.style.pointerEvents = this.checked ? '' : 'none';
-  calc();
-});
-document.getElementById('immCapEnabled').addEventListener('change', function() {
-  const days = document.getElementById('imm-cap-days');
-  days.style.opacity = this.checked ? '1' : '0.4';
-  days.style.pointerEvents = this.checked ? '' : 'none';
-  calc();
-});
-document.querySelectorAll('input[name="simMode"]').forEach(el => el.addEventListener('change', updateMode));
+const refresh = () => { updateMoveRow(); calc(); };
 document.getElementById('blockSizeKB').addEventListener('change', calc);
 document.getElementById('bwMode').addEventListener('change', () => { updateBwMode(); calc(); });
+document.getElementById('netOrigin').addEventListener('change', calc);
 document.getElementById('netVault').addEventListener('change', calc);
-document.getElementById('expressRoute').addEventListener('change', calc);
-document.querySelectorAll('input[type=number],input[type=checkbox]').forEach(el=>el.addEventListener('input', () => { updateCapOnlyFields(); calc(); }));
+document.getElementById('offloadWindow').addEventListener('change', calc);
+document.getElementById('healthCheck').addEventListener('change', calc);
+document.querySelectorAll('input[name="immMode"]').forEach(el => el.addEventListener('change', calc));
+document.querySelectorAll('input[type=number],input[type=checkbox]').forEach(el => el.addEventListener('input', refresh));
 document.getElementById('app-version').textContent = 'v' + APP_VERSION;
 applyT();
-// Defer so browser finishes restoring any saved form state before we read checked state
-setTimeout(() => { _lastMode = null; updateMode(); }, 0);
+// Defer so the browser finishes restoring any saved form state before we read it
+setTimeout(refresh, 0);
 </script>
 </body>
 </html>

@@ -2,34 +2,50 @@
 ### for Veeam Backup and Replication
 **Developed by Martin Jorge** — [martin.jorge@veeam.com](mailto:martin.jorge@veeam.com)
 
-A storage and resource estimator for **Veeam Backup & Replication** with **VDC Vault**, complementing the [official Veeam calculator](https://www.veeam.com/calculators/simple/vdc) with additional functionality.
+A sizing and upload-time estimator for offloading an on-premises **Veeam Backup & Replication** SOBR to **Veeam Data Cloud Vault**, complementing the [official Veeam calculator](https://www.veeam.com/calculators/simple/vdc) with additional functionality.
+
+The input panel mirrors the **Capacity Tier** page of the VBR *Scale-out Backup Repository* wizard, so the settings you fill in here are the same ones you set in the console.
 
 ---
 
 ## What does it calculate?
 
-- **Performance Tier** and **Capacity Tier** storage separately
-- **Full GFS retention** — daily, weekly, monthly, yearly
+- **VDC Vault capacity** — full GFS retention (daily, weekly, monthly, yearly)
 - **Immutability overhead** — with a step-by-step explanation of why it exists
-- **Visual simulation** of restore points with active lock indicators per restore point
-- **Bandwidth requirements** — daily incremental vs. peak (synthetic full day)
-- **Proxy sizing** — vCPU, RAM, and repository disk throughput based on configured bandwidth
+- **Both VBR immutability modes** — for the entire retention duration, or for the minimum period only
+- **Upload requirements**, in either direction:
+  - **Required bandwidth** — give it a backup window, get the Mbps you need
+  - **Backup duration** — give it the available Mbps, get how long the upload takes and whether it fits the window
+- **Latency ceiling** — TCP throughput modelled from RTT, parallel tasks and proxies, so you can see when latency (not the link) is the bottleneck
+- **Proxy sizing** — vCPU, RAM and repository disk throughput
+- **S3 API overhead** — object counts derived from the configured storage optimization block size
+- **Visual simulation** of restore points with active lock indicators
 - **Consistency validation** — warns when immutability periods conflict with retention settings
 
----
-
-## Simulation modes
-
-### Full SOBR (Performance + Capacity Tier)
-For new deployments. Calculates both tiers from scratch based on source data, change rate, compression, GFS retention, and immutability settings.
-
-### Capacity Tier only (VDC Vault extension)
-For customers with an existing on-premises SOBR who want to extend to VDC Vault. Only calculates the Capacity Tier storage and the bandwidth/proxy requirements to send data to the Vault.
-
-- With **Copy policy**: incrementals and synthetic fulls are both copied — daily change rate and daily retention apply.
-- With **Move policy** only: only synthetic fulls are moved — daily change rate and incremental retention are not applicable.
+Scope note: this tool sizes the **Capacity Tier only**. The on-premises Performance Tier is assumed to already exist and is not calculated.
 
 ---
+
+## Immutability modes
+
+VDC Vault always enforces immutability through S3 Object Lock. VBR offers two ways to apply it, and the choice changes the overhead substantially:
+
+| Mode | Effective lock | Overhead |
+|---|---|---|
+| For the entire duration of their retention policy *(recommended)* | `max(minimum, retention)` | Highest — nothing can be deleted early |
+| For the minimum immutability period only | the configured minimum | Lower — space is reclaimed as soon as retention allows |
+
+---
+
+## How to run it
+
+Clone the repository and open `index.html` in a browser. No build tools, no server, no dependencies to install:
+
+```bash
+git clone https://github.com/martinljor/veeamcalc
+```
+
+Google Fonts and Font Awesome are loaded from a CDN — without internet access the calculator still works, just without the custom typeface and icons.
 
 ## How to deploy on GitHub Pages
 
@@ -44,3 +60,6 @@ For customers with an existing on-premises SOBR who want to extend to VDC Vault.
 ```
 /
 └── index.html     ← entire app in a single file (no build tools required)
+```
+
+The version shown in the header comes from the `APP_VERSION` constant in `index.html`.
