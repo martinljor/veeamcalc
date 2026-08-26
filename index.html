@@ -32,6 +32,7 @@
     .lang-btn:hover{opacity:.8;transform:scale(1.15)}
     .lang-btn.active{opacity:1;transform:scale(1.15)}
     .header-badge{font-size:11px;background:var(--green-light);color:var(--green-dark);padding:3px 10px;border-radius:3px;font-weight:500}
+    .header-version{font-family:var(--mono);font-size:11px;color:var(--gray-500);border:1px solid var(--gray-200);border-radius:3px;padding:2px 7px}
 
     .page{max-width:960px;margin:0 auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem}
     @media(max-width:820px){.page{padding:.75rem}}
@@ -147,6 +148,7 @@
       <button class="lang-btn" onclick="setLang('es')" title="Español">🇦🇷</button>
       <button class="lang-btn" onclick="setLang('pt')" title="Português">🇧🇷</button>
     </div>
+    <span class="header-version" id="app-version" title="Calculator version"></span>
     <span class="header-badge" id="badge-text">Community Tool</span>
   </div>
 </header>
@@ -813,6 +815,7 @@ function fmtBW(mbps) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
+const APP_VERSION       = '1.0.0'; // Bump on each release — shown in the header
 const TCP_WINDOW_KB     = 256; // TCP window size for throughput model (KB)
 const STREAMS_PER_PROXY = 4;   // Parallel TCP streams per proxy (VBR default)
 const MBPS_PER_VCPU     = 100; // Veeam recommended: 1 vCPU per 100 Mbps
@@ -1390,6 +1393,7 @@ document.getElementById('blockSizeKB').addEventListener('change', calc);
 document.getElementById('netVault').addEventListener('change', calc);
 document.getElementById('expressRoute').addEventListener('change', calc);
 document.querySelectorAll('input[type=number],input[type=checkbox]').forEach(el=>el.addEventListener('input', () => { updateCapOnlyFields(); calc(); }));
+document.getElementById('app-version').textContent = 'v' + APP_VERSION;
 applyT();
 // Defer so browser finishes restoring any saved form state before we read checked state
 setTimeout(() => { _lastMode = null; updateMode(); }, 0);
