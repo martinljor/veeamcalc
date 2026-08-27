@@ -58,6 +58,16 @@ There is no synthetic-full cadence to configure here: because the offload is blo
 
 ---
 
+## On the latency figures
+
+The built-in round-trip times are **hand-written estimates with no published source**. They are not measurements and they are not drawn from any dataset; AWS regions reuse the figure of their co-located Azure region.
+
+This matters more than it looks: RTT is the denominator of the bandwidth-delay-product ceiling, so an estimate that is off by 2× moves every duration the calculator reports by the same factor. For anything you intend to commit to, measure the real RTT from a proxy (`ping` or `traceroute` to the Vault endpoint) and switch *Round-trip time* to **I measured it myself**. The measured value overrides the table.
+
+The same caveat applies to two constants feeding that ceiling — the assumed 256 KB TCP window and the mapping of one VBR parallel task to one TCP stream. The bandwidth-delay-product formula itself is standard networking; these inputs to it are estimates, and both are marked as assumptions in the source.
+
+---
+
 ## How to run it
 
 Clone the repository and open `index.html` in a browser. No build tools, no server, no dependencies to install:

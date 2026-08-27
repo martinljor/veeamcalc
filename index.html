@@ -584,9 +584,23 @@
         <span id="lbl-expressroute">Azure ExpressRoute available</span>
       </label>
     </div>
+    <div class="field-grid" style="margin-top:12px">
+      <div class="field">
+        <label id="lbl-rtt-mode">Round-trip time</label>
+        <select id="rttMode" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
+          <option value="estimate" selected id="lbl-rtt-est">Use built-in estimate</option>
+          <option value="measured" id="lbl-rtt-meas">I measured it myself</option>
+        </select>
+      </div>
+      <div class="field" id="rtt-measured-field" style="display:none">
+        <label id="lbl-rtt-value">Measured RTT (ms)</label>
+        <input type="number" id="rttMeasured" value="150" min="1" max="2000" step="1">
+      </div>
+    </div>
     <div id="net-result"></div>
     <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:.55rem .8rem;margin-top:10px;font-size:10px;color:var(--gray-500);line-height:1.55">
       <i class="fa-solid fa-circle-info" style="margin-right:5px"></i><span id="lbl-latency-source"></span>
+      <div style="margin-top:6px" id="lbl-latency-tools"></div>
     </div>
 
     </div>
@@ -747,7 +761,10 @@ const T = {
     sumDisclaimer:'Estimates for planning only. Storage figures assume the stated change rate and compression hold steady; upload times assume the link is dedicated to the offload and that the modelled RTT matches reality. Validate against a pilot before committing to a window or a subscription.',
     basisTime:'Time — backup window', basisTimeSub:'You set the window; the calculator returns the bandwidth you need',
     basisBw:'Bandwidth — available link', basisBwSub:'You set the link; the calculator returns how long the upload takes',
-    latencySource:'Round-trip times come from a built-in matrix of typical internet paths between each client region and each Azure region hosting VDC Vault — they are planning estimates, not live measurements. Your real RTT depends on your ISP, peering and routing, so measure it before committing to a window: from a proxy, ping or run a traceroute to the Vault endpoint and use the observed figure here.',
+    rttModeLabel:'Round-trip time', rttEstimate:'Use built-in estimate', rttMeasuredOpt:'I measured it myself',
+    rttValue:'Measured RTT (ms)',
+    latencySource:'<strong>These RTTs are unsourced estimates.</strong> They come from a built-in table of typical internet paths written by hand — not from measurements, and not from any published dataset. AWS regions reuse the figure of their co-located Azure region. Your real RTT depends on your ISP, peering and routing, and RTT is the single biggest lever on the throughput ceiling, so an estimate that is off by 2× moves every duration on this page by the same factor. Measure it from a proxy — <code>ping</code> or <code>traceroute</code> to the Vault endpoint — and switch the selector above to \'I measured it myself\'.',
+    latencyTools:'Measure or look up: ' + '<a href="https://www.azurespeed.com/Azure/Latency" target="_blank" style="color:var(--green-dark)">AzureSpeed</a> · <a href="https://www.cloudping.info/" target="_blank" style="color:var(--green-dark)">CloudPing (AWS)</a> · <a href="https://learn.microsoft.com/en-us/azure/networking/azure-network-latency" target="_blank" style="color:var(--green-dark)">Azure latency stats</a>',
     bwAvail:'Available bandwidth (Mbps)', bwWinTarget:'Maintenance window (hours)',
     durTitle:'Backup duration', durDaily:'Daily incremental', durPeak:'Peak — synthetic full day',
     durFirstFull:'First full (initial seed)', durOneTime:'one-time', perDay:'day', blocksUnit:'blocks',
@@ -878,7 +895,10 @@ const T = {
     sumDisclaimer:'Estimaciones solo para planificación. Las cifras de storage suponen que la tasa de cambio y la compresión indicadas se mantienen estables; los tiempos de subida suponen que el enlace está dedicado al offload y que el RTT modelado coincide con el real. Validá con un piloto antes de comprometer una ventana o una suscripción.',
     basisTime:'Tiempo — ventana de backup', basisTimeSub:'Vos definís la ventana; la calculadora devuelve el ancho de banda necesario',
     basisBw:'Ancho de banda — enlace disponible', basisBwSub:'Vos definís el enlace; la calculadora devuelve cuánto tarda la subida',
-    latencySource:'Los tiempos de ida y vuelta salen de una matriz interna de rutas de internet típicas entre cada región de cliente y cada región de Azure donde corre VDC Vault — son estimaciones de planificación, no mediciones en vivo. El RTT real depende de tu ISP, del peering y del ruteo, así que medilo antes de comprometer una ventana: desde un proxy, hacé ping o traceroute al endpoint del Vault y usá acá el valor observado.',
+    rttModeLabel:'Round-trip time', rttEstimate:'Usar la estimación interna', rttMeasuredOpt:'Lo medí yo mismo',
+    rttValue:'RTT medido (ms)',
+    latencySource:'<strong>Estos RTT son estimaciones sin fuente.</strong> Salen de una tabla interna de rutas de internet típicas escrita a mano — no de mediciones ni de ningún dataset publicado. Las regiones AWS reutilizan el valor de su región Azure co-ubicada. El RTT real depende de tu ISP, del peering y del ruteo, y es la palanca más grande sobre el techo de throughput: una estimación errada por 2× mueve todas las duraciones de esta página en la misma proporción. Medilo desde un proxy — <code>ping</code> o <code>traceroute</code> al endpoint del Vault — y cambiá el selector de arriba a \'Lo medí yo mismo\'.',
+    latencyTools:'Medir o consultar: ' + '<a href="https://www.azurespeed.com/Azure/Latency" target="_blank" style="color:var(--green-dark)">AzureSpeed</a> · <a href="https://www.cloudping.info/" target="_blank" style="color:var(--green-dark)">CloudPing (AWS)</a> · <a href="https://learn.microsoft.com/en-us/azure/networking/azure-network-latency" target="_blank" style="color:var(--green-dark)">Azure latency stats</a>',
     bwAvail:'Ancho de banda disponible (Mbps)', bwWinTarget:'Ventana de mantenimiento (horas)',
     durTitle:'Duración del backup', durDaily:'Incremental diario', durPeak:'Pico — día de full sintético',
     durFirstFull:'Primer full (carga inicial)', durOneTime:'una sola vez', perDay:'día', blocksUnit:'bloques',
@@ -1009,7 +1029,10 @@ const T = {
     sumDisclaimer:'Estimativas apenas para planejamento. Os números de storage assumem que a taxa de mudança e a compressão informadas se mantêm estáveis; os tempos de upload assumem que o link está dedicado ao offload e que o RTT modelado corresponde ao real. Valide com um piloto antes de assumir uma janela ou uma assinatura.',
     basisTime:'Tempo — janela de backup', basisTimeSub:'Você define a janela; a calculadora retorna a largura de banda necessária',
     basisBw:'Largura de banda — link disponível', basisBwSub:'Você define o link; a calculadora retorna quanto tempo leva o upload',
-    latencySource:'Os tempos de ida e volta vêm de uma matriz interna de rotas de internet típicas entre cada região de cliente e cada região do Azure onde roda o VDC Vault — são estimativas de planejamento, não medições ao vivo. O RTT real depende do seu ISP, do peering e do roteamento, então meça antes de assumir uma janela: de um proxy, faça ping ou traceroute ao endpoint do Vault e use aqui o valor observado.',
+    rttModeLabel:'Round-trip time', rttEstimate:'Usar a estimativa interna', rttMeasuredOpt:'Eu mesmo medi',
+    rttValue:'RTT medido (ms)',
+    latencySource:'<strong>Estes RTTs são estimativas sem fonte.</strong> Vêm de uma tabela interna de rotas de internet típicas escrita à mão — não de medições nem de qualquer dataset publicado. As regiões AWS reutilizam o valor da sua região Azure co-localizada. O RTT real depende do seu ISP, do peering e do roteamento, e é a maior alavanca sobre o teto de throughput: uma estimativa errada por 2× move todas as durações desta página na mesma proporção. Meça a partir de um proxy — <code>ping</code> ou <code>traceroute</code> ao endpoint do Vault — e mude o seletor acima para \'Eu mesmo medi\'.',
+    latencyTools:'Medir ou consultar: ' + '<a href="https://www.azurespeed.com/Azure/Latency" target="_blank" style="color:var(--green-dark)">AzureSpeed</a> · <a href="https://www.cloudping.info/" target="_blank" style="color:var(--green-dark)">CloudPing (AWS)</a> · <a href="https://learn.microsoft.com/en-us/azure/networking/azure-network-latency" target="_blank" style="color:var(--green-dark)">Azure latency stats</a>',
     bwAvail:'Largura de banda disponível (Mbps)', bwWinTarget:'Janela de manutenção (horas)',
     durTitle:'Duração do backup', durDaily:'Incremental diário', durPeak:'Pico — dia do full sintético',
     durFirstFull:'Primeiro full (carga inicial)', durOneTime:'uma única vez', perDay:'dia', blocksUnit:'blocos',
@@ -1096,7 +1119,7 @@ function applyT() {
     'lbl-basis-title':'basisTitle','lbl-summary-title':'summaryTitle','lbl-print':'printBtn',
     'lbl-basis-time':'basisTime','lbl-basis-time-sub':'basisTimeSub',
     'lbl-basis-bw':'basisBw','lbl-basis-bw-sub':'basisBwSub',
-    'lbl-latency-source':'latencySource',
+    'lbl-rtt-mode':'rttModeLabel','lbl-rtt-est':'rttEstimate','lbl-rtt-meas':'rttMeasuredOpt','lbl-rtt-value':'rttValue',
     'lbl-bwavail':'bwAvail',
     'lbl-streams-text':'parallelTasks','lbl-streams-note':'parallelTasksNote',
     'lbl-blocksize-text':'blockSizeLabel','lbl-blocksize-note':'blockSizeNote',
@@ -1123,11 +1146,20 @@ function applyT() {
     </div>`).join('');
 
   document.getElementById('footer-text').innerHTML = T[lang].footer('martin.jorge@veeam.com','https://www.veeam.com/calculators/simple/vdc');
+  document.getElementById('lbl-latency-source').innerHTML = t('latencySource');
+  document.getElementById('lbl-latency-tools').innerHTML  = t('latencyTools');
   updateBwMode(); // re-applies the mode-dependent window label after the map pass
   updatePrivateLinkLabel();
 }
 
 // The private-link product depends on which cloud backs the selected Vault region
+function updateRttMode() {
+  const measured = document.getElementById('rttMode').value === 'measured';
+  document.getElementById('rtt-measured-field').style.display = measured ? '' : 'none';
+  // The region pair only drives the estimate, so grey it out once RTT is measured
+  document.getElementById('netOrigin').parentElement.style.opacity = measured ? '.55' : '1';
+}
+
 function updatePrivateLinkLabel() {
   const link = vaultCloud(document.getElementById('netVault').value) === 'aws'
     ? 'AWS Direct Connect' : 'Azure ExpressRoute';
@@ -1165,7 +1197,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.1.2'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.2.0'; // Bump on each release — shown in the header
 // ASSUMPTION, not a documented Veeam value: per-connection TCP window used by the
 // bandwidth-delay-product ceiling below (throughput <= window / RTT). The BDP formula
 // itself is standard networking; this constant and the stream count are the modelled
@@ -1206,6 +1238,8 @@ function readInputs() {
     origin:       document.getElementById('netOrigin').value,
     vault:        document.getElementById('netVault').value,
     expressRoute: document.getElementById('expressRoute').checked,
+    rttMode:      document.getElementById('rttMode').value,
+    rttMeasured:  Math.max(1, getInt('rttMeasured')),
     sourceTB:     getVal('srcTB'),
     changeRate:   getVal('changeRate') / 100,
     compression:  getVal('compress') / 100,
@@ -1599,11 +1633,16 @@ function calc() {
   const inp        = readInputs();
   const capEnabled = inp.extendSobr && (inp.copyEnabled || inp.moveEnabled);
   const moveOnly   = inp.moveEnabled && !inp.copyEnabled;
-  const baseRtt    = LATENCY[inp.origin]?.[latencyRegion(inp.vault)] ?? 100;
+  // A measured RTT always wins over the built-in estimate — it is the one input here
+  // that the user can ground in reality, and the whole TCP ceiling hangs off it.
+  const measured   = inp.rttMode === 'measured';
+  const baseRtt    = measured ? inp.rttMeasured
+                              : (LATENCY[inp.origin]?.[latencyRegion(inp.vault)] ?? 100);
   const rtt        = inp.expressRoute ? Math.min(baseRtt, MIN_RTT_ER_MS) : baseRtt;
   const streams    = inp.proxies * inp.streamsPerProxy;
 
   updatePrivateLinkLabel();
+  updateRttMode();
   renderImmModeNote(inp);
   renderCapNotes(inp, capEnabled, moveOnly);
   renderWarnings(validateImm(inp.retDays, inp.retWeeks, inp.retMonths, inp.retYears,
@@ -1806,6 +1845,7 @@ const refresh = () => { updateMoveRow(); calc(); };
 document.getElementById('blockSizeKB').addEventListener('change', calc);
 document.querySelectorAll('input[name="bwBasis"]').forEach(el => el.addEventListener('change', () => { updateBwMode(); calc(); }));
 document.getElementById('netOrigin').addEventListener('change', calc);
+document.getElementById('rttMode').addEventListener('change', () => { updateRttMode(); calc(); });
 document.getElementById('netVault').addEventListener('change', calc);
 document.getElementById('offloadWindow').addEventListener('change', calc);
 document.getElementById('healthCheck').addEventListener('change', calc);
