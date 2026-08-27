@@ -68,7 +68,9 @@ The built-in round-trip times are **hand-written estimates with no published sou
 
 This matters more than it looks: RTT is the denominator of the bandwidth-delay-product ceiling, so an estimate that is off by 2× moves every duration the calculator reports by the same factor. For anything you intend to commit to, measure the real RTT from a proxy (`ping` or `traceroute` to the Vault endpoint) and switch *Round-trip time* to **I measured it myself**. The measured value overrides the table.
 
-The same caveat applies to two constants feeding that ceiling — the assumed 256 KB TCP window and the mapping of one VBR parallel task to one TCP stream. The bandwidth-delay-product formula itself is standard networking; these inputs to it are estimates, and both are marked as assumptions in the source.
+One input to that ceiling is now sourced rather than assumed: a repository task slot is **not** one connection. Veeam opens up to **64 concurrent S3/BLOB operations per task slot**, and recommends staying under **6016 connections** against public cloud object storage — so the default 1 proxy × 4 tasks is 256 connections, not 4. Source: [Using a SOBR and Capacity Tier](https://www.veeam.com/blog/sobr-architecture-guide.html).
+
+What remains an assumption is the 256 KB per-connection TCP window. The bandwidth-delay-product formula itself is standard networking; that constant is the modelled input to it, and it is marked as an assumption in the source.
 
 ---
 

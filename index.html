@@ -454,9 +454,10 @@
             <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
           </a>
         </label>
-        <input type="number" id="bwStreams" value="4" min="1" max="64" step="1">
+        <input type="number" id="bwStreams" value="4" min="1" max="94" step="1">
       </div>
     </div>
+    <div id="conn-note" style="margin-top:10px"></div>
 
     <div class="field-grid" style="margin-top:10px">
       <div class="field">
@@ -745,6 +746,9 @@ const T = {
     bwRequired:'Required per proxy', bwTotal:'Total (all proxies)',
     bwNote:(win,prx)=>`Based on a <strong>${win}h</strong> backup window across <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     basisTitle:'Measure by:',
+    netConns:'S3 connections',
+    connNote:(slots,conns)=>`<strong>${slots} task ${slots===1?'slot':'slots'} → ${conns} concurrent S3 connections.</strong> Veeam opens up to 64 S3/BLOB operations per repository task slot, and it is that concurrency the latency ceiling runs against — not the slot count.`,
+    connNoteOver:(slots,conns,max)=>`<strong>${conns} concurrent S3 connections</strong> from ${slots} task slots exceeds the ${max} Veeam recommends against public cloud object storage. Reduce proxies or tasks per proxy to stay under ${Math.floor(max/64)} slots.`,
     uploadTitle:'Upload to VDC Vault', sumSeedSize:'Seed size', s3ObjectsSeed:'S3 objects (seed)',
     blockGenLabel:'Block Generation', blockGenFixed:'fixed by provider',
     effLockSub:'immutability + generation', strandedLabel:'Stranded past retention',
@@ -880,6 +884,9 @@ const T = {
     bwRequired:'Requerido por proxy', bwTotal:'Total (todos los proxies)',
     bwNote:(win,prx)=>`Basado en una ventana de backup de <strong>${win}h</strong> con <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     basisTitle:'Medición por:',
+    netConns:'conexiones S3',
+    connNote:(slots,conns)=>`<strong>${slots} task ${slots===1?'slot':'slots'} → ${conns} conexiones S3 concurrentes.</strong> Veeam abre hasta 64 operaciones S3/BLOB por task slot del repositorio, y es contra esa concurrencia que corre el techo de latencia — no contra la cantidad de slots.`,
+    connNoteOver:(slots,conns,max)=>`<strong>${conns} conexiones S3 concurrentes</strong> desde ${slots} task slots supera las ${max} que Veeam recomienda contra object storage en nube pública. Reducí proxies o tareas por proxy para quedar bajo ${Math.floor(max/64)} slots.`,
     uploadTitle:'Subida al VDC Vault', sumSeedSize:'Tamaño de la carga inicial', s3ObjectsSeed:'Objetos S3 (carga inicial)',
     blockGenLabel:'Block Generation', blockGenFixed:'fijo por proveedor',
     effLockSub:'inmutabilidad + generación', strandedLabel:'Retenido pasada la retención',
@@ -1015,6 +1022,9 @@ const T = {
     bwRequired:'Necessário por proxy', bwTotal:'Total (todos os proxies)',
     bwNote:(win,prx)=>`Com base em uma janela de backup de <strong>${win}h</strong> e <strong>${prx}</strong> ${prx===1?'proxy':'proxies'}.`,
     basisTitle:'Medição por:',
+    netConns:'conexões S3',
+    connNote:(slots,conns)=>`<strong>${slots} task ${slots===1?'slot':'slots'} → ${conns} conexões S3 concorrentes.</strong> O Veeam abre até 64 operações S3/BLOB por task slot do repositório, e é contra essa concorrência que roda o teto de latência — não contra a quantidade de slots.`,
+    connNoteOver:(slots,conns,max)=>`<strong>${conns} conexões S3 concorrentes</strong> a partir de ${slots} task slots excede as ${max} que o Veeam recomenda contra object storage em nuvem pública. Reduza proxies ou tarefas por proxy para ficar abaixo de ${Math.floor(max/64)} slots.`,
     uploadTitle:'Upload para o VDC Vault', sumSeedSize:'Tamanho da carga inicial', s3ObjectsSeed:'Objetos S3 (carga inicial)',
     blockGenLabel:'Block Generation', blockGenFixed:'fixo por provedor',
     effLockSub:'imutabilidade + geração', strandedLabel:'Retido além da retenção',
@@ -1204,12 +1214,17 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.3.0'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.4.0'; // Bump on each release — shown in the header
 // ASSUMPTION, not a documented Veeam value: per-connection TCP window used by the
 // bandwidth-delay-product ceiling below (throughput <= window / RTT). The BDP formula
-// itself is standard networking; this constant and the stream count are the modelled
-// inputs to it, so treat the resulting ceiling as an order-of-magnitude guide.
+// itself is standard networking; this constant is the modelled input to it, so treat
+// the resulting ceiling as an order-of-magnitude guide.
 const TCP_WINDOW_KB     = 256;
+// Documented: each Repository Task slot opens up to 64 concurrent S3/BLOB operations,
+// and Veeam recommends staying under 6016 connections against public cloud storage.
+// Source: https://www.veeam.com/blog/sobr-architecture-guide.html
+const S3_OPS_PER_TASK   = 64;
+const MAX_CLOUD_CONNS   = 6016;
 const STREAMS_PER_PROXY = 4;   // Parallel TCP streams per proxy (VBR default)
 const MBPS_PER_VCPU     = 100; // Veeam recommended: 1 vCPU per 100 Mbps
 const MIN_VCPU          = 2;   // Minimum vCPU per proxy
@@ -1559,7 +1574,7 @@ function renderNetwork(inp, bw, rtt, baseRtt, streams) {
         <div>
           <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netRtt')}${erBadge}</div>
           <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:var(--gray-900)">~${rtt} ms</div>
-          <div style="font-size:10px;color:var(--gray-500)">${inp.expressRoute ? t('erPublic')+': ~'+baseRtt+'ms' : streams+' TCP '+t('netStreams')}</div>
+          <div style="font-size:10px;color:var(--gray-500)">${inp.expressRoute ? t('erPublic')+': ~'+baseRtt+'ms' : streams+' '+t('netConns')}</div>
         </div>
         <div>
           <div style="font-size:10px;color:var(--gray-500);margin-bottom:2px">${t('netEffective')}</div>
@@ -1646,10 +1661,14 @@ function calc() {
   const baseRtt    = measured ? inp.rttMeasured
                               : (LATENCY[inp.origin]?.[latencyRegion(inp.vault)] ?? 100);
   const rtt        = inp.expressRoute ? Math.min(baseRtt, MIN_RTT_ER_MS) : baseRtt;
-  const streams    = inp.proxies * inp.streamsPerProxy;
+  // A task slot is not a single connection: Veeam opens up to 64 S3/BLOB operations per
+  // slot, and it is that concurrency the bandwidth-delay product runs against.
+  const taskSlots  = inp.proxies * inp.streamsPerProxy;
+  const streams    = taskSlots * S3_OPS_PER_TASK;
 
   updatePrivateLinkLabel();
   updateRttMode();
+  renderConnNote(taskSlots, streams);
   renderImmModeNote(inp);
   renderCapNotes(inp, capEnabled, moveOnly);
   renderWarnings(validateImm(inp.retDays, inp.retWeeks, inp.retMonths, inp.retYears,
@@ -1765,6 +1784,17 @@ function renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, mo
   document.getElementById('print-meta').innerHTML =
     `<p style="font-size:11px;color:var(--gray-500);margin-bottom:12px">${T[lang].printMeta(new Date().toLocaleString())}</p>`;
   document.getElementById('lbl-summary-disclaimer').textContent = t('sumDisclaimer');
+}
+
+// Veeam caps recommended concurrency against public cloud object storage
+function renderConnNote(taskSlots, conns) {
+  const over = conns > MAX_CLOUD_CONNS;
+  document.getElementById('conn-note').innerHTML = `
+    <div style="background:${over ? '#fffbeb' : 'var(--blue-light)'};border-left:3px solid ${over ? '#f59e0b' : 'var(--blue)'};border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .75rem;font-size:10px;color:${over ? '#92400e' : '#1e40af'};line-height:1.55">
+      <i class="fa-solid ${over ? 'fa-triangle-exclamation' : 'fa-circle-info'}" style="margin-right:5px"></i>${
+        over ? T[lang].connNoteOver(taskSlots, conns, MAX_CLOUD_CONNS)
+             : T[lang].connNote(taskSlots, conns)}
+    </div>`;
 }
 
 // Explains what the selected immutability mode does to the lock period
