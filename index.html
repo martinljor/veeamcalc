@@ -23,7 +23,7 @@
     header{background:var(--white);border-bottom:1px solid var(--gray-200);padding:0 2rem;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
     .header-brand{display:flex;align-items:center;gap:10px}
     .veeam-logo{width:28px;height:28px;background:var(--green);border-radius:4px;display:flex;align-items:center;justify-content:center}
-    .veeam-logo svg{width:16px;height:16px}
+    .veeam-logo svg{width:21px;height:21px}
     .header-title{font-size:14px;font-weight:600;color:var(--gray-900)}
     .header-sub{font-size:12px;color:var(--gray-500)}
     .header-right{display:flex;align-items:center;gap:12px}
@@ -229,9 +229,20 @@
 
 <header>
   <div class="header-brand">
-    <div class="veeam-logo">
-      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M2 4L8 12L14 4" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="veeam-logo" title="SOBR Calculator — immutable Vault sizing">
+      <!-- A calculator whose display is a padlock: immutable Vault storage, computed.
+           The keypad reads as the SOBR extents the offload writes across. The lock sits
+           proud of the body rather than inside a display band, so the shackle still
+           resolves at 28 device px on non-retina screens. -->
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="4.8" y="2.2" width="22.4" height="27.6" rx="3.4" stroke="#fff" stroke-width="2.4"/>
+        <path d="M12.6 12.1V9.2a3.4 3.4 0 0 1 6.8 0v2.9" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>
+        <rect x="9.6" y="11.6" width="12.8" height="6.2" rx="1.5" fill="#fff"/>
+        <g fill="#fff">
+          <rect x="9.6" y="20.6" width="5.4" height="3.2" rx="0.9"/>
+          <rect x="17" y="20.6" width="5.4" height="3.2" rx="0.9"/>
+          <rect x="9.6" y="25.3" width="12.8" height="1.8" rx="0.9"/>
+        </g>
       </svg>
     </div>
     <div>
@@ -1233,7 +1244,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.5.0'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.5.1'; // Bump on each release — shown in the header
 // ASSUMPTION, not a documented Veeam value: per-connection TCP window used by the
 // bandwidth-delay-product ceiling below (throughput <= window / RTT). The BDP formula
 // itself is standard networking; this constant is the modelled input to it, so treat
