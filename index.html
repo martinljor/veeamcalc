@@ -625,6 +625,9 @@
         </div>
         <div class="card-body">
           <div id="breakdown-content" class="breakdown-cols"></div>
+          <div style="background:var(--gray-50);border-left:3px solid var(--gray-300);border-radius:0 var(--radius) var(--radius) 0;padding:.6rem .85rem;margin-top:14px;font-size:11px;color:var(--gray-500);line-height:1.6">
+            <i class="fa-solid fa-circle-info" style="margin-right:5px"></i><span id="lbl-tb-disclaimer"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -747,6 +750,7 @@ const T = {
     effLockSub:'immutability + generation', strandedLabel:'Stranded past retention',
     strandedSub:'billable after retention releases it', strandedNone:'retention outlives the lock',
     sumBlockGen:'Block Generation',
+    tbDisclaimer:'These capacity figures are a <strong>rough estimate</strong>. This tool exists to size the <strong>resources</strong> behind the offload — bandwidth, latency ceiling, proxies and repository disk — and to explain why they come out the way they do. For a TB number you intend to quote or buy against, validate it with the <a href="https://www.veeam.com/calculators/simple/vdc" target="_blank" style="color:var(--green-dark)">official Veeam VDC calculator</a>.',
     blockGenNote:(d,cloud)=>`Block Generation adds <strong>${d} days</strong> on top of the immutability period for ${cloud}-backed Vault regions — Veeam sets it per provider and it is <strong>not configurable in the console</strong> (30 days on AWS, 10 on Azure). Blocks written inside one generation share a single expiration date, which is what saves API calls — and what keeps them billable past your retention.`,
     summaryTitle:'Summary', printBtn:'Save as PDF',
     sumYes:'Yes', sumNo:'No',
@@ -881,6 +885,7 @@ const T = {
     effLockSub:'inmutabilidad + generación', strandedLabel:'Retenido pasada la retención',
     strandedSub:'sigue facturando después de que la retención lo libera', strandedNone:'la retención dura más que el lock',
     sumBlockGen:'Block Generation',
+    tbDisclaimer:'Estas cifras de capacidad son una <strong>estimación gruesa</strong>. Esta herramienta existe para dimensionar los <strong>recursos</strong> detrás del offload — ancho de banda, techo de latencia, proxies y disco del repositorio — y para explicar por qué dan lo que dan. Para un número de TB que vayas a cotizar o comprar, validalo con la <a href="https://www.veeam.com/calculators/simple/vdc" target="_blank" style="color:var(--green-dark)">calculadora oficial de Veeam VDC</a>.',
     blockGenNote:(d,cloud)=>`Block Generation suma <strong>${d} días</strong> por encima del período de inmutabilidad para regiones de Vault sobre ${cloud} — Veeam lo fija por proveedor y <strong>no es configurable en la consola</strong> (30 días en AWS, 10 en Azure). Los bloques escritos dentro de una misma generación comparten una única fecha de expiración, que es lo que ahorra llamadas a la API — y lo que los mantiene facturando pasada tu retención.`,
     summaryTitle:'Resumen', printBtn:'Guardar como PDF',
     sumYes:'Sí', sumNo:'No',
@@ -1015,6 +1020,7 @@ const T = {
     effLockSub:'imutabilidade + geração', strandedLabel:'Retido além da retenção',
     strandedSub:'continua faturando depois que a retenção o libera', strandedNone:'a retenção dura mais que o lock',
     sumBlockGen:'Block Generation',
+    tbDisclaimer:'Estes números de capacidade são uma <strong>estimativa aproximada</strong>. Esta ferramenta existe para dimensionar os <strong>recursos</strong> por trás do offload — largura de banda, teto de latência, proxies e disco do repositório — e para explicar por que eles dão o que dão. Para um número de TB que você vá cotar ou comprar, valide com a <a href="https://www.veeam.com/calculators/simple/vdc" target="_blank" style="color:var(--green-dark)">calculadora oficial do Veeam VDC</a>.',
     blockGenNote:(d,cloud)=>`O Block Generation soma <strong>${d} dias</strong> ao período de imutabilidade para regiões de Vault sobre ${cloud} — o Veeam o fixa por provedor e <strong>não é configurável no console</strong> (30 dias na AWS, 10 no Azure). Blocos escritos dentro de uma mesma geração compartilham uma única data de expiração, o que economiza chamadas de API — e os mantém faturando além da sua retenção.`,
     summaryTitle:'Resumo', printBtn:'Salvar como PDF',
     sumYes:'Sim', sumNo:'Não',
@@ -1146,6 +1152,7 @@ function applyT() {
     </div>`).join('');
 
   document.getElementById('footer-text').innerHTML = T[lang].footer('martin.jorge@veeam.com','https://www.veeam.com/calculators/simple/vdc');
+  document.getElementById('lbl-tb-disclaimer').innerHTML   = t('tbDisclaimer');
   document.getElementById('lbl-latency-source').innerHTML = t('latencySource');
   document.getElementById('lbl-latency-tools').innerHTML  = t('latencyTools');
   updateBwMode(); // re-applies the mode-dependent window label after the map pass
@@ -1197,7 +1204,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.2.0'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.3.0'; // Bump on each release — shown in the header
 // ASSUMPTION, not a documented Veeam value: per-connection TCP window used by the
 // bandwidth-delay-product ceiling below (throughput <= window / RTT). The BDP formula
 // itself is standard networking; this constant and the stream count are the modelled

@@ -2,7 +2,9 @@
 ### for Veeam Backup and Replication
 **Developed by Martin Jorge** — [martin.jorge@veeam.com](mailto:martin.jorge@veeam.com)
 
-A sizing and upload-time estimator for offloading an on-premises **Veeam Backup & Replication** SOBR to **Veeam Data Cloud Vault**, complementing the [official Veeam calculator](https://www.veeam.com/calculators/simple/vdc) with additional functionality.
+A **resource** estimator for offloading an on-premises **Veeam Backup & Replication** SOBR to **Veeam Data Cloud Vault**: what bandwidth, latency headroom, proxies and repository disk the offload needs, and why each number comes out the way it does.
+
+Capacity is reported too, but only as a rough estimate to drive those resource figures. **For a TB number you intend to quote or buy against, use the [official Veeam VDC calculator](https://www.veeam.com/calculators/simple/vdc).**
 
 The input panel mirrors the **Capacity Tier** page of the VBR *Scale-out Backup Repository* wizard, so the settings you fill in here are the same ones you set in the console.
 
