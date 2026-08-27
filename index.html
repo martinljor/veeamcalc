@@ -74,6 +74,8 @@
     .vbr-cb:checked::after{content:'';position:absolute;left:4.5px;top:1.5px;width:5px;height:9px;
       border:solid #fff;border-width:0 1.8px 1.8px 0;transform:rotate(43deg)}
     .vbr-cb:focus-visible{outline:2px solid var(--win-accent);outline-offset:1px}
+    .vbr-cb:disabled{cursor:default;opacity:1}
+    .vbr-cb:disabled + .vbr-lbl{cursor:default}
     .vbr-lbl{font-size:12.5px;color:var(--win-text);cursor:pointer;line-height:1.4}
     .vbr-desc{margin-left:25px;font-size:12px;color:var(--win-text);line-height:1.45;margin-top:3px}
     .vbr-indent{margin-left:25px}
@@ -336,7 +338,7 @@
 
           <div>
             <div class="vbr-row">
-              <input type="checkbox" id="encryptUpload" checked class="vbr-cb">
+              <input type="checkbox" id="encryptUpload" checked disabled class="vbr-cb" title="Always on for VDC Vault">
               <label for="encryptUpload" id="lbl-encrypt" class="vbr-lbl">Encrypt data uploaded to object storage</label>
             </div>
             <p id="lbl-encrypt-desc" class="vbr-desc"></p>
@@ -716,7 +718,7 @@ const T = {
     cr:'Daily change rate (%)', comp:'Compression (%)', gfsSec:'GFS Retention', daily:'Daily', weekly:'Weekly', monthly:'Monthly', yearly:'Yearly',
     immSec:'Immutability Settings', warnCapTier:'VDC Vault', days:'days',
     chooseBtn:'Choose...', pickStorage:'<Click Choose to pick object storage>',
-    dlgTitle:'Edit Scale-out Backup Repository',
+    dlgTitle:'Scale-out Backup Repository',
     immMinLabel:'Minimum immutability duration:',
     immMinDesc:'Defines guaranteed immutability duration for every backup on this repository. Provides additional layer of protection against accidental or malicious retention policy changes.',
     immModeTitle:'Make backups immutable:',
@@ -735,8 +737,7 @@ const T = {
     moveOlderLabel:'Move backup files older than',
     moveDaysUnit:'days (your operational restore window)',
     encryptLabel:'Encrypt data uploaded to object storage',
-    encryptOnDesc:'Blocks are encrypted before upload. Size is unchanged, but encrypted blocks cannot be deduplicated or recompressed by the object storage side.',
-    encryptOffDesc:'Data is uploaded unencrypted. Veeam strongly recommends enabling encryption for offsite object storage.',
+    encryptOnDesc:'Always on for VDC Vault — it cannot be turned off. Blocks are encrypted before upload; size is unchanged, but encrypted blocks cannot be deduplicated or recompressed by the object storage side.',
     offloadWindowLabel:'Offload window:',
     owAny:'Any time', owWin:'Backup window only',
     healthLabel:'Health check:',
@@ -852,7 +853,7 @@ const T = {
     cr:'Cambio diario (%)', comp:'Compresión (%)', gfsSec:'Retención GFS', daily:'Diarias', weekly:'Semanales', monthly:'Mensuales', yearly:'Anuales',
     immSec:'Configuración de inmutabilidad', warnCapTier:'VDC Vault', days:'días',
     chooseBtn:'Elegir...', pickStorage:'<Elegí el object storage>',
-    dlgTitle:'Editar Scale-out Backup Repository',
+    dlgTitle:'Scale-out Backup Repository',
     immMinLabel:'Duración mínima de inmutabilidad:',
     immMinDesc:'Define la duración de inmutabilidad garantizada para cada backup de este repositorio. Aporta una capa adicional de protección contra cambios accidentales o maliciosos en la política de retención.',
     immModeTitle:'Hacer los backups inmutables:',
@@ -871,8 +872,7 @@ const T = {
     moveOlderLabel:'Mover archivos de backup más antiguos que',
     moveDaysUnit:'días (tu ventana de restore operativa)',
     encryptLabel:'Cifrar los datos subidos al object storage',
-    encryptOnDesc:'Los bloques se cifran antes de subirse. El tamaño no cambia, pero los bloques cifrados no pueden deduplicarse ni recomprimirse del lado del object storage.',
-    encryptOffDesc:'Los datos se suben sin cifrar. Veeam recomienda fuertemente activar el cifrado para object storage externo.',
+    encryptOnDesc:'Siempre activo en VDC Vault — no se puede desactivar. Los bloques se cifran antes de subirse; el tamaño no cambia, pero los bloques cifrados no pueden deduplicarse ni recomprimirse del lado del object storage.',
     offloadWindowLabel:'Ventana de offload:',
     owAny:'Cualquier momento', owWin:'Solo la ventana de backup',
     healthLabel:'Health check:',
@@ -988,7 +988,7 @@ const T = {
     cr:'Taxa de mudança diária (%)', comp:'Compressão (%)', gfsSec:'Retenção GFS', daily:'Diárias', weekly:'Semanais', monthly:'Mensais', yearly:'Anuais',
     immSec:'Configurações de imutabilidade', warnCapTier:'VDC Vault', days:'dias',
     chooseBtn:'Escolher...', pickStorage:'<Escolha o object storage>',
-    dlgTitle:'Editar Scale-out Backup Repository',
+    dlgTitle:'Scale-out Backup Repository',
     immMinLabel:'Duração mínima de imutabilidade:',
     immMinDesc:'Define a duração de imutabilidade garantida para cada backup deste repositório. Fornece uma camada adicional de proteção contra alterações acidentais ou maliciosas na política de retenção.',
     immModeTitle:'Tornar os backups imutáveis:',
@@ -1007,8 +1007,7 @@ const T = {
     moveOlderLabel:'Mover arquivos de backup mais antigos que',
     moveDaysUnit:'dias (sua janela de restore operacional)',
     encryptLabel:'Criptografar os dados enviados ao object storage',
-    encryptOnDesc:'Os blocos são criptografados antes do upload. O tamanho não muda, mas blocos criptografados não podem ser deduplicados nem recomprimidos do lado do object storage.',
-    encryptOffDesc:'Os dados são enviados sem criptografia. O Veeam recomenda fortemente ativar a criptografia para object storage externo.',
+    encryptOnDesc:'Sempre ativo no VDC Vault — não pode ser desativado. Os blocos são criptografados antes do upload; o tamanho não muda, mas blocos criptografados não podem ser deduplicados nem recomprimidos do lado do object storage.',
     offloadWindowLabel:'Janela de offload:',
     owAny:'Qualquer momento', owWin:'Apenas a janela de backup',
     healthLabel:'Health check:',
@@ -1245,7 +1244,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.7.1'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.7.2'; // Bump on each release — shown in the header
 // ASSUMPTION, not a documented Veeam value: per-connection TCP window used by the
 // bandwidth-delay-product ceiling below (throughput <= window / RTT). The BDP formula
 // itself is standard networking; this constant is the modelled input to it, so treat
@@ -1910,7 +1909,7 @@ function renderCapNotes(inp, capEnabled, moveOnly) {
     <div style="background:${bg};border-left:3px solid ${color};border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .75rem;margin-top:8px;font-size:11px;color:${color};line-height:1.5">
       <i class="fa-solid fa-circle-info" style="margin-right:5px"></i>${msg}
     </div>`).join('');
-  document.getElementById('lbl-encrypt-desc').textContent = inp.encryptUpload ? t('encryptOnDesc') : t('encryptOffDesc');
+  document.getElementById('lbl-encrypt-desc').textContent = t('encryptOnDesc');
   document.getElementById('cap-policies').style.opacity = inp.extendSobr ? '1' : '.4';
   document.getElementById('cap-policies').style.pointerEvents = inp.extendSobr ? '' : 'none';
   // The repository name reflects the region actually selected below, so "Choose…" is real
