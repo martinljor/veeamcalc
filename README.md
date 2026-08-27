@@ -17,8 +17,8 @@ The input panel mirrors the **Capacity Tier** page of the VBR *Scale-out Backup 
 - **Both VBR immutability modes** — for the entire retention duration, or for the minimum period only
 - **Upload profile** — the one-time seed of the whole compressed source, then the daily change. Object storage offload is block-based, so unchanged blocks are never re-sent and there is no day that re-uploads a full.
 - **Upload requirements**, in either direction:
-  - **Required bandwidth** — give it a backup window, get the Mbps you need
-  - **Backup duration** — give it the available Mbps, get how long the upload takes and whether it fits the window
+  - **Time** — give it the maintenance window, get the link that meets it (sized on the initial seed, since that is the binding transfer) plus the lower rate that only keeps pace with the daily change
+  - **Bandwidth** — give it the link the customer actually has, get how long the seed and each daily change take, and whether they fit the window
 - **Latency ceiling** — TCP throughput modelled from RTT, parallel tasks and proxies, so you can see when latency (not the link) is the bottleneck
 - **Azure- and AWS-backed Vault regions**, with the provider-specific Block Generation period applied automatically
 - **Proxy sizing** — vCPU, RAM and repository disk throughput
