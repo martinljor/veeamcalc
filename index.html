@@ -211,16 +211,28 @@
     .print-only{display:none}
 
     @media print {
-      @page{margin:14mm}
+      @page{margin:16mm}
       body{background:#fff}
-      header{position:static;border-bottom:1px solid #ccc;padding:0 0 8px}
-      .lang-switcher,.tabs,.no-print,#imm-mode-note,.print-btn{display:none !important}
+      /* The PDF is a report, not a screenshot of the app: everything that is a control,
+         an intermediate result or navigation is dropped, leaving the summary alone. */
+      header, .vbr-dialog, .tabs, .tab-pane, #result-banner, #bw-result,
+      .no-print, .print-btn, .page > .card:not(#summary-card){display:none !important}
       .print-only{display:block}
-      .page{max-width:none;padding:0;gap:.6rem}
-      .tab-pane{display:block !important;margin-top:.6rem}
-      .card,.vbr-dialog,.bw-card,.tier-box{break-inside:avoid;page-break-inside:avoid;box-shadow:none}
-      .sim-rows{max-height:none;overflow:visible}
-      #summary-card{break-before:page;page-break-before:always}
+      .page{max-width:none;padding:0;gap:0;display:block}
+      #summary-card{border:none;border-radius:0}
+      #summary-card .card-header{display:none}
+      #summary-card .card-body{padding:0}
+      .summary-cols{grid-template-columns:1fr 1fr;gap:14mm}
+      .sum-group{break-after:avoid;page-break-after:avoid}
+      .sum-row{break-inside:avoid;page-break-inside:avoid;font-size:10.5px}
+      .rep-head{display:flex;align-items:flex-start;gap:12px;border-bottom:2px solid var(--green);
+        padding-bottom:9px;margin-bottom:14px}
+      .rep-head .rep-mark{width:34px;height:34px;background:var(--green);border-radius:5px;
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+      .rep-head .rep-mark svg{width:25px;height:25px}
+      .rep-title{font-size:15px;font-weight:600;color:var(--gray-900)}
+      .rep-sub{font-size:10.5px;color:var(--gray-500);margin-top:2px;line-height:1.5}
+      footer{margin-top:12mm;padding:8px 0 0;border-top:1px solid var(--gray-200);font-size:9px}
       a{color:inherit;text-decoration:none}
     }
   </style>
@@ -687,6 +699,7 @@
     </div>
     <div class="card-body">
       <div id="print-meta" class="print-only"></div>
+      <div id="rep-notes" class="print-only"></div>
       <div id="summary-content" class="summary-cols"></div>
       <p id="lbl-summary-disclaimer" style="font-size:10px;color:var(--gray-500);line-height:1.55;margin-top:14px;padding-top:10px;border-top:1px solid var(--gray-200)"></p>
     </div>
@@ -775,10 +788,14 @@ const T = {
     sumCopyMove:'Copy + Move', sumCopyOnly:'Copy only', sumMoveOnly:'Move only',
     sumImmMode:'Mode', sumEffLock:'Effective lock',
     sumResults:'Results', sumVaultStorage:'Vault storage', sumDataStored:'Data stored',
-    sumUpload:'Upload', sumDailyInc:'Daily incremental', sumSeedNights:'Seeding spread',
+    sumUpload:'Upload', sumDailyInc:'Daily change', sumDailyTime:'Daily upload time', sumSeedTime:'Seed upload time', sumSeedNights:'Seeding spread',
     sumPeakDur:'Peak day duration', sumFits:'Meets the maintenance window', sumFitsYes:'Yes', sumFitsNo:'No — exceeds',
     sumThroughput:'Throughput', sumProxySizing:'Proxy sizing', sumApi:'S3 API',
-    printMeta:(d)=>`SOBR Calculator by MJ — VDC Vault sizing report. Generated ${d}.`,
+    repTitle:(target)=>`VDC Vault resource report — ${target}`,
+    repSub:(d,v)=>`SOBR Calculator by MJ · generated ${d} · v${v}. Capacity figures are estimates; resource figures are the purpose of this report.`,
+    repWarnWindow:(dur,win)=>`The daily change needs <strong>${dur}</strong> and does not fit the ${win}h maintenance window as configured.`,
+    repWarnTcp:(lim)=>`Latency, not the link, is the ceiling: the TCP model caps throughput at ${lim}.`,
+    repWarnRtt:'Round-trip time is the built-in estimate, not a measured value. Measure it before committing to a window.',
     sumDisclaimer:'Estimates for planning only. Storage figures assume the stated change rate and compression hold steady; upload times assume the link is dedicated to the offload and that the modelled RTT matches reality. Validate against a pilot before committing to a window or a subscription.',
     basisTime:'Time — backup window', basisTimeSub:'You set the window; the calculator returns the bandwidth you need',
     basisBw:'Bandwidth — available link', basisBwSub:'You set the link; the calculator returns how long the upload takes',
@@ -809,7 +826,7 @@ const T = {
     s3EffLow:'High API overhead — consider 1 MB+ for VDC Vault',
     cpuPerProxy:'CPU per proxy', ramPerProxy:'RAM per proxy',
     cpuNote:'CPU/RAM estimates: 1 vCPU per 100 Mbps, 2 GB RAM per vCPU (Veeam recommended sizing).',
-    diskRequired:'Repository disk throughput (peak)',
+    diskRequired:'Repository disk throughput',
     diskRead:'read', diskWrite:'write',
     lockPeriod:'VDC Vault lock period', lockPeriodSub:'Object Lock duration',
     offloadTrigger:'Offload trigger', offloadTriggerSub:'Days before move/copy to Vault',
@@ -915,10 +932,14 @@ const T = {
     sumCopyMove:'Copy + Move', sumCopyOnly:'Solo Copy', sumMoveOnly:'Solo Move',
     sumImmMode:'Modo', sumEffLock:'Lock efectivo',
     sumResults:'Resultados', sumVaultStorage:'Storage en el Vault', sumDataStored:'Datos almacenados',
-    sumUpload:'Subida', sumDailyInc:'Incremental diario', sumSeedNights:'Carga inicial repartida',
+    sumUpload:'Subida', sumDailyInc:'Cambio diario', sumDailyTime:'Tiempo de subida diario', sumSeedTime:'Tiempo de carga inicial', sumSeedNights:'Carga inicial repartida',
     sumPeakDur:'Duración del día de pico', sumFits:'Cumple la ventana de mantenimiento', sumFitsYes:'Sí', sumFitsNo:'No — la excede',
     sumThroughput:'Throughput', sumProxySizing:'Dimensionamiento de proxies', sumApi:'API S3',
-    printMeta:(d)=>`SOBR Calculator by MJ — reporte de dimensionamiento de VDC Vault. Generado ${d}.`,
+    repTitle:(target)=>`Reporte de recursos VDC Vault — ${target}`,
+    repSub:(d,v)=>`SOBR Calculator by MJ · generado ${d} · v${v}. Las cifras de capacidad son estimaciones; las de recursos son el objeto de este reporte.`,
+    repWarnWindow:(dur,win)=>`El cambio diario necesita <strong>${dur}</strong> y no entra en la ventana de mantenimiento de ${win}h tal como está configurado.`,
+    repWarnTcp:(lim)=>`El techo es la latencia, no el enlace: el modelo TCP limita el throughput a ${lim}.`,
+    repWarnRtt:'El round-trip time es la estimación interna, no un valor medido. Medilo antes de comprometer una ventana.',
     sumDisclaimer:'Estimaciones solo para planificación. Las cifras de storage suponen que la tasa de cambio y la compresión indicadas se mantienen estables; los tiempos de subida suponen que el enlace está dedicado al offload y que el RTT modelado coincide con el real. Validá con un piloto antes de comprometer una ventana o una suscripción.',
     basisTime:'Tiempo — ventana de backup', basisTimeSub:'Vos definís la ventana; la calculadora devuelve el ancho de banda necesario',
     basisBw:'Ancho de banda — enlace disponible', basisBwSub:'Vos definís el enlace; la calculadora devuelve cuánto tarda la subida',
@@ -949,7 +970,7 @@ const T = {
     s3EffLow:'Alto overhead de API — considerar 1 MB+ para VDC Vault',
     cpuPerProxy:'CPU por proxy', ramPerProxy:'RAM por proxy',
     cpuNote:'Estimación CPU/RAM: 1 vCPU cada 100 Mbps, 2 GB RAM por vCPU (sizing recomendado por Veeam).',
-    diskRequired:'Disco del repositorio (pico)',
+    diskRequired:'Disco del repositorio',
     diskRead:'lectura', diskWrite:'escritura',
     lockPeriod:'Período de lock VDC Vault', lockPeriodSub:'Duración del Object Lock',
     offloadTrigger:'Trigger de offload', offloadTriggerSub:'Días antes de mover/copiar al Vault',
@@ -1055,10 +1076,14 @@ const T = {
     sumCopyMove:'Copy + Move', sumCopyOnly:'Apenas Copy', sumMoveOnly:'Apenas Move',
     sumImmMode:'Modo', sumEffLock:'Lock efetivo',
     sumResults:'Resultados', sumVaultStorage:'Storage no Vault', sumDataStored:'Dados armazenados',
-    sumUpload:'Upload', sumDailyInc:'Incremental diário', sumSeedNights:'Carga inicial distribuída',
+    sumUpload:'Upload', sumDailyInc:'Mudança diária', sumDailyTime:'Tempo de upload diário', sumSeedTime:'Tempo da carga inicial', sumSeedNights:'Carga inicial distribuída',
     sumPeakDur:'Duração do dia de pico', sumFits:'Cumpre a janela de manutenção', sumFitsYes:'Sim', sumFitsNo:'Não — excede',
     sumThroughput:'Throughput', sumProxySizing:'Dimensionamento de proxies', sumApi:'API S3',
-    printMeta:(d)=>`SOBR Calculator by MJ — relatório de dimensionamento do VDC Vault. Gerado ${d}.`,
+    repTitle:(target)=>`Relatório de recursos VDC Vault — ${target}`,
+    repSub:(d,v)=>`SOBR Calculator by MJ · gerado ${d} · v${v}. Os números de capacidade são estimativas; os de recursos são o objeto deste relatório.`,
+    repWarnWindow:(dur,win)=>`A mudança diária precisa de <strong>${dur}</strong> e não cabe na janela de manutenção de ${win}h como está configurado.`,
+    repWarnTcp:(lim)=>`O teto é a latência, não o link: o modelo TCP limita o throughput a ${lim}.`,
+    repWarnRtt:'O round-trip time é a estimativa interna, não um valor medido. Meça antes de assumir uma janela.',
     sumDisclaimer:'Estimativas apenas para planejamento. Os números de storage assumem que a taxa de mudança e a compressão informadas se mantêm estáveis; os tempos de upload assumem que o link está dedicado ao offload e que o RTT modelado corresponde ao real. Valide com um piloto antes de assumir uma janela ou uma assinatura.',
     basisTime:'Tempo — janela de backup', basisTimeSub:'Você define a janela; a calculadora retorna a largura de banda necessária',
     basisBw:'Largura de banda — link disponível', basisBwSub:'Você define o link; a calculadora retorna quanto tempo leva o upload',
@@ -1089,7 +1114,7 @@ const T = {
     s3EffLow:'Alto overhead de API — considere 1 MB+ para VDC Vault',
     cpuPerProxy:'CPU por proxy', ramPerProxy:'RAM por proxy',
     cpuNote:'Estimativa CPU/RAM: 1 vCPU a cada 100 Mbps, 2 GB RAM por vCPU (sizing recomendado pelo Veeam).',
-    diskRequired:'Disco do repositório (pico)',
+    diskRequired:'Disco do repositório',
     diskRead:'leitura', diskWrite:'escrita',
     lockPeriod:'Período de lock VDC Vault', lockPeriodSub:'Duração do Object Lock',
     offloadTrigger:'Trigger de offload', offloadTriggerSub:'Dias antes de mover/copiar para o Vault',
@@ -1244,7 +1269,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.5.1'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.6.0'; // Bump on each release — shown in the header
 // ASSUMPTION, not a documented Veeam value: per-connection TCP window used by the
 // bandwidth-delay-product ceiling below (throughput <= window / RTT). The BDP formula
 // itself is standard networking; this constant is the modelled input to it, so treat
@@ -1790,11 +1815,11 @@ function renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, mo
       + row(t('ovhImm'), fmt(capResult.overheadTB), 'warn')
       + row(t('totalEst'), fmt(capResult.totalTB), 'hi')
       + grp(t('sumUpload'))
-      + row(t('sumDailyInc'), fmt(bw.incTB))
       + row(t('sumSeedSize'), fmt(bw.seedTB))
-      + row(t('durFirstFull'), fmtDur(bw.seedHours), 'hi')
+      + row(t('sumSeedTime'), fmtDur(bw.seedHours), 'hi')
       + row(t('sumSeedNights'), `${bw.seedNights} × ${inp.windowHours}h`)
-      + row(t('durDaily'), fmtDur(bw.incHours), bw.fitsWindow ? 'hi' : 'warn')
+      + row(t('sumDailyInc'), fmt(bw.incTB))
+      + row(t('sumDailyTime'), fmtDur(bw.incHours), bw.fitsWindow ? 'hi' : 'warn')
       + row(t('sumFits'), bw.fitsWindow ? t('sumFitsYes') : t('sumFitsNo'), bw.fitsWindow ? 'hi' : 'warn');
     res += grp(t('sumThroughput'))
       + row(t('netNominal'), fmtBW(bw.nominalMbps))
@@ -1812,8 +1837,28 @@ function renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, mo
   }
 
   document.getElementById('summary-content').innerHTML = `<div>${cfg}</div><div>${res}</div>`;
-  document.getElementById('print-meta').innerHTML =
-    `<p style="font-size:11px;color:var(--gray-500);margin-bottom:12px">${T[lang].printMeta(new Date().toLocaleString())}</p>`;
+  // Report letterhead — only rendered in print, so it carries the identity the app
+  // header would have given the page on screen.
+  const stamp = new Date().toLocaleString(LOCALES[lang] || 'en-US');
+  document.getElementById('print-meta').innerHTML = `
+    <div class="rep-head">
+      <div class="rep-mark">${document.querySelector('.veeam-logo svg').outerHTML}</div>
+      <div>
+        <div class="rep-title">${T[lang].repTitle(capEnabled ? region : t('disabled'))}</div>
+        <div class="rep-sub">${T[lang].repSub(stamp, APP_VERSION)}</div>
+      </div>
+    </div>`;
+
+  // Caveats that must travel with the numbers rather than stay on screen
+  const notes = [];
+  if (capEnabled && !bw.fitsWindow) notes.push(T[lang].repWarnWindow(fmtDur(bw.incHours), inp.windowHours));
+  if (capEnabled && bw.tcpCapped)   notes.push(T[lang].repWarnTcp(fmtBW(bw.tcpLimitMbps)));
+  if (inp.rttMode !== 'measured')   notes.push(t('repWarnRtt'));
+  document.getElementById('rep-notes').innerHTML = notes.length ? `
+    <div style="border:1px solid var(--gray-300);border-left:3px solid #f59e0b;border-radius:0 var(--radius) var(--radius) 0;padding:.5rem .8rem;margin-bottom:14px">
+      ${notes.map(n=>`<div style="font-size:10px;color:var(--gray-700);line-height:1.55">• ${n}</div>`).join('')}
+    </div>` : '';
+
   document.getElementById('lbl-summary-disclaimer').textContent = t('sumDisclaimer');
 }
 
@@ -1901,6 +1946,16 @@ function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveO
   }
   document.getElementById(cid).innerHTML=html;
 }
+
+// Browsers name the saved PDF after document.title, so swap in a filename for the
+// duration of the print and put the page title back afterwards.
+const PAGE_TITLE = document.title;
+addEventListener('beforeprint', () => {
+  const d = new Date().toISOString().slice(0,10);
+  const v = document.getElementById('netVault').value;
+  document.title = `SOBR-Vault-report_${v}_${d}`;
+});
+addEventListener('afterprint', () => { document.title = PAGE_TITLE; });
 
 // Shows the "older than N days" row only while the Move policy is active
 function updateMoveRow() {

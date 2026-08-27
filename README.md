@@ -74,6 +74,14 @@ What remains an assumption is the 256 KB per-connection TCP window. The bandwidt
 
 ---
 
+## The PDF report
+
+**Save as PDF** produces a standalone report, not a print of the page. Printing drops the app entirely — controls, tabs, intermediate panels — and emits only the report: a letterhead with the target region, timestamp and tool version; every setting that produced the numbers; every resource figure; any caveats that apply to the run (window not met, latency ceiling, RTT still an estimate); and the assumptions statement.
+
+It comes from the browser's own print-to-PDF through an `@media print` stylesheet, which keeps the app a single dependency-free file. The saved file is named `SOBR-Vault-report_<region>_<date>.pdf`.
+
+---
+
 ## How to run it
 
 Clone the repository and open `index.html` in a browser. No build tools, no server, no dependencies to install:
