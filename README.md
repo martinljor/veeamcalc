@@ -43,8 +43,10 @@ On top of the immutability period, Veeam adds a **Block Generation** window that
 
 | Backing cloud | Generation |
 |---|---|
-| Amazon S3, IBM Cloud, Google Cloud | 30 days |
-| Azure Blob and other object storage | 10 days |
+| AWS — Amazon S3 | 30 days |
+| Azure — Blob ("all other types") | 10 days |
+
+VDC Vault is offered on Azure and AWS only, so these are the two cases the calculator models. Both values are quoted from the [Block Generation](https://helpcenter.veeam.com/docs/vbr/userguide/block_gen.html?ver=13) page, which also states plainly: *"You do not have to configure it, the Block Generation setting is applied automatically."*
 
 The calculator derives this from the Vault region you pick, so an AWS-backed region carries 20 more days of lock than an Azure one for the same settings. The overhead is modelled as the data still locked once retention has released it:
 
