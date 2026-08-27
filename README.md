@@ -92,14 +92,6 @@ git clone https://github.com/martinljor/veeamcalc
 
 Google Fonts and Font Awesome are loaded from a CDN — without internet access the calculator still works, just without the custom typeface and icons.
 
-## How to deploy on GitHub Pages
-
-1. Upload `index.html` and `README.md` to the root of your repository
-2. Go to **Settings → Pages**
-3. Under *Source*, select **Deploy from a branch**
-4. Choose the `main` (or `master`) branch and `/ (root)` folder
-5. Save — within 1–2 minutes your URL will be: `https://<your-username>.github.io/<repo>/`
-
 ## Project structure
 
 ```
