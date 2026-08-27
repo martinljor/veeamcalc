@@ -737,7 +737,7 @@ const T = {
     moveOlderLabel:'Move backup files older than',
     moveDaysUnit:'days (your operational restore window)',
     encryptLabel:'Encrypt data uploaded to object storage',
-    encryptOnDesc:'Always on for VDC Vault — it cannot be turned off. Blocks are encrypted before upload; size is unchanged, but encrypted blocks cannot be deduplicated or recompressed by the object storage side.',
+    encryptOnDesc:'Always on for VDC Vault',
     offloadWindowLabel:'Offload window:',
     owAny:'Any time', owWin:'Backup window only',
     healthLabel:'Health check:',
@@ -872,7 +872,7 @@ const T = {
     moveOlderLabel:'Mover archivos de backup más antiguos que',
     moveDaysUnit:'días (tu ventana de restore operativa)',
     encryptLabel:'Cifrar los datos subidos al object storage',
-    encryptOnDesc:'Siempre activo en VDC Vault — no se puede desactivar. Los bloques se cifran antes de subirse; el tamaño no cambia, pero los bloques cifrados no pueden deduplicarse ni recomprimirse del lado del object storage.',
+    encryptOnDesc:'Siempre activo en VDC Vault',
     offloadWindowLabel:'Ventana de offload:',
     owAny:'Cualquier momento', owWin:'Solo la ventana de backup',
     healthLabel:'Health check:',
@@ -1007,7 +1007,7 @@ const T = {
     moveOlderLabel:'Mover arquivos de backup mais antigos que',
     moveDaysUnit:'dias (sua janela de restore operacional)',
     encryptLabel:'Criptografar os dados enviados ao object storage',
-    encryptOnDesc:'Sempre ativo no VDC Vault — não pode ser desativado. Os blocos são criptografados antes do upload; o tamanho não muda, mas blocos criptografados não podem ser deduplicados nem recomprimidos do lado do object storage.',
+    encryptOnDesc:'Sempre ativo no VDC Vault',
     offloadWindowLabel:'Janela de offload:',
     owAny:'Qualquer momento', owWin:'Apenas a janela de backup',
     healthLabel:'Health check:',
@@ -1244,7 +1244,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.7.2'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.7.3'; // Bump on each release — shown in the header
 // ASSUMPTION, not a documented Veeam value: per-connection TCP window used by the
 // bandwidth-delay-product ceiling below (throughput <= window / RTT). The BDP formula
 // itself is standard networking; this constant is the modelled input to it, so treat
