@@ -22,11 +22,12 @@ The input panel mirrors the **Capacity Tier** page of the VBR *Scale-out Backup 
 - **Latency ceiling** — TCP throughput modelled from RTT, parallel tasks and proxies, so you can see when latency (not the link) is the bottleneck
 - **Azure- and AWS-backed Vault regions**, with the provider-specific Block Generation period applied automatically
 - **Proxy sizing** — vCPU, RAM and repository disk throughput
+- **On-prem repository load** by backup mode — forever forward, periodic synthetic full or periodic active full, which cost the repository very differently
 - **S3 API overhead** — object counts derived from the configured storage optimization block size
 - **Visual simulation** of restore points with active lock indicators
 - **Consistency validation** — warns when immutability periods conflict with retention settings
 
-Scope note: this tool sizes the **Capacity Tier only**. The on-premises Performance Tier is assumed to already exist and is not calculated.
+Scope note: this tool sizes the **Capacity Tier**. The on-premises Performance Tier is assumed to already exist — its capacity is not calculated — but the repository I/O its backup mode implies *is* reported, because that is frequently the real constraint rather than the link.
 
 ---
 
@@ -59,6 +60,36 @@ overhead ≈ daily_incremental × stranded_days
 ```
 
 There is no synthetic-full cadence to configure here: because the offload is block-based, a synthetic full on the performance tier does not re-transfer blocks the Vault already holds.
+
+---
+
+## Backup mode and the repository
+
+The backup mode on the on-prem job does not change what reaches the Vault — block reuse means only changed blocks travel either way — but it changes what the **repository** has to sustain, by a factor of two between the two periodic modes:
+
+| Mode | Repository reads | Repository writes |
+|---|---|---|
+| Forever forward incremental | the daily increment | the daily increment |
+| Periodic **synthetic** full | a full | a full |
+| Periodic **active** full | — | a full |
+
+A synthetic full is the heaviest of the three on the repository: it assembles the new full from blocks the repository already holds, so the repository does both sides of the copy. An active full re-reads from production, so that read lands on the production storage instead.
+
+---
+
+## GFS points and shared blocks
+
+GFS points do **not** each cost a full. The Vault stores unique blocks, and consecutive points share nearly everything — what a point adds is the change accumulated since the previous one, capped at a full:
+
+```
+gfs ≈ min(full, daily_change × 7)   × weeklies
+    + min(full, daily_change × 30)  × monthlies
+    + min(full, daily_change × 365) × yearlies
+```
+
+For 10 TB at 50% compression and 3% daily change, 4 weeklies + 12 monthlies comes to **58 TB rather than 80 TB**. The weeklies are where most of the difference is: a week of change is a fraction of a full, while a month of 3% daily change is already most of one.
+
+They do still **pin** those blocks for their retention, which is why they appear in the capacity figure at all. What they do not do is re-upload, so they add nothing to the bandwidth estimate.
 
 ---
 

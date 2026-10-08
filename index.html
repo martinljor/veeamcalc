@@ -378,6 +378,27 @@
         <div class="field"><label id="lbl-comp">Compression (%)</label>
           <input type="number" id="compress" value="50" min="0" max="80" step="5"></div>
       </div>
+
+      <div class="field-grid" style="margin-top:10px">
+        <div class="field">
+          <label id="lbl-bkpmode" style="display:flex;align-items:center;gap:4px">
+            <span id="lbl-bkpmode-text">Backup mode (on-prem job)</span>
+            <a href="https://helpcenter.veeam.com/docs/vbr/userguide/backup_job_advanced_backup_vm.html?ver=13" target="_blank" id="lbl-bkpmode-tip" style="color:var(--green-dark);line-height:1">
+              <i class="fa-solid fa-circle-question" style="font-size:10px"></i>
+            </a>
+          </label>
+          <select id="backupMode" style="font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--gray-300);border-radius:var(--radius);background:var(--white);color:var(--gray-900);width:100%">
+            <option value="forever" selected id="lbl-bm-forever">Forever forward incremental</option>
+            <option value="synthetic" id="lbl-bm-synth">Periodic synthetic full</option>
+            <option value="active" id="lbl-bm-active">Periodic active full</option>
+          </select>
+        </div>
+        <div class="field" id="full-every-field" style="display:none">
+          <label id="lbl-full-every">Full every (days)</label>
+          <input type="number" id="fullEveryDays" value="7" min="1" max="365" step="1">
+        </div>
+      </div>
+      <div id="bkpmode-note" style="margin-top:10px"></div>
       <div id="blockgen-note" style="margin-top:10px"></div>
 
       <div class="section-label" id="lbl-gfs-sec">GFS Retention</div>
@@ -765,6 +786,14 @@ const T = {
     bwTotal:'Total (all proxies)',
     basisTitle:'Measure by:',
     netConns:'S3 connections',
+    sumRepoLoad:'Repository load (on-prem)', sumRepoRead:'Read', sumRepoWrite:'Write', sumRepoTotal:'Total',
+    sumGfsStored:'GFS stored (shared blocks)',
+    bkpModeLabel:'Backup mode (on-prem job)', bkpModeTip:'Set on the backup job — Storage → Advanced → Backup.',
+    bmForever:'Forever forward incremental', bmSynth:'Periodic synthetic full', bmActive:'Periodic active full',
+    fullEvery:'Full every (days)',
+    bkpNote_forever:(r,w)=>`The repository merges the oldest incremental into the full each day: about <strong>${r}</strong> read and <strong>${w}</strong> written. The lightest of the three modes, and nothing lands on the Vault beyond the daily change.`,
+    bkpNote_synthetic:(r,w,every,full)=>`<strong>Heaviest on the repository.</strong> Every ${every} days it builds a ${full} full from blocks it already holds, so it both reads <strong>${r}</strong> and writes <strong>${w}</strong> locally. Nothing extra reaches the Vault — those blocks are already there — but the repository has to sustain this inside the window.`,
+    bkpNote_active:(r,w,every,full)=>`Every ${every} days it re-reads from production and writes a ${full} full: about <strong>${w}</strong> on the repository. The read lands on the production storage, not here, so the repository is lighter than with a synthetic full. The Vault still receives only changed blocks.`,
     sumSeedAtFloor:'Seed at the daily-only link',
     reqLink:'Required link', reqDaily:'Daily change only', inWindow:'in the window',
     perProxyLabel:'Per proxy', tcpCeil:'TCP ceiling',
@@ -776,7 +805,7 @@ const T = {
     blockGenLabel:'Block Generation', blockGenFixed:'fixed by provider',
     effLockSub:'immutability + generation', strandedLabel:'Stranded past retention',
     strandedSub:'billable after retention releases it', strandedNone:'retention outlives the lock',
-    sumBlockGen:'Block Generation',
+    sumBlockGen:'Block Generation', gfsSharedNote:'GFS points share blocks — each adds only the change since the previous one',
     tbDisclaimer:'These capacity figures are a <strong>rough estimate</strong>. This tool exists to size the <strong>resources</strong> behind the offload — bandwidth, latency ceiling, proxies and repository disk — and to explain why they come out the way they do. For a TB number you intend to quote or buy against, validate it with the <a href="https://www.veeam.com/calculators/simple/vdc" target="_blank" style="color:var(--green-dark)">official Veeam VDC calculator</a>.',
     blockGenNote:(d,cloud)=>`Block Generation adds <strong>${d} days</strong> on top of the immutability period for ${cloud}-backed Vault regions — Veeam sets it per provider and it is <strong>not configurable in the console</strong> (30 days on AWS, 10 on Azure). Blocks written inside one generation share a single expiration date, which is what saves API calls — and what keeps them billable past your retention.`,
     summaryTitle:'Summary', printBtn:'Save as PDF',
@@ -900,6 +929,14 @@ const T = {
     bwTotal:'Total (todos los proxies)',
     basisTitle:'Medición por:',
     netConns:'conexiones S3',
+    sumRepoLoad:'Carga del repositorio (on-prem)', sumRepoRead:'Lectura', sumRepoWrite:'Escritura', sumRepoTotal:'Total',
+    sumGfsStored:'GFS almacenado (bloques compartidos)',
+    bkpModeLabel:'Modo de backup (job on-prem)', bkpModeTip:'Se configura en el job de backup — Storage → Advanced → Backup.',
+    bmForever:'Forever forward incremental', bmSynth:'Full sintético periódico', bmActive:'Full activo periódico',
+    fullEvery:'Full cada (días)',
+    bkpNote_forever:(r,w)=>`El repositorio fusiona el incremental más viejo con el full todos los días: unos <strong>${r}</strong> de lectura y <strong>${w}</strong> de escritura. Es el modo más liviano de los tres, y al Vault no llega nada más que el cambio diario.`,
+    bkpNote_synthetic:(r,w,every,full)=>`<strong>El más pesado para el repositorio.</strong> Cada ${every} días arma un full de ${full} con bloques que ya tiene, así que lee <strong>${r}</strong> y escribe <strong>${w}</strong> localmente. Al Vault no llega nada extra —esos bloques ya están— pero el repositorio tiene que sostener esto dentro de la ventana.`,
+    bkpNote_active:(r,w,every,full)=>`Cada ${every} días relee desde producción y escribe un full de ${full}: unos <strong>${w}</strong> sobre el repositorio. La lectura cae en el storage de producción, no acá, así que el repositorio sufre menos que con un full sintético. Al Vault siguen llegando solo los bloques que cambiaron.`,
     sumSeedAtFloor:'Siembra con el enlace del diario',
     reqLink:'Enlace necesario', reqDaily:'Solo el cambio diario', inWindow:'en la ventana',
     perProxyLabel:'Por proxy', tcpCeil:'techo TCP',
@@ -911,7 +948,7 @@ const T = {
     blockGenLabel:'Block Generation', blockGenFixed:'fijo por proveedor',
     effLockSub:'inmutabilidad + generación', strandedLabel:'Retenido pasada la retención',
     strandedSub:'sigue facturando después de que la retención lo libera', strandedNone:'la retención dura más que el lock',
-    sumBlockGen:'Block Generation',
+    sumBlockGen:'Block Generation', gfsSharedNote:'Los puntos GFS comparten bloques — cada uno suma solo el cambio desde el anterior',
     tbDisclaimer:'Estas cifras de capacidad son una <strong>estimación gruesa</strong>. Esta herramienta existe para dimensionar los <strong>recursos</strong> detrás del offload — ancho de banda, techo de latencia, proxies y disco del repositorio — y para explicar por qué dan lo que dan. Para un número de TB que vayas a cotizar o comprar, validalo con la <a href="https://www.veeam.com/calculators/simple/vdc" target="_blank" style="color:var(--green-dark)">calculadora oficial de Veeam VDC</a>.',
     blockGenNote:(d,cloud)=>`Block Generation suma <strong>${d} días</strong> por encima del período de inmutabilidad para regiones de Vault sobre ${cloud} — Veeam lo fija por proveedor y <strong>no es configurable en la consola</strong> (30 días en AWS, 10 en Azure). Los bloques escritos dentro de una misma generación comparten una única fecha de expiración, que es lo que ahorra llamadas a la API — y lo que los mantiene facturando pasada tu retención.`,
     summaryTitle:'Resumen', printBtn:'Guardar como PDF',
@@ -1035,6 +1072,14 @@ const T = {
     bwTotal:'Total (todos os proxies)',
     basisTitle:'Medição por:',
     netConns:'conexões S3',
+    sumRepoLoad:'Carga do repositório (on-prem)', sumRepoRead:'Leitura', sumRepoWrite:'Escrita', sumRepoTotal:'Total',
+    sumGfsStored:'GFS armazenado (blocos compartilhados)',
+    bkpModeLabel:'Modo de backup (job on-prem)', bkpModeTip:'Configurado no job de backup — Storage → Advanced → Backup.',
+    bmForever:'Forever forward incremental', bmSynth:'Full sintético periódico', bmActive:'Full ativo periódico',
+    fullEvery:'Full a cada (dias)',
+    bkpNote_forever:(r,w)=>`O repositório funde o incremental mais antigo com o full todos os dias: cerca de <strong>${r}</strong> de leitura e <strong>${w}</strong> de escrita. É o modo mais leve dos três, e ao Vault não chega nada além da mudança diária.`,
+    bkpNote_synthetic:(r,w,every,full)=>`<strong>O mais pesado para o repositório.</strong> A cada ${every} dias monta um full de ${full} com blocos que já possui, então lê <strong>${r}</strong> e escreve <strong>${w}</strong> localmente. Ao Vault não chega nada extra — esses blocos já estão lá — mas o repositório precisa sustentar isso dentro da janela.`,
+    bkpNote_active:(r,w,every,full)=>`A cada ${every} dias relê da produção e escreve um full de ${full}: cerca de <strong>${w}</strong> no repositório. A leitura cai no storage de produção, não aqui, então o repositório sofre menos que com um full sintético. Ao Vault continuam chegando apenas os blocos que mudaram.`,
     sumSeedAtFloor:'Semeadura com o link do diário',
     reqLink:'Link necessário', reqDaily:'Apenas a mudança diária', inWindow:'na janela',
     perProxyLabel:'Por proxy', tcpCeil:'teto TCP',
@@ -1046,7 +1091,7 @@ const T = {
     blockGenLabel:'Block Generation', blockGenFixed:'fixo por provedor',
     effLockSub:'imutabilidade + geração', strandedLabel:'Retido além da retenção',
     strandedSub:'continua faturando depois que a retenção o libera', strandedNone:'a retenção dura mais que o lock',
-    sumBlockGen:'Block Generation',
+    sumBlockGen:'Block Generation', gfsSharedNote:'Os pontos GFS compartilham blocos — cada um soma apenas a mudança desde o anterior',
     tbDisclaimer:'Estes números de capacidade são uma <strong>estimativa aproximada</strong>. Esta ferramenta existe para dimensionar os <strong>recursos</strong> por trás do offload — largura de banda, teto de latência, proxies e disco do repositório — e para explicar por que eles dão o que dão. Para um número de TB que você vá cotar ou comprar, valide com a <a href="https://www.veeam.com/calculators/simple/vdc" target="_blank" style="color:var(--green-dark)">calculadora oficial do Veeam VDC</a>.',
     blockGenNote:(d,cloud)=>`O Block Generation soma <strong>${d} dias</strong> ao período de imutabilidade para regiões de Vault sobre ${cloud} — o Veeam o fixa por provedor e <strong>não é configurável no console</strong> (30 dias na AWS, 10 no Azure). Blocos escritos dentro de uma mesma geração compartilham uma única data de expiração, o que economiza chamadas de API — e os mantém faturando além da sua retenção.`,
     summaryTitle:'Resumo', printBtn:'Salvar como PDF',
@@ -1149,6 +1194,8 @@ function applyT() {
     'lbl-health':'healthLabel','lbl-hc-off':'hcOff','lbl-hc-monthly':'hcMonthly','lbl-hc-weekly':'hcWeekly',
     'lbl-sim-vault':'vaultTotal',
     'lbl-bw-sec':'bwSec','lbl-bwwin':'bwWin','lbl-proxies-text':'proxies',
+    'lbl-bkpmode-text':'bkpModeLabel','lbl-bm-forever':'bmForever','lbl-bm-synth':'bmSynth',
+    'lbl-bm-active':'bmActive','lbl-full-every':'fullEvery',
     'lbl-basis-title':'basisTitle','lbl-summary-title':'summaryTitle','lbl-print':'printBtn',
     'lbl-basis-time':'basisTime','lbl-basis-time-sub':'basisTimeSub',
     'lbl-basis-bw':'basisBw','lbl-basis-bw-sub':'basisBwSub',
@@ -1168,6 +1215,8 @@ function applyT() {
   if (streamsLink) streamsLink.title = t('parallelTasksTip');
   const bsLink = document.getElementById('lbl-blocksize-tip');
   if (bsLink) bsLink.title = t('blockSizeTip');
+  const bmLink = document.getElementById('lbl-bkpmode-tip');
+  if (bmLink) bmLink.title = t('bkpModeTip');
 
   document.getElementById('why-body').innerHTML = T[lang].why.map((s,i)=>`
     <div class="explainer-step">
@@ -1244,7 +1293,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.7.3'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.8.0'; // Bump on each release — shown in the header
 // ASSUMPTION, not a documented Veeam value: per-connection TCP window used by the
 // bandwidth-delay-product ceiling below (throughput <= window / RTT). The BDP formula
 // itself is standard networking; this constant is the modelled input to it, so treat
@@ -1294,6 +1343,8 @@ function readInputs() {
     sourceTB:     getVal('srcTB'),
     changeRate:   getVal('changeRate') / 100,
     compression:  getVal('compress') / 100,
+    backupMode:   document.getElementById('backupMode').value,
+    fullEveryDays: Math.max(1, getInt('fullEveryDays')),
     // How often a new synthetic full is written — this one IS a job setting in VBR
     // Block Generation is fixed by the provider and not exposed in the console
     blockGenDays:  blockGenFor(vaultRegion),
@@ -1314,11 +1365,20 @@ function calcStorageTier({ sourceTB, changeRate, compression, blockGenDays,
     retDays, retWeeks, retMonths, retYears, immDays, moveOnly }) {
   const fullTB = sourceTB * (1 - compression);
   const incTB  = sourceTB * changeRate * (1 - compression);
-  // The Vault stores unique blocks: one full's worth, plus a delta per retained day,
-  // plus a full per GFS point. With Move policy only, the daily deltas never arrive.
+
+  // GFS points do not each cost a full. The Vault stores unique blocks, and a weekly
+  // point shares almost everything with the one before it — what it adds is the change
+  // accumulated since then, capped at a full (a point cannot hold more unique blocks
+  // than the source itself). Counting every GFS point as a whole full, which is what
+  // this did before, inflated the figure badly on short intervals.
+  const gfsPoint = spacingDays => Math.min(fullTB, incTB * spacingDays);
+  const gfsTB = gfsPoint(7) * retWeeks + gfsPoint(30) * retMonths + gfsPoint(365) * retYears;
+
+  // One full's worth of blocks, a delta per retained day, and the GFS deltas on top.
+  // With Move policy only, the daily deltas never arrive.
   const dataTB = moveOnly
-    ? fullTB + fullTB * (retWeeks + retMonths + retYears)
-    : fullTB + incTB * (Math.max(1, retDays) - 1) + fullTB * (retWeeks + retMonths + retYears);
+    ? fullTB + gfsTB
+    : fullTB + incTB * (Math.max(1, retDays) - 1) + gfsTB;
 
   const effectiveLockDays = immDays + blockGenDays;
   const strandedDays      = Math.max(0, effectiveLockDays - Math.max(1, retDays));
@@ -1326,8 +1386,31 @@ function calcStorageTier({ sourceTB, changeRate, compression, blockGenDays,
   // blocks per generation still holding a lock (a generation shares one expiry date).
   const strandedFulls = Math.ceil(strandedDays / blockGenDays);
   const overheadTB = (moveOnly ? 0 : incTB * strandedDays) + fullTB * strandedFulls;
-  return { fullTB, incTB, dataTB, overheadTB, totalTB: dataTB + overheadTB,
+  return { fullTB, incTB, gfsTB, dataTB, overheadTB, totalTB: dataTB + overheadTB,
            effectiveLockDays, strandedDays };
+}
+
+// ─── Performance Tier repository load ───────────────────────────────────────
+// Out of the Vault's scope, but it is where the periodic full lands, and it is often
+// the real constraint. The three VBR modes cost the repository very differently:
+//  forever    — merges the oldest incremental into the full. Small, daily.
+//  synthetic  — builds the new full from blocks already on the repository, so the
+//               repository both reads and writes a full. Heaviest of the three.
+//  active     — re-reads from production and writes a new full. The repository only
+//               writes; the read lands on the production storage instead.
+function calcRepoLoad({ sourceTB, changeRate, compression, backupMode, fullEveryDays, windowHours }) {
+  const fullTB = sourceTB * (1 - compression);
+  const incTB  = sourceTB * changeRate * (1 - compression);
+  const perSec = tb => (tb * 1024 * 1024) / (windowHours * 3600); // TB -> MB/s over the window
+
+  if (backupMode === 'forever')
+    return { mode:'forever', readMBs: perSec(incTB), writeMBs: perSec(incTB),
+             everyDays: 1, fullTB, periodic: false };
+  if (backupMode === 'synthetic')
+    return { mode:'synthetic', readMBs: perSec(fullTB), writeMBs: perSec(fullTB),
+             everyDays: fullEveryDays, fullTB, periodic: true };
+  return { mode:'active', readMBs: 0, writeMBs: perSec(fullTB),
+           everyDays: fullEveryDays, fullTB, periodic: true };
 }
 
 // ─── Pure bandwidth calculation ──────────────────────────────────────────────
@@ -1678,14 +1761,17 @@ function renderBanner(inp, capResult, capEnabled) {
 
 // ─── Render: storage breakdown (unified for both modes) ──────────────────────
 function mkBreakdown({ label, fullTB, incTB, retDays, retWeeks, retMonths, retYears, overheadTB, totalTB, showImm, showInc }) {
+  // Each GFS point adds the change since the previous one, not a whole full
+  const gfs = (count, spacing) => Math.min(fullTB, incTB * spacing) * count;
   return `
     <div>
       <div class="breakdown-col-title">${label}</div>
       <div class="breakdown-row"><span class="lbl">${t('fullComp')}</span><span class="val">${fmt(fullTB)}</span></div>
       ${showInc && retDays > 0 ? `<div class="breakdown-row"><span class="lbl">${t('incrementals')} (${retDays}d)</span><span class="val">${fmt(incTB*(retDays-1))}</span></div>` : ''}
-      ${retWeeks  > 0 ? `<div class="breakdown-row"><span class="lbl">${t('weeklies')}  (${retWeeks})</span><span class="val">${fmt(fullTB*retWeeks)}</span></div>`  : ''}
-      ${retMonths > 0 ? `<div class="breakdown-row"><span class="lbl">${t('monthlies')} (${retMonths})</span><span class="val">${fmt(fullTB*retMonths)}</span></div>` : ''}
-      ${retYears  > 0 ? `<div class="breakdown-row"><span class="lbl">${t('yearlies')}  (${retYears})</span><span class="val">${fmt(fullTB*retYears)}</span></div>`   : ''}
+      ${retWeeks  > 0 ? `<div class="breakdown-row"><span class="lbl">${t('weeklies')}  (${retWeeks})</span><span class="val">${fmt(gfs(retWeeks,7))}</span></div>`    : ''}
+      ${retMonths > 0 ? `<div class="breakdown-row"><span class="lbl">${t('monthlies')} (${retMonths})</span><span class="val">${fmt(gfs(retMonths,30))}</span></div>` : ''}
+      ${retYears  > 0 ? `<div class="breakdown-row"><span class="lbl">${t('yearlies')}  (${retYears})</span><span class="val">${fmt(gfs(retYears,365))}</span></div>`   : ''}
+      ${(retWeeks+retMonths+retYears) > 0 ? `<div class="breakdown-row"><span class="lbl" style="font-size:10px;font-style:italic">${t('gfsSharedNote')}</span><span class="val"></span></div>` : ''}
       ${showImm ? `<div class="breakdown-row"><span class="lbl">${t('ovhImm')}</span><span class="val overhead">${fmt(overheadTB)}</span></div>` : ''}
       <div class="breakdown-row"><span class="lbl"><strong>${t('totalEst')}</strong></span><span class="val total"><strong>${fmt(totalTB)}</strong></span></div>
     </div>`;
@@ -1731,6 +1817,7 @@ function calc() {
   updatePrivateLinkLabel();
   updateRttMode();
   renderConnNote(taskSlots, streams);
+  renderBkpModeNote(inp);
   renderImmModeNote(inp);
   renderCapNotes(inp, capEnabled, moveOnly);
   renderWarnings(validateImm(inp.retDays, inp.retWeeks, inp.retMonths, inp.retYears,
@@ -1789,6 +1876,8 @@ function renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, mo
     + grp(t('gfsSec'))
     + row(t('daily'), inp.retDays) + row(t('weekly'), inp.retWeeks)
     + row(t('monthly'), inp.retMonths) + row(t('yearly'), inp.retYears)
+    + (capEnabled && capResult && (inp.retWeeks+inp.retMonths+inp.retYears) > 0
+        ? row(t('sumGfsStored'), fmt(capResult.gfsTB)) : '')
     + grp(t('immSec'))
     + row(t('sumImmMode'), t(inp.immMode === 'retention' ? 'immModeRet' : 'immModeMin'))
     + row(t('immMinLabel').replace(':',''), inp.immMinDays+' '+t('days'))
@@ -1842,6 +1931,17 @@ function renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, mo
       + row(t('cpuPerProxy'), `${bw.vcpuPerProxy} vCPU (${bw.vcpuPerProxy*inp.proxies} ${t('bwTotal').toLowerCase()})`)
       + row(t('ramPerProxy'), `${bw.ramPerProxy} GB (${bw.ramPerProxy*inp.proxies} GB)`)
       + row(t('diskRequired'), `${num(bw.diskReadMBs+bw.diskWriteMBs, 0)} MB/s`)
+      + (() => {
+          const r = calcRepoLoad(inp);
+          const f = v => num(v, v >= 10 ? 0 : 1)+' MB/s';
+          return grp(t('sumRepoLoad'))
+            + row(t('bkpModeLabel'), t(inp.backupMode === 'forever' ? 'bmForever'
+                                     : inp.backupMode === 'synthetic' ? 'bmSynth' : 'bmActive'))
+            + (r.periodic ? row(t('fullEvery'), `${r.everyDays} ${t('days')}`) : '')
+            + row(t('sumRepoRead'),  f(r.readMBs))
+            + row(t('sumRepoWrite'), f(r.writeMBs))
+            + row(t('sumRepoTotal'), f(r.readMBs + r.writeMBs), r.mode === 'synthetic' ? 'warn' : '');
+        })()
       + grp(t('sumApi'))
       + row(t('s3ObjectsSeed'), fmtObj(objSeed))
       + row(t('s3Objects'), fmtObj(objInc))
@@ -1872,6 +1972,20 @@ function renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, mo
     </div>` : '';
 
   document.getElementById('lbl-summary-disclaimer').textContent = t('sumDisclaimer');
+}
+
+// The on-prem repository load the chosen backup mode implies
+function renderBkpModeNote(inp) {
+  const periodic = inp.backupMode !== 'forever';
+  document.getElementById('full-every-field').style.display = periodic ? '' : 'none';
+  const r = calcRepoLoad(inp);
+  const fmtMB = v => v >= 1000 ? num(v/1000,2)+' GB/s' : num(v, v >= 10 ? 0 : 1)+' MB/s';
+  const heavy = inp.backupMode === 'synthetic';
+  document.getElementById('bkpmode-note').innerHTML = `
+    <div style="background:${heavy ? '#fffbeb' : 'var(--gray-50)'};border:1px solid ${heavy ? '#fcd34d' : 'var(--gray-200)'};border-radius:var(--radius);padding:.55rem .8rem;font-size:10px;color:${heavy ? '#92400e' : 'var(--gray-500)'};line-height:1.55">
+      <i class="fa-solid fa-hard-drive" style="margin-right:5px"></i>${
+        T[lang]['bkpNote_'+inp.backupMode](fmtMB(r.readMBs), fmtMB(r.writeMBs), r.everyDays, fmtTB(r.fullTB))}
+    </div>`;
 }
 
 // Veeam caps recommended concurrency against public cloud object storage
@@ -1978,6 +2092,7 @@ function updateMoveRow() {
 // ─── Event listeners ─────────────────────────────────────────────────────────
 const refresh = () => { updateMoveRow(); calc(); };
 document.getElementById('blockSizeKB').addEventListener('change', calc);
+document.getElementById('backupMode').addEventListener('change', calc);
 document.querySelectorAll('input[name="bwBasis"]').forEach(el => el.addEventListener('change', () => { updateBwMode(); calc(); }));
 document.getElementById('netOrigin').addEventListener('change', calc);
 document.getElementById('rttMode').addEventListener('change', () => { updateRttMode(); calc(); });
