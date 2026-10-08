@@ -4,6 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MJ Storage and Resource Calculator — for Veeam</title>
+  <meta name="description" content="Size a Veeam Data Cloud Vault offload: bandwidth, latency ceiling, proxies, repository load and immutability overhead — and why each number comes out that way.">
+  <meta name="author" content="Martin Jorge">
+
+  <!-- Open Graph / LinkedIn -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SOBR Calculator by MJ">
+  <meta property="og:title" content="SOBR Calculator by MJ — for Veeam Data Cloud Vault">
+  <meta property="og:description" content="Size a Veeam Data Cloud Vault offload: bandwidth, latency ceiling, proxies, repository load and immutability overhead — and why each number comes out that way.">
+  <meta property="og:url" content="https://martinljor.github.io/veeamcalc/">
+  <meta property="og:image" content="https://martinljor.github.io/veeamcalc/og-preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SOBR Calculator by MJ — resource estimator for Veeam Data Cloud Vault offloads">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SOBR Calculator by MJ — for Veeam Data Cloud Vault">
+  <meta name="twitter:description" content="Size a Veeam Data Cloud Vault offload: bandwidth, latency ceiling, proxies, repository load and immutability overhead — and why each number comes out that way.">
+  <meta name="twitter:image" content="https://martinljor.github.io/veeamcalc/og-preview.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -1293,7 +1313,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.8.0'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.8.1'; // Bump on each release — shown in the header
 // ASSUMPTION, not a documented Veeam value: per-connection TCP window used by the
 // bandwidth-delay-product ceiling below (throughput <= window / RTT). The BDP formula
 // itself is standard networking; this constant is the modelled input to it, so treat
