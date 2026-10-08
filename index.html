@@ -893,7 +893,7 @@ const T = {
     why:[
       {h:'What is an immutable backup?',p:'An immutable restore point cannot be modified or deleted during the configured period. VDC Vault implements this via <strong>Object Lock</strong> (WORM — Write Once Read Many) on its S3-compatible storage, protecting you against ransomware and human error.'},
       {h:'Why does it generate additional space?',p:'Normally, when Veeam performs a merge (combining incrementals into a new synthetic full), it can overwrite or delete the previous blocks. With immutability enabled, <strong>that is not possible</strong>: the original blocks have an active lock. Veeam must write the new blocks in parallel and wait for the lock to expire before freeing the space.'},
-      {h:'What determines the overhead size?',p:'Veeam locks a block for the immutability period you set <strong>plus a Block Generation window</strong> it fixes per provider — 30 days on AWS, 10 days on Azure — and does not expose in the console. Blocks written inside one generation share a single expiration date. Whatever is still locked once retention has released it stays billable, and that gap is the overhead.',formula:'stranded_days = (immutability + block_generation) − retention\nOverhead ≈ daily_incremental × stranded_days + compressed_full × ⌈stranded_days ÷ block_generation⌉',example:'Example: full = 0.5 TB, daily inc = 0.015 TB, immutability = 7 days, retention = 7 days, Azure generation = 10 days → stranded = 10 days → 0.015 × 10 + 0.5 × 1 = 0.65 TB'},
+      {h:'What determines the overhead size?',p:'Veeam locks a block for the immutability period you set <strong>plus a Block Generation window</strong> it fixes per provider — 30 days on AWS, 10 days on Azure — and does not expose in the console. Blocks written inside one generation share a single expiration date. Whatever is still locked once retention has released it stays billable, and that gap is the overhead.',formula:'stranded_days = (immutability + block_generation) − retention\nOverhead ≈ daily_incremental × stranded_days\n         + new_full × ⌈stranded_days ÷ full_cycle⌉   (periodic full modes only)\nnew_full = min(compressed_full, daily_incremental × full_cycle)',example:'Example: daily inc = 0.015 TB, immutability = 7 days, retention = 7 days, Azure generation = 10 days → stranded = 10 days. Forever forward incremental: 0.015 × 10 = 0.15 TB — no periodic full exists, so nothing is added for one. Weekly active or synthetic full: + min(full, 0.015 × 7) = 0.105 TB → 0.26 TB'},
       {h:'How to reduce the overhead?',p:'Increase the <strong>block generation period</strong> (fewer fulls = less overlap) or reduce the <strong>immutability period</strong>. However, shorter periods reduce the ransomware protection window — it is a balance between security and storage cost.'}
     ]
   },
@@ -1036,7 +1036,7 @@ const T = {
     why:[
       {h:'¿Qué es un backup inmutable?',p:'Un restore point inmutable no puede ser modificado ni eliminado durante el período configurado. VDC Vault implementa esto mediante <strong>Object Lock</strong> (WORM — Write Once Read Many) en su almacenamiento S3-compatible, protegiéndote contra ransomware y errores humanos.'},
       {h:'¿Por qué genera espacio adicional?',p:'Normalmente, cuando Veeam hace un merge (combina incrementales en un nuevo full sintético), puede sobrescribir o eliminar los bloques anteriores. Con inmutabilidad activada, <strong>eso no es posible</strong>: los bloques originales tienen un lock activo. Veeam debe escribir los nuevos bloques en paralelo y esperar a que el lock expire para liberar el espacio.'},
-      {h:'¿Qué determina el tamaño del overhead?',p:'Veeam bloquea un bloque durante el período de inmutabilidad que configuraste <strong>más una ventana de Block Generation</strong> que fija según el proveedor — 30 días en AWS, 10 días en Azure — y no es configurable desde la consola. Los bloques escritos dentro de una misma generación comparten una única fecha de expiración. Todo lo que siga bloqueado después de que la retención lo liberó sigue facturando, y ese hueco es el overhead.',formula:'días_retenidos = (inmutabilidad + block_generation) − retención\nOverhead ≈ incremental_diario × días_retenidos + full_comprimido × ⌈días_retenidos ÷ block_generation⌉',example:'Ejemplo: full = 0.5 TB, inc. diario = 0.015 TB, inmutabilidad = 7 días, retención = 7 días, generación Azure = 10 días → retenidos = 10 días → 0.015 × 10 + 0.5 × 1 = 0.65 TB'},
+      {h:'¿Qué determina el tamaño del overhead?',p:'Veeam bloquea un bloque durante el período de inmutabilidad que configuraste <strong>más una ventana de Block Generation</strong> que fija según el proveedor — 30 días en AWS, 10 días en Azure — y no es configurable desde la consola. Los bloques escritos dentro de una misma generación comparten una única fecha de expiración. Todo lo que siga bloqueado después de que la retención lo liberó sigue facturando, y ese hueco es el overhead.',formula:'días_retenidos = (inmutabilidad + block_generation) − retención\nOverhead ≈ incremental_diario × días_retenidos\n         + full_nuevo × ⌈días_retenidos ÷ ciclo_full⌉   (solo con full periódico)\nfull_nuevo = min(full_comprimido, incremental_diario × ciclo_full)',example:'Ejemplo: inc. diario = 0.015 TB, inmutabilidad = 7 días, retención = 7 días, generación Azure = 10 días → retenidos = 10 días. Forever forward incremental: 0.015 × 10 = 0.15 TB — no existe full periódico, así que no se suma ninguno. Full activo o sintético semanal: + min(full, 0.015 × 7) = 0.105 TB → 0.26 TB'},
       {h:'¿Cómo reducir el overhead?',p:'Aumentá el <strong>block generation period</strong> (menos fulls = menos solapamiento) o reducí el <strong>período de inmutabilidad</strong>. Períodos más cortos reducen la ventana de protección contra ataques — es un balance entre seguridad y costo de almacenamiento.'}
     ]
   },
@@ -1179,7 +1179,7 @@ const T = {
     why:[
       {h:'O que é um backup imutável?',p:'Um restore point imutável não pode ser modificado nem excluído durante o período configurado. O VDC Vault implementa isso via <strong>Object Lock</strong> (WORM — Write Once Read Many) em seu armazenamento compatível com S3, protegendo contra ransomware e erros humanos.'},
       {h:'Por que gera espaço adicional?',p:'Normalmente, quando o Veeam faz um merge (combina incrementais em um novo full sintético), pode sobrescrever ou excluir os blocos anteriores. Com a imutabilidade ativa, <strong>isso não é possível</strong>: os blocos originais têm um lock ativo. O Veeam precisa escrever os novos blocos em paralelo e aguardar o lock expirar para liberar o espaço.'},
-      {h:'O que determina o tamanho do overhead?',p:'O Veeam bloqueia um bloco pelo período de imutabilidade que você configurou <strong>mais uma janela de Block Generation</strong> que ele fixa por provedor — 30 dias na AWS, 10 dias no Azure — e não é configurável no console. Blocos escritos dentro de uma mesma geração compartilham uma única data de expiração. Tudo o que continuar bloqueado depois que a retenção o liberou segue faturando, e essa lacuna é o overhead.',formula:'dias_retidos = (imutabilidade + block_generation) − retenção\nOverhead ≈ incremental_diário × dias_retidos + full_comprimido × ⌈dias_retidos ÷ block_generation⌉',example:'Exemplo: full = 0,5 TB, inc. diário = 0,015 TB, imutabilidade = 7 dias, retenção = 7 dias, geração Azure = 10 dias → retidos = 10 dias → 0,015 × 10 + 0,5 × 1 = 0,65 TB'},
+      {h:'O que determina o tamanho do overhead?',p:'O Veeam bloqueia um bloco pelo período de imutabilidade que você configurou <strong>mais uma janela de Block Generation</strong> que ele fixa por provedor — 30 dias na AWS, 10 dias no Azure — e não é configurável no console. Blocos escritos dentro de uma mesma geração compartilham uma única data de expiração. Tudo o que continuar bloqueado depois que a retenção o liberou segue faturando, e essa lacuna é o overhead.',formula:'dias_retidos = (imutabilidade + block_generation) − retenção\nOverhead ≈ incremental_diário × dias_retidos\n         + full_novo × ⌈dias_retidos ÷ ciclo_full⌉   (só com full periódico)\nfull_novo = min(full_comprimido, incremental_diário × ciclo_full)',example:'Exemplo: inc. diário = 0,015 TB, imutabilidade = 7 dias, retenção = 7 dias, geração Azure = 10 dias → retidos = 10 dias. Forever forward incremental: 0,015 × 10 = 0,15 TB — não existe full periódico, então nada é somado por isso. Full ativo ou sintético semanal: + min(full, 0,015 × 7) = 0,105 TB → 0,26 TB'},
       {h:'Como reduzir o overhead?',p:'Aumente o <strong>block generation period</strong> (menos fulls = menos sobreposição) ou reduza o <strong>período de imutabilidade</strong>. Períodos mais curtos reduzem a janela de proteção contra ataques — é um equilíbrio entre segurança e custo de armazenamento.'}
     ]
   }
@@ -1313,7 +1313,7 @@ function fmtDur(hours) {
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const APP_VERSION       = '3.8.1'; // Bump on each release — shown in the header
+const APP_VERSION       = '3.9.0'; // Bump on each release — shown in the header
 // ASSUMPTION, not a documented Veeam value: per-connection TCP window used by the
 // bandwidth-delay-product ceiling below (throughput <= window / RTT). The BDP formula
 // itself is standard networking; this constant is the modelled input to it, so treat
@@ -1382,7 +1382,8 @@ function readInputs() {
 // window, so the effective lock outlives retention by (immDays + blockGenDays - retDays).
 // Whatever falls inside that gap is still billable even though retention has released it.
 function calcStorageTier({ sourceTB, changeRate, compression, blockGenDays,
-    retDays, retWeeks, retMonths, retYears, immDays, moveOnly }) {
+    retDays, retWeeks, retMonths, retYears, immDays, moveOnly,
+    backupMode = 'forever', fullEveryDays = 7 }) {
   const fullTB = sourceTB * (1 - compression);
   const incTB  = sourceTB * changeRate * (1 - compression);
 
@@ -1402,12 +1403,25 @@ function calcStorageTier({ sourceTB, changeRate, compression, blockGenDays,
 
   const effectiveLockDays = immDays + blockGenDays;
   const strandedDays      = Math.max(0, effectiveLockDays - Math.max(1, retDays));
-  // Stranded past retention: the daily deltas, plus one generation's worth of full
-  // blocks per generation still holding a lock (a generation shares one expiry date).
-  const strandedFulls = Math.ceil(strandedDays / blockGenDays);
-  const overheadTB = (moveOnly ? 0 : incTB * strandedDays) + fullTB * strandedFulls;
+
+  // Stranded past retention: the daily deltas the lock still holds, plus whatever a
+  // periodic full added inside the gap.
+  //
+  // Forever forward incremental never starts a new chain, so there is no periodic full
+  // and this second term is zero. Charging one anyway — which this did before, once per
+  // block generation and regardless of mode — invented a whole full that the job never
+  // creates.
+  //
+  // And when the mode IS periodic, a new full does not cost a full either: the offload
+  // is block-based, so the new chain reuses every block the Vault already holds and only
+  // the change since the previous full is new. Same reasoning as the GFS points above.
+  const periodic     = backupMode === 'synthetic' || backupMode === 'active';
+  const fullCycle    = Math.max(1, fullEveryDays);
+  const newFullTB    = periodic ? Math.min(fullTB, incTB * fullCycle) : 0;
+  const strandedFulls = periodic ? Math.ceil(strandedDays / fullCycle) : 0;
+  const overheadTB = (moveOnly ? 0 : incTB * strandedDays) + newFullTB * strandedFulls;
   return { fullTB, incTB, gfsTB, dataTB, overheadTB, totalTB: dataTB + overheadTB,
-           effectiveLockDays, strandedDays };
+           effectiveLockDays, strandedDays, strandedFulls, newFullTB, periodic };
 }
 
 // ─── Performance Tier repository load ───────────────────────────────────────
@@ -1807,7 +1821,7 @@ function renderBreakdown(inp, capResult, capEnabled) {
     : `<div><div class="breakdown-col-title">${t('vaultTotal')}</div><p style="font-size:12px;color:var(--gray-500);margin-top:8px">${t('capDisabledMsg')}</p></div>`;
 }
 
-function renderSimulations(inp, capEnabled, moveOnly) {
+function renderSimulations(inp, capResult, capEnabled, moveOnly) {
   if (!capEnabled) {
     document.getElementById('sim-cap').innerHTML = `<p style="font-size:12px;color:var(--gray-500)">${t('copyDisabledMsg')}</p>`;
     return;
@@ -1815,7 +1829,7 @@ function renderSimulations(inp, capEnabled, moveOnly) {
   const { sourceTB, changeRate, compression, blockGenDays,
           retDays, retWeeks, retMonths, retYears, immCapDays } = inp;
   renderSim('sim-cap', sourceTB, changeRate, compression, blockGenDays,
-    retDays, retWeeks, retMonths, retYears, immCapDays, true, moveOnly, false);
+    retDays, retWeeks, retMonths, retYears, immCapDays, true, moveOnly, false, capResult);
 }
 
 // ─── Unified calculation entry point ────────────────────────────────────────
@@ -1859,11 +1873,12 @@ function calc() {
     blockGenDays:inp.blockGenDays, retDays:inp.retDays,
     retWeeks:inp.retWeeks, retMonths:inp.retMonths, retYears:inp.retYears,
     immDays:inp.immCapDays, moveOnly,
+    backupMode:inp.backupMode, fullEveryDays:inp.fullEveryDays,
   }) : null;
 
   renderBanner(inp, capResult, capEnabled);
   renderBreakdown(inp, capResult, capEnabled);
-  renderSimulations(inp, capEnabled, moveOnly);
+  renderSimulations(inp, capResult, capEnabled, moveOnly);
   renderSummary(inp, capResult, bw, rtt, baseRtt, streams, capEnabled, moveOnly);
 }
 
@@ -2054,7 +2069,7 @@ function renderCapNotes(inp, capEnabled, moveOnly) {
   nameEl.classList.toggle('placeholder', !inp.extendSobr);
 }
 
-function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveOnly, isPerfWithMove) {
+function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveOnly, isPerfWithMove, res) {
   const full=src*(1-comp), inc=src*cr*(1-comp);
   const maxW=180, scale=maxW/full;
   let rows=[];
@@ -2065,11 +2080,15 @@ function renderSim(cid, src, cr, comp, bg, rd, rw, rm, ry, immDays, immOn, moveO
     if (moveOnly && !isSeed) continue;
     rows.push({label:'D'+i,size:isSeed?full:inc,type:isSeed?'full-synth':'incremental',immutable:immOn&&i<=immDays});
   }
-  if(rw>0) for(let w=1;w<=rw;w++) rows.push({label:'W'+w,size:full,type:'gfs',immutable:immOn&&w*7<=immDays});
-  if(rm>0) for(let m=1;m<=rm;m++) rows.push({label:'M'+m,size:full,type:'gfs',immutable:immOn&&m*30<=immDays});
-  if(ry>0) for(let y=1;y<=ry;y++) rows.push({label:'Y'+y,size:full,type:'gfs',immutable:immOn&&y*365<=immDays});
-  const strandedDays = Math.max(0, (immDays + bg) - Math.max(1, rd));
-  const immOvh = immOn ? (moveOnly ? 0 : inc*strandedDays) + full*Math.ceil(strandedDays/bg) : 0;
+  // A GFS point is drawn at what it actually adds — the change since the previous point,
+  // capped at a full — not at a full each. Same rule the capacity figure uses.
+  const gfsPoint = spacing => Math.min(full, inc*spacing);
+  if(rw>0) for(let w=1;w<=rw;w++) rows.push({label:'W'+w,size:gfsPoint(7),type:'gfs',immutable:immOn&&w*7<=immDays});
+  if(rm>0) for(let m=1;m<=rm;m++) rows.push({label:'M'+m,size:gfsPoint(30),type:'gfs',immutable:immOn&&m*30<=immDays});
+  if(ry>0) for(let y=1;y<=ry;y++) rows.push({label:'Y'+y,size:gfsPoint(365),type:'gfs',immutable:immOn&&y*365<=immDays});
+  // The overhead comes from the one model in calcStorageTier. This used to re-derive it
+  // here from its own copy of the formula, so the chart and the figure could disagree.
+  const immOvh = immOn && res ? res.overheadTB : 0;
 
   let html='<div class="sim-rows">';
   rows.forEach(r=>{

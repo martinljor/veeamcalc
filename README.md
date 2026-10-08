@@ -56,10 +56,16 @@ The calculator derives this from the Vault region you pick, so an AWS-backed reg
 ```
 stranded_days = (immutability + block_generation) − retention
 overhead ≈ daily_incremental × stranded_days
-         + compressed_full × ⌈stranded_days ÷ block_generation⌉
+         + new_full × ⌈stranded_days ÷ full_cycle⌉    (periodic full modes only)
+new_full  = min(compressed_full, daily_incremental × full_cycle)
 ```
 
-There is no synthetic-full cadence to configure here: because the offload is block-based, a synthetic full on the performance tier does not re-transfer blocks the Vault already holds.
+The second term depends on the backup mode, and for one mode it does not exist at all:
+
+- **Forever forward incremental** never starts a new chain, so there is no periodic full and nothing is added for one.
+- **Periodic synthetic or active full** does start one — but a new full does not cost a full. The offload is block-based, so the new chain reuses everything the Vault already holds and only the change since the previous full is new. Same rule as the GFS points below.
+
+A longer full cycle therefore costs *more* per full, not less: each one carries more accumulated change.
 
 ---
 
